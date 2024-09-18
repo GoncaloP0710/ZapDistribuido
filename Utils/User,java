@@ -1,0 +1,11 @@
+public class User {
+    private String user_id;
+
+    public User(String id) {
+        this.user_id = id;
+    }
+
+    public String getUserId() {
+        return user_id;
+    }
+}
