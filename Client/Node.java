@@ -1,44 +1,39 @@
 package Client;
 
 import java.util.ArrayList;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 public class Node {
 
-    private Node nextNode;
-    private Node prevNode;
     private ArrayList<Node> fingerTable;
     
     private String ip;
     private int port;
-    private byte[] hash; // Hash of the ip and port to identify the node order
+    private BigInteger hash; // Hash of the ip and port to identify the node order
 
     public Node(String ip, int port) {
         this.ip = ip;
         this.port = port;
     }
 
-    private int getPort() {
+    public ArrayList<Node> getFingerTable() {
+        return this.fingerTable;
+    }
+
+    public int getPort() {
         return this.port;
     }
 
-    private String getIp() {
+    public String getIp() {
         return this.ip;
     }
-    
-    private Node nextNode() {
-        return this.nextNode;
-    }
-    
-    private Node prevNode() {
-        return this.prevNode;
-    }
 
-    private void setNextNode(Node node) {
-        this.nextNode = node;
-    }
-
-    private void setPrevNode(Node node) {
-        this.prevNode = node;
+    public BigInteger getHashNumber() {
+        return this.hash;
     }
 
     private void setFingerTable(ArrayList<Node> fingerTable) {
@@ -46,31 +41,20 @@ public class Node {
     }
 
     /**
-     * Updates all of the finger tables of the nodes in the network
+     * Calculates the hash of the node and updates its value
      * 
-     * @param node
+     * @throws NoSuchAlgorithmException
      */
-    private void updateAllFingerTables(Node node) {
-        if (this.equals(node))
-            return;
-        node.setFingerTable(node.getUpdateFingerTable(0, node, new ArrayList<Node>()));
-        updateAllFingerTables(node.nextNode());
-    }
+    private void calculateHash() throws NoSuchAlgorithmException {
+        String msg = ip + port;
+        MessageDigest md = MessageDigest.getInstance("SHA-1");
+        byte[] hashBytes = md.digest(msg.getBytes());
 
-    /**
-     * Obtains the updated finger table of the node
-     * 
-     * @param counter 
-     * @param node
-     * @param fingerTable
-     * @return
-     */
-    private ArrayList<Node> getUpdateFingerTable(int counter, Node node, ArrayList<Node> fingerTable) {
-        if (this.equals(node))
-            return fingerTable;
-        if (Utils.isPowerOfTwo(counter))
-            fingerTable.add(node);
-        getUpdateFingerTable(++counter, node.nextNode(), fingerTable);
+        // Convert the hash bytes directly to a BigInteger
+        BigInteger hashNumber = new BigInteger(1, hashBytes);
+        System.out.println("Hash as Decimal Number: " + hashNumber);
+
+        this.hash = hashNumber;
     }
     
     @Override
@@ -84,7 +68,7 @@ public class Node {
     }
 
     /**
-     * Creates a representation of the finger table of the node
+     * Creates a String representation of the finger table of the node
      * 
      * @return
      */
@@ -103,11 +87,42 @@ public class Node {
     @Override
     public String toString() {
         return "Node[" +
-                "nextNode = " + nextNode.ip + ":" + nextNode.port + ", " +
-                "prevNode = " + prevNode.ip + ":" + prevNode.port + ", " +
                 "fingerTable = " + getFingerTableString() + ", " +
                 "ip = " + ip + ", " +
                 "port = " + port + ", " +
                 "hash = " + hash + ']';
+    }
+
+    // ===========================================================================================
+    //                                    Imports do be hard
+    // ===========================================================================================
+
+    public static boolean isPowerOfTwo(int n) {
+        return (n > 0) && ((n & (n - 1)) == 0);
+    }
+
+    // ===========================================================================================
+    //                                          Tests
+    // ===========================================================================================
+
+    public static void main(String[] args) throws UnknownHostException, NoSuchAlgorithmException {
+
+        // Get the local host address
+        InetAddress localHost = InetAddress.getLocalHost();
+        String ipAddress = localHost.getHostAddress();
+
+        // Create the nodes
+        Node node1 = new Node(ipAddress, 8081);
+        Node node2 = new Node(ipAddress, 8082);
+        Node node3 = new Node(ipAddress, 8083);
+        Node node4 = new Node(ipAddress, 8084);
+        Node node5 = new Node(ipAddress, 8085);
+
+        // create the hashes of the nodes
+        node1.calculateHash();
+        node2.calculateHash();
+        node3.calculateHash();
+        node4.calculateHash();
+        node5.calculateHash();
     }
 }
