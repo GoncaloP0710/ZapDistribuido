@@ -14,7 +14,9 @@ public class Node {
     private String ip;
     private int port;
 
-    private int hashLength = 160; // Length of the hash in bits (SHA-1)
+    // TODO: Change to 160 after testing
+    private int hashLength = 4; // Length of the hash in bits (SHA-1)
+    private int ringSize = (int) Math.pow(2, hashLength); // Size of the ring (2^160)
     private BigInteger hash; // Hash of the ip and port to identify the node order
 
     public Node(String ip, int port) throws NoSuchAlgorithmException {
@@ -82,12 +84,23 @@ public class Node {
      * @return
      */
     private ArrayList<Node> getUpdateFingerTable(int counter, Node node, ArrayList<Node> fingerTable) {
-        if (this.equals(node) || counter == this.hashLength - 1)
+        if (this.equals(node) || counter == Math.pow(2, this.hashLength))
             return fingerTable;
-        // TODO: Change from the hash number value to the interval of the hashs between these and the last node
-        if (node.hash.intValue() >= Math.pow(2, counter)) {
+        int distance = (node.hash.intValue() - this.hash.intValue()+ ringSize) % ringSize;
+        // TODO: Alterar esta linha (0-7 = 7 mas deveria ser 9 when the chord is of 2^4)
+        if (Math.abs((node.hash.intValue() - this.hash.intValue()+ ringSize) % ringSize) >= Math.pow(2, counter)) {
             fingerTable.add(node);
-            return getUpdateFingerTable(counter + 1, node.getFingerTable().get(0), fingerTable);
+
+            int pow = (int) Math.pow(2, counter);
+            distance =  (node.getFingerTable().get(0).hash.intValue() - this.hash.intValue()+ ringSize) % ringSize;
+            
+            // Skip the next counters if 2^counter is lower than the distance between this and the next node to try
+            while (Math.pow(2, counter) <= ((node.hash.intValue() - this.hash.intValue()+ ringSize) % ringSize)) {
+                counter++;
+                pow = (int) Math.pow(2, counter);
+            }
+
+            return getUpdateFingerTable(counter, node.getFingerTable().get(0), fingerTable);
         }
         return getUpdateFingerTable(counter, node.getFingerTable().get(0), fingerTable);
     }
@@ -110,12 +123,19 @@ public class Node {
     private String getFingerTableString() {
         StringBuilder sb = new StringBuilder();
         sb.append("FingerTable: [");
+        // for (Node node : fingerTable) {
+        //     sb.append("IP: ").append(node.getIp())
+        //         .append(", Port: ").append(node.getPort())
+        //         .append(", Hash: ").append(node.getHashNumber())
+        //         .append(", ");
+        // }
+
+        // TODO: Change to the previous implementation after all the testing
         for (Node node : fingerTable) {
-            sb.append("IP: ").append(node.getIp())
-                .append(", Port: ").append(node.getPort())
-                .append(", Hash: ").append(node.getHashNumber())
+            sb.append(", Hash: ").append(node.getHashNumber())
                 .append(", ");
         }
+
         if (!fingerTable.isEmpty())
             sb.setLength(sb.length() - 2); // Remove the last comma and space
         sb.append("]");
@@ -181,19 +201,19 @@ public class Node {
         // Update the finger tables
         node1.setFingerTable( node1.getUpdateFingerTable(0, node1.fingerTable.get(0), new ArrayList<>()) );
         node2.setFingerTable( node2.getUpdateFingerTable(0, node2.fingerTable.get(0), new ArrayList<>()) );
-        node3.setFingerTable( node3.getUpdateFingerTable(0, node3.fingerTable.get(0), new ArrayList<>()) );
+        //node3.setFingerTable( node3.getUpdateFingerTable(0, node3.fingerTable.get(0), new ArrayList<>()) );
         node4.setFingerTable( node4.getUpdateFingerTable(0, node4.fingerTable.get(0), new ArrayList<>()) );
         node5.setFingerTable( node5.getUpdateFingerTable(0, node5.fingerTable.get(0), new ArrayList<>()) );
-        node6.setFingerTable( node6.getUpdateFingerTable(0, node6.fingerTable.get(0), new ArrayList<>()) );
-        node7.setFingerTable( node7.getUpdateFingerTable(0, node7.fingerTable.get(0), new ArrayList<>()) );
+        //node6.setFingerTable( node6.getUpdateFingerTable(0, node6.fingerTable.get(0), new ArrayList<>()) );
+        //node7.setFingerTable( node7.getUpdateFingerTable(0, node7.fingerTable.get(0), new ArrayList<>()) );
 
         // Print the finger tables
         System.out.println("Node 1: " + node1.toString());
         System.out.println("Node 2: " + node2.toString());
-        System.out.println("Node 3: " + node3.toString());
+        //System.out.println("Node 3: " + node3.toString());
         System.out.println("Node 4: " + node4.toString());
         System.out.println("Node 5: " + node5.toString());
-        System.out.println("Node 6: " + node6.toString());
-        System.out.println("Node 7: " + node7.toString());
+        //System.out.println("Node 6: " + node6.toString());
+        //System.out.println("Node 7: " + node7.toString());
     }
 }
