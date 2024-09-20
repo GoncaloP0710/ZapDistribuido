@@ -6,6 +6,10 @@
 - Daniel Nunes - fc58257
 - Gonçalo Pinto - fc58178
 
+## TODO Notes
+
+Change user class to Client folder and change the Node class to a new folder.
+
 ## Project overview
 
 The aim of this project is to give students the opportunity to put the topics they have studied in the lecture and lab classes to practice. In more detail, in this project the students are asked to build a secure P2P messaging app, similar to WhatsApp/Signal/Telegram. Next is a list of requirements for the app.
