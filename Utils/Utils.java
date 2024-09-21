@@ -1,3 +1,5 @@
+package utils;
+
 import java.security.SecureRandom;
 
 public final class Utils {
