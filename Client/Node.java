@@ -18,8 +18,15 @@ public class Node {
     private String ip;
     private int port;
 
+    // ---------------------- key store ----------------------
     String keystoreFile;
     String keystorePassword;
+    // -------------------------------------------------------
+
+    // ---------------------- trust store ----------------------
+    String truststoreFile;
+    // String truststorePassword;
+    // -------------------------------------------------------
 
     private NodeService nodeService;
 
@@ -32,7 +39,7 @@ public class Node {
         this.fingerTable = new ArrayList<>();
         this.ip = ip;
         this.port = port;
-        this.nodeService = new NodeService(this, ip, port, keystoreFile, keystorePassword);
+        this.nodeService = new NodeService(this);
         setHashNumber(calculateHash());
     }
 
@@ -56,6 +63,18 @@ public class Node {
         return this.hash;
     }
 
+    public String getKeystoreFile() {
+        return this.keystoreFile;
+    }
+
+    public String getKeystorePassword() {
+        return this.keystorePassword;
+    }
+
+    public String getTruststoreFile() {
+        return this.truststoreFile;
+    }
+
     private void setFingerTable(ArrayList<NodeDTO> fingerTable) {
         this.fingerTable = fingerTable;
     }
@@ -74,6 +93,18 @@ public class Node {
 
     private void setHashNumber(BigInteger hash) {
         this.hash = hash;
+    }
+
+    private void setKeystoreFile(String keystoreFile) {
+        this.keystoreFile = keystoreFile;
+    }
+
+    private void setKeystorePassword(String keystorePassword) {
+        this.keystorePassword = keystorePassword;
+    }
+
+    private void setTruststoreFile(String truststoreFile) {
+        this.truststoreFile = truststoreFile;
     }
 
     /**
