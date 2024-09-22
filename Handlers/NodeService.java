@@ -30,8 +30,6 @@ public class NodeService {
 
     private Node currentNode;
 
-    // TODO: Check the port situation 
-
     private static SSLServerSocket serverSocket;
     public static List<NodeThread> activeServerThreads = Collections.synchronizedList(new ArrayList<>()); // Threads that are currently only listening
     private ConcurrentHashMap<String, NodeThread> activeClientThreads; // Threads that are currently only sending messages
@@ -77,20 +75,34 @@ public class NodeService {
         System.setProperty("javax.net.ssl.trustStoreType", "JCEKS");
 
         // -----------------------------------------------------------------------------------
+        
+       try {
+        // Create SSL socket
         SocketFactory factory = SSLSocketFactory.getDefault();
-        sslClientSocket = (SSLSocket) factory.createSocket(currentNode.getIp(), port);
-        ObjectInputStream ois = new ObjectInputStream(clientSocket.getInputStream());
-        ObjectOutputStream oos = new ObjectOutputStream(clientSocket.getOutputStream());
+        SSLSocket sslClientSocket = (SSLSocket) factory.createSocket(currentNode.getIp(), 0);
 
+        // Initialize input and output streams
+        ObjectInputStream ois = new ObjectInputStream(sslClientSocket.getInputStream());
+        ObjectOutputStream oos = new ObjectOutputStream(sslClientSocket.getOutputStream());
+
+        // Load keystore
         KeyStore keystore = KeyStore.getInstance("JCEKS");
-        try (InputStream keystoreStream = new FileInputStream(keystoreFile)) {
-            keystore.load(keystoreStream, keystorePassword.toCharArray());
+        try (InputStream keystoreStream = new FileInputStream(currentNode.getKeystoreFile())) {
+            keystore.load(keystoreStream, currentNode.getKeystorePassword().toCharArray());
         }
 
+        // Load truststore
         KeyStore truststore = KeyStore.getInstance("JCEKS");
-        try (InputStream keystoreStream = new FileInputStream(truststoreFile)) {
-            truststore.load(keystoreStream, keystorePassword.toCharArray());
+        try (InputStream truststoreStream = new FileInputStream(currentNode.getTruststoreFile())) {
+            truststore.load(truststoreStream, currentNode.getKeystorePassword().toCharArray());
         }
+
+        // Additional client logic here
+
+    } catch (Exception e) {
+        System.err.println(e.getMessage());
+        System.exit(-1);
+    }
         // -----------------------------------------------------------------------------------
     }
 
