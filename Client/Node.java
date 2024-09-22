@@ -75,35 +75,43 @@ public class Node {
         return this.truststoreFile;
     }
 
-    private void setFingerTable(ArrayList<NodeDTO> fingerTable) {
+    public NodeService getNodeService() {
+        return this.nodeService;
+    }
+
+    public int getRingSize() {
+        return this.ringSize;
+    }
+
+    public void setFingerTable(ArrayList<NodeDTO> fingerTable) {
         this.fingerTable = fingerTable;
     }
 
-    private void setNextNode(NodeDTO nextNode) {
+    public void setNextNode(NodeDTO nextNode) {
         this.nextNode = nextNode;
     }
 
-    private void setPort(int port) {
+    public void setPort(int port) {
         this.port = port;
     }
 
-    private void setIp(String ip) {
+    public void setIp(String ip) {
         this.ip = ip;
     }
 
-    private void setHashNumber(BigInteger hash) {
+    public void setHashNumber(BigInteger hash) {
         this.hash = hash;
     }
 
-    private void setKeystoreFile(String keystoreFile) {
+    public void setKeystoreFile(String keystoreFile) {
         this.keystoreFile = keystoreFile;
     }
 
-    private void setKeystorePassword(String keystorePassword) {
+    public void setKeystorePassword(String keystorePassword) {
         this.keystorePassword = keystorePassword;
     }
 
-    private void setTruststoreFile(String truststoreFile) {
+    public void setTruststoreFile(String truststoreFile) {
         this.truststoreFile = truststoreFile;
     }
 
@@ -126,6 +134,17 @@ public class Node {
     }
 
     /**
+     * Obtains the NodeDTO of the node next to the one with the given hash
+     * 
+     * @param startNode hash of the node that is calling the method
+     * @param node hash of the node we want to find to get the nodeDTO of the next node
+     * @return
+     */
+    private NodeDTO getNodeWithHash(BigInteger startNode, BigInteger node) {
+        return nodeService.getNextNodeWithHash(startNode, node);
+    }
+
+    /**
      * Obtains the updated finger table of the node
      * 
      * @param counter has to be initializad as 0!
@@ -136,6 +155,7 @@ public class Node {
     private ArrayList<NodeDTO> getUpdateFingerTable(int counter, NodeDTO node, ArrayList<NodeDTO> fingerTable) {
         if (this.equals(node) || counter == this.hashLength)
             return fingerTable;
+        // TODO: Try the func from the utils class
         int distance = (node.getHash().intValue() - this.hash.intValue()+ ringSize) % ringSize;
 
         if (distance >= Math.pow(2, counter)) {

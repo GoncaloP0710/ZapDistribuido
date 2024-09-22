@@ -1,27 +1,21 @@
 package handlers;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.math.BigInteger;
 import java.net.Socket;
-import java.security.KeyStore;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.net.ServerSocketFactory;
 import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import client.Node;
+import dtos.NodeDTO;
 import handlers.NodeThread;
+import utils.Utils;
 
 /**
  * This class is responsible for the node comunication on the network
@@ -31,11 +25,16 @@ public class NodeService {
     private Node currentNode;
 
     private static SSLServerSocket serverSocket;
-    public static List<NodeThread> activeServerThreads = Collections.synchronizedList(new ArrayList<>()); // Threads that are currently only listening
-    private ConcurrentHashMap<String, NodeThread> activeClientThreads; // Threads that are currently only sending messages
+    private ConcurrentHashMap<BigInteger, NodeThread> activeThreads;
+
+    // TODO: Add a result queue to store the results of the commands
 
     public NodeService(Node currentNode) {
         this.currentNode = currentNode;
+    }
+
+    public void addThread(BigInteger hash, NodeThread thread) {
+        activeThreads.put(hash, thread);
     }
 
     public void startServer() throws IOException {
@@ -46,25 +45,23 @@ public class NodeService {
 
         // Get an SSLSocketFactory from the SSLContext
         ServerSocketFactory factory = SSLServerSocketFactory.getDefault();
-        SSLServerSocket sslServerSocket = (SSLServerSocket) factory.createServerSocket(currentNode.getPort());
+        serverSocket = (SSLServerSocket) factory.createServerSocket(currentNode.getPort());
 
         while (true) {
-            Socket clientSocket = null; // other node socket
+            Socket clientSocket = null; // other node sockets
             try {
                 clientSocket = serverSocket.accept();
-                NodeThread newServerThread = new NodeThread(currentNode, clientSocket);
-                activeServerThreads.add(newServerThread);
+                NodeThread newServerThread = new NodeThread(currentNode, clientSocket, true);
                 newServerThread.start();
 
             } catch (IOException e) {
                 System.err.println(e.getMessage());
                 System.exit(-1);
             }
-
         }
     }
 
-    public void startClient() {
+    public void startClient(String ip, int port) {
 
         System.setProperty("javax.net.ssl.keyStore", currentNode.getKeystoreFile());
         System.setProperty("javax.net.ssl.keyStorePassword", currentNode.getKeystorePassword());
@@ -73,37 +70,36 @@ public class NodeService {
         System.setProperty("javax.net.ssl.trustStore", currentNode.getTruststoreFile());
         System.setProperty("javax.net.ssl.trustStorePassword", currentNode.getKeystorePassword());
         System.setProperty("javax.net.ssl.trustStoreType", "JCEKS");
-
-        // -----------------------------------------------------------------------------------
         
-       try {
-        // Create SSL socket
-        SocketFactory factory = SSLSocketFactory.getDefault();
-        SSLSocket sslClientSocket = (SSLSocket) factory.createSocket(currentNode.getIp(), 0);
+        try {
+            // Create SSL socket
+            SocketFactory factory = SSLSocketFactory.getDefault();
+            SSLSocket sslClientSocket = (SSLSocket) factory.createSocket(ip, port);
 
-        // Initialize input and output streams
-        ObjectInputStream ois = new ObjectInputStream(sslClientSocket.getInputStream());
-        ObjectOutputStream oos = new ObjectOutputStream(sslClientSocket.getOutputStream());
+            NodeThread newClientThread = new NodeThread(currentNode, sslClientSocket, false);
+            newClientThread.start();
 
-        // Load keystore
-        KeyStore keystore = KeyStore.getInstance("JCEKS");
-        try (InputStream keystoreStream = new FileInputStream(currentNode.getKeystoreFile())) {
-            keystore.load(keystoreStream, currentNode.getKeystorePassword().toCharArray());
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+            System.exit(-1);
         }
-
-        // Load truststore
-        KeyStore truststore = KeyStore.getInstance("JCEKS");
-        try (InputStream truststoreStream = new FileInputStream(currentNode.getTruststoreFile())) {
-            truststore.load(truststoreStream, currentNode.getKeystorePassword().toCharArray());
-        }
-
-        // Additional client logic here
-
-    } catch (Exception e) {
-        System.err.println(e.getMessage());
-        System.exit(-1);
     }
-        // -----------------------------------------------------------------------------------
+
+    public NodeDTO getNodeWithHash(BigInteger startNode, BigInteger node) {
+        if (currentNode.getFingerTable().isEmpty()) // If there are no nodes on the finger table
+            return null;
+
+        int distanceToNext = Utils.getDistance(currentNode.getHashNumber(), currentNode.getNextNode().getHash(), currentNode.getRingSize());
+        int distanceToNode = Utils.getDistance(currentNode.getHashNumber(), node, currentNode.getRingSize());
+        if (distanceToNext > distanceToNode) // If the node is between the current node and the next node (in these case the node does not exist)
+            return null;
+
+        for (NodeDTO fingerNode : currentNode.getFingerTable()) { // TODO: track of the node in the finger table that is the closest to the one we want to find
+            if (fingerNode.getHash().equals(node)) { // If the node is in the finger table
+                return fingerNode;
+            }
+        }
+        
     }
 
 }

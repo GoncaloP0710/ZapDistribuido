@@ -8,7 +8,6 @@ public class NodeDTO {
     private int port;
     private BigInteger hash;
 
-
     protected NodeDTO() {}
 
     public NodeDTO(String ip, int port, BigInteger hash) {

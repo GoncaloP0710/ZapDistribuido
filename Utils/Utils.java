@@ -1,5 +1,6 @@
 package utils;
 
+import java.math.BigInteger;
 import java.security.SecureRandom;
 
 public final class Utils {
@@ -28,5 +29,16 @@ public final class Utils {
 
     public static boolean isPowerOfTwo(int n) {
         return (n > 0) && ((n & (n - 1)) == 0);
+    }
+
+    /**
+     * 
+     * 
+     * @param start
+     * @param end
+     * @return
+     */
+    public static int getDistance(BigInteger start, BigInteger end, int ringSize) {
+        return ((end.intValue() - start.intValue()+ ringSize) % ringSize);
     }
 }
