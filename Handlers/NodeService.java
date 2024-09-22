@@ -94,11 +94,19 @@ public class NodeService {
         if (distanceToNext > distanceToNode) // If the node is between the current node and the next node (in these case the node does not exist)
             return null;
 
-        for (NodeDTO fingerNode : currentNode.getFingerTable()) { // TODO: track of the node in the finger table that is the closest to the one we want to find
-            if (fingerNode.getHash().equals(node)) { // If the node is in the finger table
+        NodeDTO closestFingerNode = null;
+        for (NodeDTO fingerNode : currentNode.getFingerTable()) {
+            BigInteger fingerNodeHash = fingerNode.getHash();
+
+            if (fingerNodeHash.equals(node)) // If the node is in the finger table
                 return fingerNode;
-            }
+
+            if (closestFingerNode == null || 
+                (fingerNodeHash.intValue() > closestFingerNode.getHash().intValue() && 
+                fingerNodeHash.intValue() < node.intValue())) // If these node is the closest to the node
+                closestFingerNode = fingerNode;
         }
+        return closestFingerNode;
         
     }
 

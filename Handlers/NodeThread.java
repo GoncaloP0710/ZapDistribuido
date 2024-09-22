@@ -63,7 +63,7 @@ public class NodeThread extends Thread {
     /**
      * Function that is called when the thread is started
      */
-    public void run() {
+    public void run() {  // TODO: Change the func to close the connection after the command is sent or received
         while (true) {
 
             // Check for commands from the queue with a timeout
@@ -91,7 +91,7 @@ public class NodeThread extends Thread {
         }
     }
 
-    // TODO: Create a enumerated type for the commands
+    // TODO: Create a enumerated type for the commands?
     private void processCommand(String command) {
         if (command.contains("getNodeWithHash:")) { // Get the NodeDTO of the next node of the one with the given hash
             commandHandler.getNodeRequest();
