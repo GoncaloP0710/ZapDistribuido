@@ -9,8 +9,16 @@ import java.net.UnknownHostException;
 
 import dtos.NodeDTO;
 import handlers.NodeService;
+import client.User;
 
 public class Node {
+
+    // ---------------------- Default Node ----------------------
+    private String ipDefault = "";
+    private int portDefault = 0;
+    // ----------------------------------------------------------
+
+    private User user;
 
     private ArrayList<NodeDTO> fingerTable;
     private NodeDTO nextNode;
@@ -18,22 +26,21 @@ public class Node {
     private String ip;
     private int port;
 
+    private NodeService nodeService;
+
+    private int hashLength = 160; // Length of the hash in bits (SHA-1)
+    private int ringSize = (int) Math.pow(2, hashLength); // Size of the ring (2^160)
+    private BigInteger hash; // Hash of the ip and port to identify the node order
+
     // ---------------------- key store ----------------------
     String keystoreFile;
     String keystorePassword;
     // -------------------------------------------------------
 
-    // ---------------------- trust store ----------------------
+    // ---------------------- trust store --------------------
     String truststoreFile;
     // String truststorePassword;
     // -------------------------------------------------------
-
-    private NodeService nodeService;
-
-    // TODO: Change to 160 or the respective value after testing
-    private int hashLength = 4; // Length of the hash in bits (SHA-1)
-    private int ringSize = (int) Math.pow(2, hashLength); // Size of the ring (2^160)
-    private BigInteger hash; // Hash of the ip and port to identify the node order
 
     public Node(String ip, int port, String keystoreFile, String keystorePassword) throws NoSuchAlgorithmException {
         this.fingerTable = new ArrayList<>();
@@ -116,14 +123,15 @@ public class Node {
     }
 
     /**
-     * 
+     * Instead of the ip and port we use name to be easier to find the user in the ring
      * 
      * @return
      * @throws NoSuchAlgorithmException
      */
     private BigInteger calculateHash() throws NoSuchAlgorithmException {
-        String msg = ip + port;
-        MessageDigest md = MessageDigest.getInstance("SHA-1"); //TODO: O Joao disse para usar o 256, devemos mudar?
+        // Instead of the ip and port we use name to be easier to find the user in the ring
+        String msg = user.getUserName(); 
+        MessageDigest md = MessageDigest.getInstance("SHA-1");
         byte[] hashBytes = md.digest(msg.getBytes());
 
         // Convert the hash bytes directly to a BigInteger
@@ -131,17 +139,6 @@ public class Node {
         System.out.println("Hash as Decimal Number: " + hashNumber);
 
         return hashNumber;
-    }
-
-    /**
-     * Obtains the NodeDTO of the node next to the one with the given hash
-     * 
-     * @param startNode hash of the node that is calling the method
-     * @param node hash of the node we want to find to get the nodeDTO of the next node
-     * @return
-     */
-    private NodeDTO getNodeWithHash(BigInteger startNode, BigInteger targetNode) {
-        return nodeService.getNodeWithHash(startNode, targetNode);
     }
 
     /**
@@ -206,5 +203,10 @@ public class Node {
                 "ip = " + ip + ", " +
                 "port = " + port + ", " +
                 "hash = " + hash + ']';
+    }
+
+    public static void main(String[] args) {
+        // TODO: Implement main loop to get the user input (commands)
+        // Use command handler to process the commands and send them to the nodeService
     }
 }

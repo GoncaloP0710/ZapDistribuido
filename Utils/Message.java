@@ -3,6 +3,8 @@ package utils;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+import client.User;
+
 public class Message implements Serializable {
     
     private byte[] data;

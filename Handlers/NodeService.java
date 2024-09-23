@@ -3,7 +3,8 @@ package handlers;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.Socket;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.net.ServerSocketFactory;
 import javax.net.SocketFactory;
@@ -14,7 +15,6 @@ import javax.net.ssl.SSLSocketFactory;
 
 import client.Node;
 import dtos.NodeDTO;
-import handlers.NodeThread;
 import utils.Utils;
 
 /**
@@ -23,18 +23,17 @@ import utils.Utils;
 public class NodeService {
 
     private Node currentNode;
-
     private static SSLServerSocket serverSocket;
-    private ConcurrentHashMap<BigInteger, NodeThread> activeThreads;
 
-    // TODO: Add a result queue to store the results of the commands
+    private BlockingQueue<String> answerQueue; // Queue to store the answers from the other nodes
 
     public NodeService(Node currentNode) {
         this.currentNode = currentNode;
+        this.answerQueue = new LinkedBlockingQueue<>();
     }
 
-    public void addThread(BigInteger hash, NodeThread thread) {
-        activeThreads.put(hash, thread);
+    public void addAnswer(String answer) {
+        answerQueue.add(answer);
     }
 
     public void startServer() throws IOException {
@@ -51,7 +50,7 @@ public class NodeService {
             Socket clientSocket = null; // other node sockets
             try {
                 clientSocket = serverSocket.accept();
-                NodeThread newServerThread = new NodeThread(currentNode, clientSocket, true);
+                NodeThread newServerThread = new NodeThread(currentNode, clientSocket, null);
                 newServerThread.start();
 
             } catch (IOException e) {
@@ -61,7 +60,7 @@ public class NodeService {
         }
     }
 
-    public void startClient(String ip, int port) {
+    public void startClient(String ip, int port, String command) {
 
         System.setProperty("javax.net.ssl.keyStore", currentNode.getKeystoreFile());
         System.setProperty("javax.net.ssl.keyStorePassword", currentNode.getKeystorePassword());
@@ -76,7 +75,7 @@ public class NodeService {
             SocketFactory factory = SSLSocketFactory.getDefault();
             SSLSocket sslClientSocket = (SSLSocket) factory.createSocket(ip, port);
 
-            NodeThread newClientThread = new NodeThread(currentNode, sslClientSocket, false);
+            NodeThread newClientThread = new NodeThread(currentNode, sslClientSocket, command);
             newClientThread.start();
 
         } catch (Exception e) {
@@ -85,6 +84,13 @@ public class NodeService {
         }
     }
 
+    /**
+     * Discovers the node that has the given hash or the closest one to it to continue the search
+     * 
+     * @param startNode
+     * @param node
+     * @return
+     */
     public NodeDTO getNodeWithHash(BigInteger startNode, BigInteger node) {
         if (currentNode.getFingerTable().isEmpty()) // If there are no nodes on the finger table
             return null;

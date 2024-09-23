@@ -1,4 +1,4 @@
-package utils;
+package client;
 
 import java.security.KeyPair;
 import java.security.KeyStore;
@@ -10,6 +10,7 @@ import java.security.cert.Certificate;
 import handlers.KeyHandler;
 
 public class User {
+    // Para que serve o user_id? Assumirmos que todos os names sao diferentes!
     private String user_id;
     private String user_name;
 
