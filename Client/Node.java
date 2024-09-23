@@ -133,31 +133,6 @@ public class Node {
 
         return hashNumber;
     }
-
-    /**
-     * Obtains the updated finger table of the node
-     * 
-     * @param counter has to be initializad as 0!
-     * @param node
-     * @param fingerTable
-     * @return
-     */
-    private ArrayList<NodeDTO> getUpdateFingerTable(int counter, NodeDTO node, ArrayList<NodeDTO> fingerTable) {
-        if (this.equals(node) || counter == this.hashLength)
-            return fingerTable;
-        // TODO: Try the func from the utils class
-        int distance = (node.getHash().intValue() - this.hash.intValue()+ ringSize) % ringSize;
-
-        if (distance >= Math.pow(2, counter)) {
-            fingerTable.add(node);
-
-            // Skip the next counters if 2^counter is lower than the distance between this and the next node to try
-            while (Math.pow(2, counter) <= distance) 
-                counter++;
-        }
-        // TODO: Implement a way to get the next node DTO
-        return getUpdateFingerTable(counter, node.nextNode, fingerTable);
-    }
     
     @Override
     public boolean equals(Object obj) {

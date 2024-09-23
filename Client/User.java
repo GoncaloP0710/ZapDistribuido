@@ -7,10 +7,13 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+
 import handlers.KeyHandler;
 import handlers.NodeService;
 
-public class User {
+public class User implements PropertyChangeListener {
     // Para que serve o user_id? Assumirmos que todos os names sao diferentes!
     private String user_id;
     private String user_name;
@@ -22,7 +25,7 @@ public class User {
     private Node node;
     private NodeService nodeService;
 
-    
+
 
     public User(String user_id, String user_name) {
         this.user_id = user_id;

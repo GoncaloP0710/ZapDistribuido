@@ -3,7 +3,6 @@ package handlers;
 import java.io.IOException;
 import java.math.BigInteger;
 
-// TODO: Implement a EventBus so that NodeCommandHandler can communicate with NodeService without circular dependencies
 public class NodeCommandHandler {
 
     private NodeThread currentThread;
@@ -36,7 +35,7 @@ public class NodeCommandHandler {
             String bigIntegerStr = splitedCmd[1].trim();
             try {
                 BigInteger nodeHash = new BigInteger(bigIntegerStr);
-                currentThread.
+                // TODO: Continue the logic
 
             } catch (NumberFormatException e) {
                 System.err.println("Invalid BigInteger format: " + bigIntegerStr);
