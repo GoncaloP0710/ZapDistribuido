@@ -140,8 +140,8 @@ public class Node {
      * @param node hash of the node we want to find to get the nodeDTO of the next node
      * @return
      */
-    private NodeDTO getNodeWithHash(BigInteger startNode, BigInteger node) {
-        return nodeService.getNextNodeWithHash(startNode, node);
+    private NodeDTO getNodeWithHash(BigInteger startNode, BigInteger targetNode) {
+        return nodeService.getNodeWithHash(startNode, targetNode);
     }
 
     /**
