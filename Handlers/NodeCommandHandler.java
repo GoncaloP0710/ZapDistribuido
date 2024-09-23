@@ -1,7 +1,9 @@
 package handlers;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
+// TODO: Implement a EventBus so that NodeCommandHandler can communicate with NodeService without circular dependencies
 public class NodeCommandHandler {
 
     private NodeThread currentThread;
@@ -13,17 +15,32 @@ public class NodeCommandHandler {
     public void processCommand(String command) {
         if (command.equals("End Connection")) {
             endConectionRequest();
+        } else if (command.contains("Enter Node:")) {
+            enterNode(command);
         }
     }
 
-    public void endConectionRequest() {
+    private void endConectionRequest() {
         try {
             currentThread.getSocket().close();
             System.out.println("Connection closed.");
+            System.exit(-1); // TODO: Check if this is the best way to close the thread
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            currentThread.interrupt(); // Interrupt the thread to terminate it
+        }
+    }
+
+    private void enterNode(String command) {
+        String[] splitedCmd = command.split("Enter Node:");
+        if (splitedCmd.length > 1) {
+            String bigIntegerStr = splitedCmd[1].trim();
+            try {
+                BigInteger nodeHash = new BigInteger(bigIntegerStr);
+                currentThread.
+
+            } catch (NumberFormatException e) {
+                System.err.println("Invalid BigInteger format: " + bigIntegerStr);
+            }
         }
     }
 }

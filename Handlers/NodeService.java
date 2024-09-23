@@ -60,6 +60,13 @@ public class NodeService {
         }
     }
 
+    /**
+     * Send command to the Node with the respective ip and port
+     * 
+     * @param ip
+     * @param port
+     * @param command
+     */
     public void startClient(String ip, int port, String command) {
 
         System.setProperty("javax.net.ssl.keyStore", currentNode.getKeystoreFile());
@@ -84,6 +91,11 @@ public class NodeService {
         }
     }
 
+    public void enterNode(String ipDefault, int portDefault, BigInteger hash) {
+        String command = "Enter Node:" + hash;
+        startClient(ipDefault, portDefault, command);
+    }
+
     /**
      * Discovers the node that has the given hash or the closest one to it to continue the search
      * 
@@ -91,7 +103,7 @@ public class NodeService {
      * @param node
      * @return
      */
-    public NodeDTO getNodeWithHash(BigInteger startNode, BigInteger node) {
+    public NodeDTO getNodeWithHash(BigInteger node) {
         if (currentNode.getFingerTable().isEmpty()) // If there are no nodes on the finger table
             return null;
 

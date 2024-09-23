@@ -8,6 +8,7 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 
 import handlers.KeyHandler;
+import handlers.NodeService;
 
 public class User {
     // Para que serve o user_id? Assumirmos que todos os names sao diferentes!
@@ -16,13 +17,17 @@ public class User {
 
     // Usar certificate????
     private Certificate certificate;
-
     private KeyHandler keyHandler;
 
+    private Node node;
+    private NodeService nodeService;
+
+    
 
     public User(String user_id, String user_name) {
         this.user_id = user_id;
         this.user_name = user_name;
+        // TODO: Create the Node and the Service
 
         this.keyHandler = new KeyHandler();
         KeyPair keyPair = keyHandler.generateKeyPair();
@@ -70,5 +75,10 @@ public class User {
 
     public String toString() {
         return user_name + ":" + user_id;
+    }
+
+    public static void main(String[] args) {
+        // TODO: Implement main loop to get the user input (commands)
+        // Use command handler to process the commands and send them to the nodeService
     }
 }

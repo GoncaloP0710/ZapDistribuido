@@ -26,8 +26,6 @@ public class Node {
     private String ip;
     private int port;
 
-    private NodeService nodeService;
-
     private int hashLength = 160; // Length of the hash in bits (SHA-1)
     private int ringSize = (int) Math.pow(2, hashLength); // Size of the ring (2^160)
     private BigInteger hash; // Hash of the ip and port to identify the node order
@@ -46,7 +44,6 @@ public class Node {
         this.fingerTable = new ArrayList<>();
         this.ip = ip;
         this.port = port;
-        this.nodeService = new NodeService(this);
         setHashNumber(calculateHash());
     }
 
@@ -80,10 +77,6 @@ public class Node {
 
     public String getTruststoreFile() {
         return this.truststoreFile;
-    }
-
-    public NodeService getNodeService() {
-        return this.nodeService;
     }
 
     public int getRingSize() {
@@ -203,10 +196,5 @@ public class Node {
                 "ip = " + ip + ", " +
                 "port = " + port + ", " +
                 "hash = " + hash + ']';
-    }
-
-    public static void main(String[] args) {
-        // TODO: Implement main loop to get the user input (commands)
-        // Use command handler to process the commands and send them to the nodeService
     }
 }
