@@ -6,14 +6,14 @@ import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
-
+import java.util.ArrayList;
+import java.util.List;
 import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
 import handlers.KeyHandler;
 import handlers.NodeService;
 
-public class User implements PropertyChangeListener {
+public class User {
     // Para que serve o user_id? Assumirmos que todos os names sao diferentes!
     private String user_id;
     private String user_name;
@@ -24,8 +24,6 @@ public class User implements PropertyChangeListener {
 
     private Node node;
     private NodeService nodeService;
-
-
 
     public User(String user_id, String user_name) {
         this.user_id = user_id;
@@ -84,4 +82,5 @@ public class User implements PropertyChangeListener {
         // TODO: Implement main loop to get the user input (commands)
         // Use command handler to process the commands and send them to the nodeService
     }
+    
 }

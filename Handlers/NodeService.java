@@ -1,8 +1,11 @@
 package handlers;
 
+import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -13,14 +16,19 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
+import Events.NodeEvent;
+import Interface.NodeServiceInterface;
+import Interface.NodeServiceInterface;
 import client.Node;
 import dtos.NodeDTO;
-import utils.Utils;
+import utils.*;
+import utils.observer.Listener;
 
 /**
  * This class is responsible for the node comunication on the network
  */
-public class NodeService {
+// TODO: Change to normal sockets for testing
+public class NodeService implements NodeServiceInterface{
 
     private Node currentNode;
     private static SSLServerSocket serverSocket;
@@ -126,6 +134,18 @@ public class NodeService {
         }
         return closestFingerNode;
         
+    }
+
+    @Override
+    public void processEvent(NodeEvent e) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'processEvent'");
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'propertyChange'");
     }
 
 }

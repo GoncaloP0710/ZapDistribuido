@@ -4,12 +4,19 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
+import Events.NodeEvent;
 import client.Node;
 import dtos.NodeDTO;
 import handlers.NodeCommandHandler;
+import utils.observer.Listener;
+import utils.observer.Subject;
 
-public class NodeThread extends Thread {
+public class NodeThread extends Thread implements Subject<NodeEvent>, PropertyChangeListener{
 
     private Node currentNode;
 
@@ -19,6 +26,8 @@ public class NodeThread extends Thread {
 
     private String command;
     private NodeCommandHandler commandHandler;
+
+    private List<Listener<NodeEvent>> listeners = new ArrayList<>(); // TODO: If the listeners are here then i still have a circular dependency
 
     // If command is null, it means that the thread is a server and its objective is to process the command it receives
     public NodeThread (Node currentNode, Socket socket, String command) {
@@ -60,6 +69,30 @@ public class NodeThread extends Thread {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'propertyChange'");
+    }
+
+    @Override
+    public void emitEvent(NodeEvent e) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'emitEvent'");
+    }
+
+    @Override
+    public void registerListener(Listener<NodeEvent> obs) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'registerListener'");
+    }
+
+    @Override
+    public void unregisterListener(Listener<NodeEvent> obs) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'unregisterListener'");
     }
 
 }
