@@ -58,7 +58,8 @@ public class NodeService implements NodeServiceInterface{
             Socket clientSocket = null; // other node sockets
             try {
                 clientSocket = serverSocket.accept();
-                NodeThread newServerThread = new NodeThread(currentNode, clientSocket, null, this);
+                NodeThread newServerThread = new NodeThread(currentNode, clientSocket, null);
+                newServerThread.setListener(this);
                 newServerThread.start();
 
             } catch (IOException e) {
@@ -90,7 +91,7 @@ public class NodeService implements NodeServiceInterface{
             SocketFactory factory = SSLSocketFactory.getDefault();
             SSLSocket sslClientSocket = (SSLSocket) factory.createSocket(ip, port);
 
-            NodeThread newClientThread = new NodeThread(currentNode, sslClientSocket, command, this);
+            NodeThread newClientThread = new NodeThread(currentNode, sslClientSocket, command);
             newClientThread.start();
 
         } catch (Exception e) {

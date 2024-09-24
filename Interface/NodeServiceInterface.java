@@ -1,12 +1,11 @@
 package Interface;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-
 import utils.observer.Listener;
 import Events.*;
 
 public interface NodeServiceInterface extends Listener<NodeEvent> {
+
+	// TODO: Add the other methods
 	
 	/**
 	 * Reaction to events, namely those emitted by the music library that 

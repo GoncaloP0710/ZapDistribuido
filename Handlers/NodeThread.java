@@ -28,11 +28,10 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     private Listener<NodeEvent> listener;
 
     // If command is null, it means that the thread is a server and its objective is to process the command it receives
-    public NodeThread (Node currentNode, Socket socket, String command, NodeService nodeService) {
+    public NodeThread (Node currentNode, Socket socket, String command) {
         this.currentNode = currentNode;
         this.socket = socket;
         this.commandHandler = new NodeCommandHandler(this);
-        this.listener = nodeService;
         try {
             this.out = new ObjectOutputStream(socket.getOutputStream());
             this.in = new ObjectInputStream(socket.getInputStream());
@@ -44,6 +43,10 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
 
     public Socket getSocket() {
         return socket;
+    }
+
+    public void setListener (Listener<NodeEvent> listener) {
+        this.listener = listener;
     }
 
     /**
