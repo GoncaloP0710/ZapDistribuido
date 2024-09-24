@@ -1,6 +1,5 @@
 package handlers;
 
-import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.Socket;
@@ -16,7 +15,7 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-import Events.NodeEvent;
+import Events.*;
 import Interface.NodeServiceInterface;
 import Interface.NodeServiceInterface;
 import client.Node;
@@ -33,6 +32,7 @@ public class NodeService implements NodeServiceInterface{
     private Node currentNode;
     private static SSLServerSocket serverSocket;
 
+    // TODO: Check if can be replaced with the events
     private BlockingQueue<String> answerQueue; // Queue to store the answers from the other nodes
 
     public NodeService(Node currentNode) {
@@ -58,7 +58,7 @@ public class NodeService implements NodeServiceInterface{
             Socket clientSocket = null; // other node sockets
             try {
                 clientSocket = serverSocket.accept();
-                NodeThread newServerThread = new NodeThread(currentNode, clientSocket, null);
+                NodeThread newServerThread = new NodeThread(currentNode, clientSocket, null, this);
                 newServerThread.start();
 
             } catch (IOException e) {
@@ -90,7 +90,7 @@ public class NodeService implements NodeServiceInterface{
             SocketFactory factory = SSLSocketFactory.getDefault();
             SSLSocket sslClientSocket = (SSLSocket) factory.createSocket(ip, port);
 
-            NodeThread newClientThread = new NodeThread(currentNode, sslClientSocket, command);
+            NodeThread newClientThread = new NodeThread(currentNode, sslClientSocket, command, this);
             newClientThread.start();
 
         } catch (Exception e) {
@@ -138,14 +138,11 @@ public class NodeService implements NodeServiceInterface{
 
     @Override
     public void processEvent(NodeEvent e) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'processEvent'");
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'propertyChange'");
+        if (e instanceof EnterNodeEvent) {
+            
+        } else {
+            throw new UnsupportedOperationException("Unhandled event type");
+        }
     }
 
 }

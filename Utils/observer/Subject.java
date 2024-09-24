@@ -16,18 +16,4 @@ package utils.observer;
 	 */
 	void emitEvent(E e);
 
-	/**
-	 * Registers the given listener
-	 * 
-	 * @param obs listener to be added 
-	 */
-	void registerListener(Listener<E> obs);
-
-	/**
-	 * Removes the registry of the given listener
-	 * 
-	 * @param obs listener to be removed
-	 */
-	void unregisterListener(Listener<E> obs);
-
 }

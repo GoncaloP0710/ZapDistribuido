@@ -6,8 +6,6 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
 import Events.NodeEvent;
 import client.Node;
@@ -16,7 +14,7 @@ import handlers.NodeCommandHandler;
 import utils.observer.Listener;
 import utils.observer.Subject;
 
-public class NodeThread extends Thread implements Subject<NodeEvent>, PropertyChangeListener{
+public class NodeThread extends Thread implements Subject<NodeEvent> {
 
     private Node currentNode;
 
@@ -27,13 +25,14 @@ public class NodeThread extends Thread implements Subject<NodeEvent>, PropertyCh
     private String command;
     private NodeCommandHandler commandHandler;
 
-    private List<Listener<NodeEvent>> listeners = new ArrayList<>(); // TODO: If the listeners are here then i still have a circular dependency
+    private Listener<NodeEvent> listener;
 
     // If command is null, it means that the thread is a server and its objective is to process the command it receives
-    public NodeThread (Node currentNode, Socket socket, String command) {
+    public NodeThread (Node currentNode, Socket socket, String command, NodeService nodeService) {
         this.currentNode = currentNode;
         this.socket = socket;
-        commandHandler = new NodeCommandHandler(this);
+        this.commandHandler = new NodeCommandHandler(this);
+        this.listener = nodeService;
         try {
             this.out = new ObjectOutputStream(socket.getOutputStream());
             this.in = new ObjectInputStream(socket.getInputStream());
@@ -72,27 +71,8 @@ public class NodeThread extends Thread implements Subject<NodeEvent>, PropertyCh
     }
 
     @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'propertyChange'");
-    }
-
-    @Override
     public void emitEvent(NodeEvent e) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'emitEvent'");
-    }
-
-    @Override
-    public void registerListener(Listener<NodeEvent> obs) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'registerListener'");
-    }
-
-    @Override
-    public void unregisterListener(Listener<NodeEvent> obs) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'unregisterListener'");
+        this.listener.processEvent(e);
     }
 
 }

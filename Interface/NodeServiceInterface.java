@@ -6,16 +6,7 @@ import java.beans.PropertyChangeListener;
 import utils.observer.Listener;
 import Events.*;
 
-public interface NodeServiceInterface extends Listener<NodeEvent>, PropertyChangeListener{
-    
-    // TODO: Add other methods
-
-    /**
-	 * Reaction to property change events, namely those emitted by the player
-	 * (can affect the selected song and song being played)
-	 */
-	@Override
-	void propertyChange(PropertyChangeEvent evt);
+public interface NodeServiceInterface extends Listener<NodeEvent> {
 	
 	/**
 	 * Reaction to events, namely those emitted by the music library that 
