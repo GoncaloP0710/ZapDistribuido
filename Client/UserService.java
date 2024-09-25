@@ -110,6 +110,33 @@ public class UserService implements UserServiceInterface{
     }
 
     /**
+     * 
+     * 
+     * @param nextNode
+     */
+    public void setNextNode(NodeDTO nextNode) {
+        currentNode.setNextNode(nextNode);
+    }
+
+    /**
+     * 
+     * 
+     * @return
+     */
+    public String getIpDefault() {
+        return ipDefault;
+    }
+
+    /**
+     * 
+     * 
+     * @return
+     */
+    public int getPortDefault() {
+        return portDefault;
+    }
+
+    /**
      * Discovers the node that has the given hash or the closest one to it to continue the search
      * 
      * @param startNode

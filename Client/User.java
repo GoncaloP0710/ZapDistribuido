@@ -6,9 +6,6 @@ import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
-import java.util.ArrayList;
-import java.util.List;
-import java.beans.PropertyChangeEvent;
 
 import handlers.KeyHandler;
 
@@ -19,7 +16,7 @@ public class User {
     private String user_name;
 
     private Node node;
-    private UserService userService;
+    private static UserService userService;
 
     private Certificate certificate; // Usar certificate????
     private KeyHandler keyHandler;
@@ -33,15 +30,6 @@ public class User {
     String truststoreFile;
     // String truststorePassword;
     // -------------------------------------------------------
-
-    public User(String user_id, String user_name) {
-        this.user_id = user_id;
-        this.user_name = user_name;
-        // TODO: Create the Node and the Service
-
-        this.keyHandler = new KeyHandler();
-        KeyPair keyPair = keyHandler.generateKeyPair();
-    }
 
     public String getUserId() {
         return user_id;
@@ -88,7 +76,13 @@ public class User {
     }
 
     public static void main(String[] args) {
+        // TODO: obtain the info needed from the args
+        startClient("Enter Node");
         // TODO: Implement main loop to get the user input (commands)
+    }
+
+    public static void startClient (String command) {
+        userService.startClient(userService.getIpDefault(), userService.getPortDefault(), command);
     }
     
 }

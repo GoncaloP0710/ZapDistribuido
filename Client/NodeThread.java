@@ -44,7 +44,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     /**
      * Function that is called when the thread is started
      */
-    public void run() {
+    public void run() { // TODO: Instead of using a command, we should use a object of the class Message
         if (command != null) {
             try {
                 out.writeObject(command);

@@ -11,5 +11,9 @@ public class EnterNodeEvent extends NodeEvent {
 		super(current);
 		this.toEnter = toEnter;
 	}
+
+	public NodeDTO getToEnter() {
+		return toEnter;
+	}
     
 }
