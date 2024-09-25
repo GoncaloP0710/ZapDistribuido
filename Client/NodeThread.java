@@ -7,6 +7,7 @@ import java.net.Socket;
 
 import Events.EnterNodeEvent;
 import Events.NodeEvent;
+import Message.Message;
 import dtos.NodeDTO;
 import utils.observer.*;
 import utils.*;

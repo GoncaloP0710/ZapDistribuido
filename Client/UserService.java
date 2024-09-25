@@ -13,6 +13,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import Events.*;
 import Interface.UserServiceInterface;
+import Message.Message;
 import dtos.NodeDTO;
 import handlers.EventHandler;
 import utils.*;
