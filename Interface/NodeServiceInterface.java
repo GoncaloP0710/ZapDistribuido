@@ -5,7 +5,7 @@ import Events.*;
 
 public interface NodeServiceInterface extends Listener<NodeEvent> {
 
-	// TODO: Add the other methods
+	// TODO: Add the other methods that belong to the NodeService
 	
 	/**
 	 * Reaction to events, namely those emitted by the music library that 

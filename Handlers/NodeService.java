@@ -26,39 +26,54 @@ import utils.observer.Listener;
 /**
  * This class is responsible for the node comunication on the network
  */
-// TODO: Change to normal sockets for testing
+// TODO: Because the NodeService is now more like a user Service, we should change the name to UserService?
 public class NodeService implements NodeServiceInterface{
 
+    // ---------------------- Default Node ----------------------
+    private String ipDefault = "";
+    private int portDefault = 0;
+    // ----------------------------------------------------------
+
+    // ---------------------- key store ----------------------
+    String keystoreFile;
+    String keystorePassword;
+    // -------------------------------------------------------
+
+    // ---------------------- trust store --------------------
+    String truststoreFile;
+    // String truststorePassword;
+    // -------------------------------------------------------
+
     private Node currentNode;
-    private static SSLServerSocket serverSocket;
+    private SSLServerSocket serverSocket;
+    private EventHandler eventHandler;
 
-    // TODO: Check if can be replaced with the events
-    private BlockingQueue<String> answerQueue; // Queue to store the answers from the other nodes
-
-    public NodeService(Node currentNode) {
+    public NodeService(Node currentNode, String keystoreFile, String keystorePassword, String truststoreFile) throws IOException {
         this.currentNode = currentNode;
-        this.answerQueue = new LinkedBlockingQueue<>();
+        this.keystoreFile = keystoreFile;
+        this.keystorePassword = keystorePassword;
+        this.truststoreFile = truststoreFile;
+        this.eventHandler = new EventHandler(this);
+        startServer(currentNode);
     }
 
-    public void addAnswer(String answer) {
-        answerQueue.add(answer);
-    }
+    public void startServer(Node node) throws IOException {
 
-    public void startServer() throws IOException {
+        this.currentNode = node;
 
-        System.setProperty("javax.net.ssl.keyStore", currentNode.getKeystoreFile());
-        System.setProperty("javax.net.ssl.keyStorePassword", currentNode.getKeystorePassword());
+        System.setProperty("javax.net.ssl.keyStore", keystoreFile);
+        System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
         System.setProperty("javax.net.ssl.keyStoreType", "JCEKS");
 
         // Get an SSLSocketFactory from the SSLContext
         ServerSocketFactory factory = SSLServerSocketFactory.getDefault();
-        serverSocket = (SSLServerSocket) factory.createServerSocket(currentNode.getPort());
+        this.serverSocket = (SSLServerSocket) factory.createServerSocket(currentNode.getPort());
 
         while (true) {
             Socket clientSocket = null; // other node sockets
             try {
                 clientSocket = serverSocket.accept();
-                NodeThread newServerThread = new NodeThread(currentNode, clientSocket, null);
+                NodeThread newServerThread = new NodeThread(currentNode, clientSocket, null, this);
                 newServerThread.setListener(this);
                 newServerThread.start();
 
@@ -78,12 +93,12 @@ public class NodeService implements NodeServiceInterface{
      */
     public void startClient(String ip, int port, String command) {
 
-        System.setProperty("javax.net.ssl.keyStore", currentNode.getKeystoreFile());
-        System.setProperty("javax.net.ssl.keyStorePassword", currentNode.getKeystorePassword());
+        System.setProperty("javax.net.ssl.keyStore", keystoreFile);
+        System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
         System.setProperty("javax.net.ssl.keyStoreType", "JCEKS");
 
-        System.setProperty("javax.net.ssl.trustStore", currentNode.getTruststoreFile());
-        System.setProperty("javax.net.ssl.trustStorePassword", currentNode.getKeystorePassword());
+        System.setProperty("javax.net.ssl.trustStore", truststoreFile);
+        System.setProperty("javax.net.ssl.trustStorePassword", keystorePassword);
         System.setProperty("javax.net.ssl.trustStoreType", "JCEKS");
         
         try {
@@ -91,18 +106,13 @@ public class NodeService implements NodeServiceInterface{
             SocketFactory factory = SSLSocketFactory.getDefault();
             SSLSocket sslClientSocket = (SSLSocket) factory.createSocket(ip, port);
 
-            NodeThread newClientThread = new NodeThread(currentNode, sslClientSocket, command);
+            NodeThread newClientThread = new NodeThread(currentNode, sslClientSocket, command, this);
             newClientThread.start();
 
         } catch (Exception e) {
             System.err.println(e.getMessage());
             System.exit(-1);
         }
-    }
-
-    public void enterNode(String ipDefault, int portDefault, BigInteger hash) {
-        String command = "Enter Node:" + hash;
-        startClient(ipDefault, portDefault, command);
     }
 
     /**
@@ -138,9 +148,11 @@ public class NodeService implements NodeServiceInterface{
     }
 
     @Override
-    public void processEvent(NodeEvent e) {
+    public void processEvent(NodeEvent e) { // TODO: Add more events if necessary
         if (e instanceof EnterNodeEvent) {
-            
+            eventHandler.enterNode((EnterNodeEvent) e);
+        } else if (e instanceof UpdateNodeFingerTableEvent) {
+            // TODO: Implement the update finger table event handling func
         } else {
             throw new UnsupportedOperationException("Unhandled event type");
         }

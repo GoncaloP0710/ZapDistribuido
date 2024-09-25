@@ -14,16 +14,26 @@ import handlers.KeyHandler;
 import handlers.NodeService;
 
 public class User {
-    // Para que serve o user_id? Assumirmos que todos os names sao diferentes!
+
+    // Assumimos que todos os names sao diferentes? Se sim entao nao precisamos de user_id?
     private String user_id;
     private String user_name;
 
-    // Usar certificate????
-    private Certificate certificate;
-    private KeyHandler keyHandler;
-
     private Node node;
     private NodeService nodeService;
+
+    private Certificate certificate; // Usar certificate????
+    private KeyHandler keyHandler;
+
+    // ---------------------- key store ----------------------
+    String keystoreFile;
+    String keystorePassword;
+    // -------------------------------------------------------
+
+    // ---------------------- trust store --------------------
+    String truststoreFile;
+    // String truststorePassword;
+    // -------------------------------------------------------
 
     public User(String user_id, String user_name) {
         this.user_id = user_id;
@@ -80,7 +90,6 @@ public class User {
 
     public static void main(String[] args) {
         // TODO: Implement main loop to get the user input (commands)
-        // Use command handler to process the commands and send them to the nodeService
     }
     
 }

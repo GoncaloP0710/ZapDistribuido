@@ -7,7 +7,7 @@ public abstract class NodeEvent implements Event {
     
     private Node node;
 
-    public NodeEvent(Node node){
+    public NodeEvent(Node node){ // TODO: Probably remove the Node parameter
         this.node = node;
     }
 

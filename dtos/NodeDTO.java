@@ -1,14 +1,13 @@
 package dtos;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 
-public class NodeDTO {
+public class NodeDTO implements Serializable {
 
     private String ip;
     private int port;
     private BigInteger hash;
-
-    protected NodeDTO() {}
 
     public NodeDTO(String ip, int port, BigInteger hash) {
         this.ip = ip;

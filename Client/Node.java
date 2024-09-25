@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.math.BigInteger;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 import dtos.NodeDTO;
 import handlers.NodeService;
@@ -13,16 +11,10 @@ import client.User;
 
 public class Node {
 
-    // ---------------------- Default Node ----------------------
-    private String ipDefault = "";
-    private int portDefault = 0;
-    // ----------------------------------------------------------
-
-    private User user;
-
     private ArrayList<NodeDTO> fingerTable;
     private NodeDTO nextNode;
     
+    String name;
     private String ip;
     private int port;
 
@@ -30,21 +22,12 @@ public class Node {
     private int ringSize = (int) Math.pow(2, hashLength); // Size of the ring (2^160)
     private BigInteger hash; // Hash of the ip and port to identify the node order
 
-    // ---------------------- key store ----------------------
-    String keystoreFile;
-    String keystorePassword;
-    // -------------------------------------------------------
-
-    // ---------------------- trust store --------------------
-    String truststoreFile;
-    // String truststorePassword;
-    // -------------------------------------------------------
-
-    public Node(String ip, int port, String keystoreFile, String keystorePassword) throws NoSuchAlgorithmException {
+    public Node(String name, String ip, int port) throws NoSuchAlgorithmException {
         this.fingerTable = new ArrayList<>();
+        this.name = name;
         this.ip = ip;
         this.port = port;
-        setHashNumber(calculateHash());
+        setHashNumber(calculateHash(name));
     }
 
     public ArrayList<NodeDTO> getFingerTable() {
@@ -65,18 +48,6 @@ public class Node {
 
     public BigInteger getHashNumber() {
         return this.hash;
-    }
-
-    public String getKeystoreFile() {
-        return this.keystoreFile;
-    }
-
-    public String getKeystorePassword() {
-        return this.keystorePassword;
-    }
-
-    public String getTruststoreFile() {
-        return this.truststoreFile;
     }
 
     public int getRingSize() {
@@ -103,29 +74,17 @@ public class Node {
         this.hash = hash;
     }
 
-    public void setKeystoreFile(String keystoreFile) {
-        this.keystoreFile = keystoreFile;
-    }
-
-    public void setKeystorePassword(String keystorePassword) {
-        this.keystorePassword = keystorePassword;
-    }
-
-    public void setTruststoreFile(String truststoreFile) {
-        this.truststoreFile = truststoreFile;
-    }
-
     /**
      * Instead of the ip and port we use name to be easier to find the user in the ring
      * 
+     * @param name
      * @return
      * @throws NoSuchAlgorithmException
      */
-    private BigInteger calculateHash() throws NoSuchAlgorithmException {
+    private BigInteger calculateHash(String name) throws NoSuchAlgorithmException {
         // Instead of the ip and port we use name to be easier to find the user in the ring
-        String msg = user.getUserName(); 
         MessageDigest md = MessageDigest.getInstance("SHA-1");
-        byte[] hashBytes = md.digest(msg.getBytes());
+        byte[] hashBytes = md.digest(name.getBytes());
 
         // Convert the hash bytes directly to a BigInteger
         BigInteger hashNumber = new BigInteger(1, hashBytes);
