@@ -79,14 +79,14 @@ public class User {
 
     public static void main(String[] args) {
         // TODO: obtain the info needed from the args
+        // TODO: create a Node object and UserService object
         startClient("Enter Node");
         // TODO: Implement main loop to get the user input (commands)
     }
 
     public static void startClient (String command) {
         if (command.equals("Enter Node")) {
-            Message msg = new Message(MessageType.EnterNode, null, null);
-            // Create Message
+            // Message msg = new Message(MessageType.EnterNode,);
             // Start client: userService.startClient();
         } else {
 

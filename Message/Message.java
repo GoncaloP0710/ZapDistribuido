@@ -4,8 +4,6 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
 
-import client.User;
-import utils.*;
 import dtos.UserDTO;
 
 public abstract class Message implements Serializable {

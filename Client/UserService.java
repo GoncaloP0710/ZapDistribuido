@@ -21,7 +21,6 @@ import utils.*;
 /**
  * This class is responsible for the node comunication on the network
  */
-// TODO: Because the NodeService is now more like a user Service, we should change the name to UserService?
 public class UserService implements UserServiceInterface{
 
     // ---------------------- Default Node ----------------------

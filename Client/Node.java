@@ -6,7 +6,6 @@ import java.security.NoSuchAlgorithmException;
 import java.math.BigInteger;
 
 import dtos.NodeDTO;
-import client.User;
 
 public class Node {
 
