@@ -7,7 +7,9 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 
+import Message.*;
 import handlers.KeyHandler;
+import utils.*;
 
 public class User {
 
@@ -82,7 +84,14 @@ public class User {
     }
 
     public static void startClient (String command) {
-        userService.startClient(userService.getIpDefault(), userService.getPortDefault(), command);
+        if (command.equals("Enter Node")) {
+            Message msg = new Message(MessageType.EnterNode, null, null);
+            // Create Message
+            // Start client: userService.startClient();
+        } else {
+
+        }
+        
     }
     
 }

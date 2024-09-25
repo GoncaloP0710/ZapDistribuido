@@ -1,6 +1,6 @@
-package utils;
+package Message;
 
-enum Status {
+public enum MessageStatus {
     SENDING,
     SENT,
     RECEIVED,

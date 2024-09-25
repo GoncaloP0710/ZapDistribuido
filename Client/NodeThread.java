@@ -8,8 +8,8 @@ import java.net.Socket;
 import Events.EnterNodeEvent;
 import Events.NodeEvent;
 import dtos.NodeDTO;
-import utils.observer.Listener;
-import utils.observer.Subject;
+import utils.observer.*;
+import utils.*;
 
 public class NodeThread extends Thread implements Subject<NodeEvent> {
 
@@ -19,14 +19,14 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     private ObjectInputStream in = null;
     private ObjectOutputStream out = null;
 
-    private String command;
+    private Message msg;
     private Listener<NodeEvent> listener;
 
     // If command is null, it means that the thread is a server and its objective is to process the command it receives
-    public NodeThread (Node currentNode, Socket socket, String command, Listener<NodeEvent> listener) {
+    public NodeThread (Node currentNode, Socket socket, Message msg, Listener<NodeEvent> listener) {
         this.currentNode = currentNode;
         this.socket = socket;
-        this.command = command;
+        this.msg = msg;
         setListener(listener);
         try {
             this.out = new ObjectOutputStream(socket.getOutputStream());
@@ -44,10 +44,10 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     /**
      * Function that is called when the thread is started
      */
-    public void run() { // TODO: Instead of using a command, we should use a object of the class Message
-        if (command != null) {
+    public void run() {
+        if (msg != null) {
             try {
-                out.writeObject(command);
+                out.writeObject(msg);
                 out.writeObject("End Connection");
                 endThread();
             } catch (IOException e) {
@@ -55,11 +55,10 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             }
         } else {
             try {
-                String commandToProcess = (String) in.readObject();
-                NodeEvent event = processCommand(commandToProcess);
+                Message messageToProcess = (Message) in.readObject();
+                NodeEvent event = processCommand(messageToProcess);
                 emitEvent(event);
-                // Should be a "End Connection"
-                commandToProcess = (String) in.readObject();
+                String commandToProcess = (String) in.readObject(); // "End Connection"
                 endThread();
             } catch (ClassNotFoundException | IOException e) {
                 e.printStackTrace();
@@ -83,11 +82,10 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
      * @throws IOException 
      * @throws ClassNotFoundException 
      */
-    public NodeEvent processCommand(String command) throws ClassNotFoundException, IOException { // TODO: Add more commands if necessary
-        switch (command) {
-            case "Enter Node":
-                NodeDTO toEnter = (NodeDTO) in.readObject(); // recive the node to enter
-                return new EnterNodeEvent(currentNode, toEnter);
+    public NodeEvent processCommand(Message messageToProcess) throws ClassNotFoundException, IOException { // TODO: Add more types if necessary
+        switch (messageToProcess.getMsgType()) {
+            case EnterNode:
+                // TODO: return the respective event
             default:
                 return null;
         }

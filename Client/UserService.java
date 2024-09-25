@@ -85,7 +85,7 @@ public class UserService implements UserServiceInterface{
      * @param port
      * @param command
      */
-    public void startClient(String ip, int port, String command) {
+    public void startClient(String ip, int port, Message msg) {
 
         System.setProperty("javax.net.ssl.keyStore", keystoreFile);
         System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
@@ -100,7 +100,7 @@ public class UserService implements UserServiceInterface{
             SocketFactory factory = SSLSocketFactory.getDefault();
             SSLSocket sslClientSocket = (SSLSocket) factory.createSocket(ip, port);
 
-            NodeThread newClientThread = new NodeThread(currentNode, sslClientSocket, command, this);
+            NodeThread newClientThread = new NodeThread(currentNode, sslClientSocket, msg, this);
             newClientThread.start();
 
         } catch (Exception e) {
