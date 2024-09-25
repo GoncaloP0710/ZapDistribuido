@@ -3,7 +3,7 @@ package Interface;
 import utils.observer.Listener;
 import Events.*;
 
-public interface NodeServiceInterface extends Listener<NodeEvent> {
+public interface UserServiceInterface extends Listener<NodeEvent> {
 
 	// TODO: Add the other methods that belong to the NodeService
 	

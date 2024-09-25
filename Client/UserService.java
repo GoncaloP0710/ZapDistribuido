@@ -3,10 +3,6 @@ package client;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.net.ServerSocketFactory;
 import javax.net.SocketFactory;
@@ -16,18 +12,16 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import Events.*;
-import Interface.NodeServiceInterface;
-import Interface.NodeServiceInterface;
+import Interface.UserServiceInterface;
 import dtos.NodeDTO;
 import handlers.EventHandler;
 import utils.*;
-import utils.observer.Listener;
 
 /**
  * This class is responsible for the node comunication on the network
  */
 // TODO: Because the NodeService is now more like a user Service, we should change the name to UserService?
-public class UserService implements NodeServiceInterface{
+public class UserService implements UserServiceInterface{
 
     // ---------------------- Default Node ----------------------
     private String ipDefault = "";

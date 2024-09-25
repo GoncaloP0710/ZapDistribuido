@@ -2,7 +2,6 @@ package handlers;
 
 import Events.*;
 import client.UserService;
-import client.UserService;
 
 public class EventHandler {
 
