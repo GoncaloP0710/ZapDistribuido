@@ -1,4 +1,4 @@
-package handlers;
+package client;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -18,8 +18,8 @@ import javax.net.ssl.SSLSocketFactory;
 import Events.*;
 import Interface.NodeServiceInterface;
 import Interface.NodeServiceInterface;
-import client.Node;
 import dtos.NodeDTO;
+import handlers.EventHandler;
 import utils.*;
 import utils.observer.Listener;
 
@@ -27,7 +27,7 @@ import utils.observer.Listener;
  * This class is responsible for the node comunication on the network
  */
 // TODO: Because the NodeService is now more like a user Service, we should change the name to UserService?
-public class NodeService implements NodeServiceInterface{
+public class UserService implements NodeServiceInterface{
 
     // ---------------------- Default Node ----------------------
     private String ipDefault = "";
@@ -48,7 +48,7 @@ public class NodeService implements NodeServiceInterface{
     private SSLServerSocket serverSocket;
     private EventHandler eventHandler;
 
-    public NodeService(Node currentNode, String keystoreFile, String keystorePassword, String truststoreFile) throws IOException {
+    public UserService(Node currentNode, String keystoreFile, String keystorePassword, String truststoreFile) throws IOException {
         this.currentNode = currentNode;
         this.keystoreFile = keystoreFile;
         this.keystorePassword = keystorePassword;

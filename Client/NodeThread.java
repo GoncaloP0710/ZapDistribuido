@@ -1,4 +1,4 @@
-package handlers;
+package client;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -9,7 +9,6 @@ import java.util.List;
 
 import Events.EnterNodeEvent;
 import Events.NodeEvent;
-import client.Node;
 import dtos.NodeDTO;
 import utils.observer.Listener;
 import utils.observer.Subject;

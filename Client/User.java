@@ -11,7 +11,6 @@ import java.util.List;
 import java.beans.PropertyChangeEvent;
 
 import handlers.KeyHandler;
-import handlers.NodeService;
 
 public class User {
 
@@ -20,7 +19,7 @@ public class User {
     private String user_name;
 
     private Node node;
-    private NodeService nodeService;
+    private UserService userService;
 
     private Certificate certificate; // Usar certificate????
     private KeyHandler keyHandler;

@@ -1,12 +1,14 @@
 package handlers;
 
 import Events.*;
+import client.UserService;
+import client.UserService;
 
 public class EventHandler {
 
-    private NodeService nodeService;
+    private UserService nodeService;
 
-    public EventHandler(NodeService nodeService) {
+    public EventHandler(UserService nodeService) {
         this.nodeService = nodeService;
     }
 
