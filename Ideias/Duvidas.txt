@@ -20,3 +20,23 @@ Usar uma blockchain é uma boa solução? Ou deveriamos usar uma rede P2P do est
 outra arquitetura?
 
 Usar java parece uma boa linguagem para realizar a aplicação?
+
+
+// ---------------------------------------------------------------------------------------------
+
+menssagems:
+
+- Enter Node: (update the finger table of the previous node) (update the next node) (update previous node)
+ - NodeDTO: node to Enter
+
+- Exit Node: (Need to update all nodes that have the node on its finger table)
+ - NodeDTO node to Exit
+ - 
+
+- Send Message: 
+ - byte[] message
+ - BigInteger: hash of the node to recive the message
+
+- Update finger table:
+ - 
+ 

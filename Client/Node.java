@@ -11,6 +11,7 @@ public class Node {
 
     private ArrayList<NodeDTO> fingerTable;
     private NodeDTO nextNode;
+    private NodeDTO previousNode;
     
     String name;
     private String ip;
@@ -36,6 +37,10 @@ public class Node {
         return this.nextNode;
     }
 
+    public NodeDTO getPreviousNode() {
+        return this.previousNode;
+    }
+
     public int getPort() {
         return this.port;
     }
@@ -58,6 +63,10 @@ public class Node {
 
     public void setNextNode(NodeDTO nextNode) {
         this.nextNode = nextNode;
+    }
+
+    public void setPreviousNode(NodeDTO previousNode) {
+        this.previousNode = previousNode;
     }
 
     public void setPort(int port) {

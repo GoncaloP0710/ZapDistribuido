@@ -80,6 +80,7 @@ public class User {
     public static void main(String[] args) {
         // TODO: obtain the info needed from the args
         // TODO: create a Node object and UserService object
+        // if node ip and port = defeult then next and previous = same node
         startClient("Enter Node");
         // TODO: Implement main loop to get the user input (commands)
     }

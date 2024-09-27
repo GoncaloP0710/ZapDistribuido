@@ -18,10 +18,9 @@ public class EventHandler {
         BigInteger hash = event.getToEnter().getHash();
         NodeDTO nodeWithHash = userService.getNodeWithHash(hash);
 
-        if (nodeWithHash == null) {
+        if (nodeWithHash == null) { // Either the network is empty or the current node is the predecessor
             userService.setNextNode(nodeWithHash);
             // TODO: Update the finger table of the current node
-            // TODO: Send a message to next node to update its finger table and next node
         } else {
             // Continue to the next node
         }

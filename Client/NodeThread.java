@@ -5,8 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
-import Events.EnterNodeEvent;
-import Events.NodeEvent;
+import Events.*;
 import Message.Message;
 import dtos.NodeDTO;
 import utils.observer.*;
@@ -86,7 +85,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     public NodeEvent processCommand(Message messageToProcess) throws ClassNotFoundException, IOException { // TODO: Add more types if necessary
         switch (messageToProcess.getMsgType()) {
             case EnterNode:
-                // TODO: return the respective event
+                emitEvent(new EnterNodeEvent(currentNode, null));
             default:
                 return null;
         }
