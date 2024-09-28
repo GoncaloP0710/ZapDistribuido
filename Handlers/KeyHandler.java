@@ -1,6 +1,7 @@
 package handlers;
 
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -23,8 +24,8 @@ public class KeyHandler {
 
     private KeyStore loadKeyStore() throws Exception {
         KeyStore ks = KeyStore.getInstance("JKS"); 
-        try (FileInputStream fis = new FileInputStream(keyStoreFile)) {
-            ks.load(fis, keyStorePassword.toCharArray());
+        try (FileInputStream in = new FileInputStream(keyStoreFile)) {
+            ks.load(in, keyStorePassword.toCharArray());
         } catch (IOException e) { // If the file does not exist, create a new one
             ks.load(null, keyStorePassword.toCharArray());
         }
@@ -33,7 +34,13 @@ public class KeyHandler {
 
     public void generateAndStoreKey (String user_id, String keyPassword) throws Exception {
         KeyPair keyPair = generateKeyPair();
-        storeKeys(user_id, keyPair);
+        saveKeyStore();
+    }
+
+    private void saveKeyStore() throws Exception {
+        try (FileOutputStream out = new FileOutputStream(keyStoreFile)) {
+            keyStore.store(out, keyStorePassword.toCharArray());
+        }
     }
 
 
