@@ -3,6 +3,7 @@ package handlers;
 import java.math.BigInteger;
 
 import Events.*;
+import Message.ChordInternalMessage;
 import Message.Message;
 import client.UserService;
 import dtos.NodeDTO;
@@ -35,7 +36,7 @@ public class EventHandler {
             String ipPrev = userService.getCurrentNode().getPreviousNode().getIp();
             int portPrev = userService.getCurrentNode().getPreviousNode().getPort();
 
-            userService.startClient(ipNext, portNext, new Message()); // mudar prev do next para o novo node
+            userService.startClient(ipNext, portNext, new ChordInternalMessage()); // mudar prev do next para o novo node
             userService.startClient(, , new Message()); // mudar next do novo node para o next do current
             // mudar next do current para o novo node
             userService.startClient(, , new Message()); // mudar prev do novo node para o current
