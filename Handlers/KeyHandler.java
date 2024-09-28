@@ -6,8 +6,10 @@ import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.CertificateException;
 import java.security.NoSuchAlgorithmException;
 
 public class KeyHandler {
@@ -19,10 +21,10 @@ public class KeyHandler {
     public KeyHandler(String keyStoreFile, String keyStorePassword) throws Exception {
         this.keyStoreFile = keyStoreFile;
         this.keyStorePassword = keyStorePassword;
-        this.keyStore = loadKeyStore();
+        this.keyStore = initializeKeyStore();
     }
 
-    private KeyStore loadKeyStore() throws Exception {
+    private KeyStore initializeKeyStore() throws Exception {
         KeyStore ks = KeyStore.getInstance("JKS"); 
         try (FileInputStream in = new FileInputStream(keyStoreFile)) {
             ks.load(in, keyStorePassword.toCharArray());
@@ -32,15 +34,18 @@ public class KeyHandler {
         return ks;
     }
 
-    public void generateAndStoreKey (String user_id, String keyPassword) throws Exception {
-        KeyPair keyPair = generateKeyPair();
-        saveKeyStore();
-    }
-
     private void saveKeyStore() throws Exception {
         try (FileOutputStream out = new FileOutputStream(keyStoreFile)) {
             keyStore.store(out, keyStorePassword.toCharArray());
         }
+    }
+
+    public PublicKey getPublicKey(String alias) throws Exception {
+        return keyStore.getCertificate(alias).getPublicKey();
+    }
+
+    public PrivateKey getPrivateKey(String alias, String keyPassword) throws Exception {
+        return (PrivateKey) keyStore.getKey(alias, keyPassword.toCharArray());
     }
 
 
@@ -51,24 +56,17 @@ public class KeyHandler {
     }
 
 
-    public PrivateKey getPrivateKey(String user_id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getPrivateKey'");
+    public boolean containsAlias(String alias) throws KeyStoreException {
+        return keyStore.containsAlias(alias);
     }
 
-    public PublicKey getPublicKey(String user_id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getPublicKey'");
-    }
-
-    public void initializeKeyStore() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'initializeKeyStore'");
-    }
-
-    public void storeKeys(String user_id, KeyPair keyPair) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'storeKeys'");
+    public void deleteEntry(String alias) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+        keyStore.deleteEntry(alias);
+        try {
+            saveKeyStore();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }
