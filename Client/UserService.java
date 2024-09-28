@@ -14,7 +14,7 @@ import javax.net.ssl.SSLSocketFactory;
 import Events.*;
 import Interface.UserServiceInterface;
 import Message.Message;
-import dtos.NodeDTO;
+import dtos.*;
 import handlers.EventHandler;
 import utils.*;
 
@@ -38,6 +38,7 @@ public class UserService implements UserServiceInterface{
     // String truststorePassword;
     // -------------------------------------------------------
 
+    private UserDTO currentUser;
     private Node currentNode;
     private SSLServerSocket serverSocket;
     private EventHandler eventHandler;
@@ -138,6 +139,14 @@ public class UserService implements UserServiceInterface{
 
     public Node getCurrentNode() {
         return currentNode;
+    }
+
+    public NodeDTO getCurrentNodeDTO() {
+        return currentNode.getNodeDTO();
+    }
+
+    public UserDTO getCurrentUser() {
+        return currentUser;
     }
 
     /**

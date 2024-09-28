@@ -12,6 +12,7 @@ public class Node {
     private ArrayList<NodeDTO> fingerTable;
     private NodeDTO nextNode;
     private NodeDTO previousNode;
+    private NodeDTO currentNode;
     
     String name;
     private String ip;
@@ -27,6 +28,7 @@ public class Node {
         this.ip = ip;
         this.port = port;
         setHashNumber(calculateHash(name));
+        currentNode = new NodeDTO(name, ip, port, hash);
     }
 
     public ArrayList<NodeDTO> getFingerTable() {
@@ -55,6 +57,10 @@ public class Node {
 
     public int getRingSize() {
         return this.ringSize;
+    }
+
+    public NodeDTO getNodeDTO() {
+        return this.currentNode;
     }
 
     public void setFingerTable(ArrayList<NodeDTO> fingerTable) {

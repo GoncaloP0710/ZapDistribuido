@@ -10,9 +10,11 @@ import java.security.cert.Certificate;
 import Message.*;
 import handlers.KeyHandler;
 import utils.*;
+import dtos.*;
 
 public class User {
 
+    private UserDTO currentUser;
     // Assumimos que todos os names sao diferentes? Se sim entao nao precisamos de user_id?
     private String user_id;
     private String user_name;
