@@ -1,17 +1,17 @@
 package Events;
 
+import Message.Message;
 import utils.observer.Event;
-import client.Node;
 
 public abstract class NodeEvent implements Event {
     
-    private Node node;
+    private Message msg; // Message that invoked the event
 
-    public NodeEvent(Node node){ // TODO: Probably remove the Node parameter
-        this.node = node;
+    public NodeEvent(Message msg){
+        this.msg = msg;
     }
 
-    public Node getNode(){
-        return this.node;
+    public Message getMessage(){
+        return this.msg;
     }
 }

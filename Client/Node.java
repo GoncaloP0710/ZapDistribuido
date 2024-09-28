@@ -82,6 +82,21 @@ public class Node {
     }
 
     /**
+     * 
+     * 
+     * @param ip default ip
+     * @param port default port
+     */
+    public boolean checkDefaultNode(String ip, int port) {
+        if (this.ip.equals(ip) && this.port == port) {
+            setNextNode(null);
+            setPreviousNode(null);
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Instead of the ip and port we use name to be easier to find the user in the ring
      * 
      * @param name

@@ -7,13 +7,9 @@ import java.net.Socket;
 
 import Events.*;
 import Message.Message;
-import dtos.NodeDTO;
 import utils.observer.*;
-import utils.*;
 
 public class NodeThread extends Thread implements Subject<NodeEvent> {
-
-    private Node currentNode; // TODO: If in the end the node is not necessary, we should remove it
 
     private Socket socket = null;
     private ObjectInputStream in = null;
@@ -23,8 +19,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     private Listener<NodeEvent> listener;
 
     // If command is null, it means that the thread is a server and its objective is to process the command it receives
-    public NodeThread (Node currentNode, Socket socket, Message msg, Listener<NodeEvent> listener) {
-        this.currentNode = currentNode;
+    public NodeThread (Socket socket, Message msg, Listener<NodeEvent> listener) {
         this.socket = socket;
         this.msg = msg;
         setListener(listener);
@@ -85,7 +80,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     public NodeEvent processCommand(Message messageToProcess) throws ClassNotFoundException, IOException { // TODO: Add more types if necessary
         switch (messageToProcess.getMsgType()) {
             case EnterNode:
-                emitEvent(new EnterNodeEvent(currentNode, null));
+                emitEvent(new EnterNodeEvent(messageToProcess, null));
             default:
                 return null;
         }

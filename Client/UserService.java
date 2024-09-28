@@ -67,7 +67,7 @@ public class UserService implements UserServiceInterface{
             Socket clientSocket = null; // other node sockets
             try {
                 clientSocket = serverSocket.accept();
-                NodeThread newServerThread = new NodeThread(currentNode, clientSocket, null, this);
+                NodeThread newServerThread = new NodeThread(clientSocket, null, this);
                 newServerThread.setListener(this);
                 newServerThread.start();
 
@@ -100,7 +100,7 @@ public class UserService implements UserServiceInterface{
             SocketFactory factory = SSLSocketFactory.getDefault();
             SSLSocket sslClientSocket = (SSLSocket) factory.createSocket(ip, port);
 
-            NodeThread newClientThread = new NodeThread(currentNode, sslClientSocket, msg, this);
+            NodeThread newClientThread = new NodeThread(sslClientSocket, msg, this);
             newClientThread.start();
 
         } catch (Exception e) {
@@ -134,6 +134,10 @@ public class UserService implements UserServiceInterface{
      */
     public int getPortDefault() {
         return portDefault;
+    }
+
+    public Node getCurrentNode() {
+        return currentNode;
     }
 
     /**
