@@ -28,20 +28,20 @@ public class UserService implements UserServiceInterface{
     private int portDefault = 0;
     // ----------------------------------------------------------
 
-    // ---------------------- key store ----------------------
     String keystoreFile;
     String keystorePassword;
-    // -------------------------------------------------------
-
-    // ---------------------- trust store --------------------
     String truststoreFile;
     // String truststorePassword;
-    // -------------------------------------------------------
 
     private UserDTO currentUser;
     private Node currentNode;
+    private NodeDTO currentNodeDTO;
+
     private SSLServerSocket serverSocket;
     private EventHandler eventHandler;
+
+    private int hashLength = 160; // Length of the hash in bits (SHA-1)
+    private int ringSize = (int) Math.pow(2, hashLength); // Size of the ring (2^160)
 
     public UserService(Node currentNode, String keystoreFile, String keystorePassword, String truststoreFile) throws IOException {
         this.currentNode = currentNode;
@@ -49,7 +49,36 @@ public class UserService implements UserServiceInterface{
         this.keystorePassword = keystorePassword;
         this.truststoreFile = truststoreFile;
         this.eventHandler = new EventHandler(this);
+        currentNodeDTO = new NodeDTO(currentNode.getIp(), currentNode.getPort(), currentNode.getHashNumber());
         startServer(currentNode);
+    }
+
+    public void setNextNode(NodeDTO nextNode) {
+        currentNode.setNextNode(nextNode);
+    }
+
+    public String getIpDefault() {
+        return ipDefault;
+    }
+
+    public int getPortDefault() {
+        return portDefault;
+    }
+
+    public Node getCurrentNode() {
+        return currentNode;
+    }
+
+    public UserDTO getCurrentUser() {
+        return currentUser;
+    }
+
+    public int getRingSize() {
+        return ringSize;
+    }
+
+    public NodeDTO getCurrentNodeDTO() {
+        return currentNodeDTO;
     }
 
     public void startServer(Node node) throws IOException {
@@ -111,45 +140,6 @@ public class UserService implements UserServiceInterface{
     }
 
     /**
-     * 
-     * 
-     * @param nextNode
-     */
-    public void setNextNode(NodeDTO nextNode) {
-        currentNode.setNextNode(nextNode);
-    }
-
-    /**
-     * 
-     * 
-     * @return
-     */
-    public String getIpDefault() {
-        return ipDefault;
-    }
-
-    /**
-     * 
-     * 
-     * @return
-     */
-    public int getPortDefault() {
-        return portDefault;
-    }
-
-    public Node getCurrentNode() {
-        return currentNode;
-    }
-
-    public NodeDTO getCurrentNodeDTO() {
-        return currentNode.getNodeDTO();
-    }
-
-    public UserDTO getCurrentUser() {
-        return currentUser;
-    }
-
-    /**
      * Discovers the node that has the given hash or the closest one to it to continue the search. 
      * If the network is empty or the node with a given hash does not exist, null is returned.
      * 
@@ -161,8 +151,8 @@ public class UserService implements UserServiceInterface{
         if (currentNode.getFingerTable().isEmpty()) // If there are no nodes on the finger table
             return null;
 
-        int distanceToNext = Utils.getDistance(currentNode.getHashNumber(), currentNode.getNextNode().getHash(), currentNode.getRingSize());
-        int distanceToNode = Utils.getDistance(currentNode.getHashNumber(), node, currentNode.getRingSize());
+        int distanceToNext = Utils.getDistance(currentNode.getHashNumber(), currentNode.getNextNode().getHash(), getRingSize());
+        int distanceToNode = Utils.getDistance(currentNode.getHashNumber(), node, getRingSize());
         if (distanceToNext > distanceToNode) // If the node is between the current node and the next node (in these case the node does not exist)
             return null;
 
@@ -179,15 +169,25 @@ public class UserService implements UserServiceInterface{
                 closestFingerNode = fingerNode;
         }
         return closestFingerNode;
-        
+    }
+
+    /**
+     * Makes the changes needed to mantain the network correct when a node exits
+     */
+    public void exitNode() {
+        eventHandler.exitNode();
     }
 
     @Override
-    public void processEvent(NodeEvent e) { // TODO: Add more events if necessary
+    public void processEvent(NodeEvent e) {
         if (e instanceof EnterNodeEvent) {
             eventHandler.enterNode((EnterNodeEvent) e);
+        } else if (e instanceof UpdateNeighboringNodesEvent) {
+            eventHandler.updateNeighbors((UpdateNeighboringNodesEvent) e);
         } else if (e instanceof UpdateNodeFingerTableEvent) {
-            // TODO: Implement the update finger table event handling func
+
+        } else if (e instanceof NodeSendMessageEvent) {
+        
         } else {
             throw new UnsupportedOperationException("Unhandled event type");
         }

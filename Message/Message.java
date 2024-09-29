@@ -28,4 +28,5 @@ public abstract class Message implements Serializable {
     public BigInteger getReciverHash(){
         return this.reciverHash;
     }
+
 }

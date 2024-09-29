@@ -6,7 +6,9 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 import Events.*;
+import Message.ChordInternalMessage;
 import Message.Message;
+import Message.UserMessage;
 import utils.observer.*;
 
 public class NodeThread extends Thread implements Subject<NodeEvent> {
@@ -77,10 +79,16 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
      * @throws IOException 
      * @throws ClassNotFoundException 
      */
-    public NodeEvent processCommand(Message messageToProcess) throws ClassNotFoundException, IOException { // TODO: Add more types if necessary
+    public NodeEvent processCommand(Message messageToProcess) throws ClassNotFoundException, IOException {
         switch (messageToProcess.getMsgType()) {
             case EnterNode:
-                emitEvent(new EnterNodeEvent(messageToProcess, null));
+                emitEvent(new EnterNodeEvent((ChordInternalMessage) messageToProcess));
+            case UpdateNeighbors:
+                emitEvent(new UpdateNeighboringNodesEvent((ChordInternalMessage) messageToProcess));
+            case UpdateFingerTable:
+                emitEvent(new UpdateNodeFingerTableEvent((ChordInternalMessage) messageToProcess));
+            case SendMsg:
+                emitEvent(new NodeSendMessageEvent((UserMessage) messageToProcess));
             default:
                 return null;
         }

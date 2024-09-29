@@ -1,6 +1,6 @@
 package Events;
 
-import Message.Message;
+import Message.ChordInternalMessage;
 import dtos.NodeDTO;
 
 public class UpdateNeighboringNodesEvent extends NodeEvent {
@@ -8,10 +8,10 @@ public class UpdateNeighboringNodesEvent extends NodeEvent {
     private NodeDTO next;
     private NodeDTO previous;
     
-    public UpdateNeighboringNodesEvent(Message msg, NodeDTO next, NodeDTO previous) {
+    public UpdateNeighboringNodesEvent(ChordInternalMessage msg) {
 		super(msg);
-		this.next = next;
-        this.previous = previous;
+		this.next = msg.getNextNode();
+        this.previous = msg.getPreviousNode();
 	}
 
     public NodeDTO getNext() {

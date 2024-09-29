@@ -5,24 +5,14 @@ import java.math.BigInteger;
 
 public class NodeDTO implements Serializable {
 
-    String name;
     private String ip;
     private int port;
     private BigInteger hash;
 
-    public NodeDTO(String name, String ip, int port, BigInteger hash) {
-        this.name = name;
+    public NodeDTO(String ip, int port, BigInteger hash) {
         this.ip = ip;
         this.port = port;
         this.hash = hash;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getName() {
-        return this.name;
     }
 
     public void setIp(String ip) {

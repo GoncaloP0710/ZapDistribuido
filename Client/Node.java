@@ -12,23 +12,16 @@ public class Node {
     private ArrayList<NodeDTO> fingerTable;
     private NodeDTO nextNode;
     private NodeDTO previousNode;
-    private NodeDTO currentNode;
     
-    String name;
     private String ip;
     private int port;
-
-    private int hashLength = 160; // Length of the hash in bits (SHA-1)
-    private int ringSize = (int) Math.pow(2, hashLength); // Size of the ring (2^160)
     private BigInteger hash; // Hash of the ip and port to identify the node order
 
     public Node(String name, String ip, int port) throws NoSuchAlgorithmException {
         this.fingerTable = new ArrayList<>();
-        this.name = name;
         this.ip = ip;
         this.port = port;
         setHashNumber(calculateHash(name));
-        currentNode = new NodeDTO(name, ip, port, hash);
     }
 
     public ArrayList<NodeDTO> getFingerTable() {
@@ -53,14 +46,6 @@ public class Node {
 
     public BigInteger getHashNumber() {
         return this.hash;
-    }
-
-    public int getRingSize() {
-        return this.ringSize;
-    }
-
-    public NodeDTO getNodeDTO() {
-        return this.currentNode;
     }
 
     public void setFingerTable(ArrayList<NodeDTO> fingerTable) {

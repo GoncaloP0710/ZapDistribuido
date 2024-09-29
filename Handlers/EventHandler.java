@@ -22,10 +22,11 @@ public class EventHandler {
     }
 
     public void enterNode(EnterNodeEvent event) {
-        BigInteger hash = event.getToEnter().getHash();
+        BigInteger hash = event.getToEnterHash();
+        NodeDTO nodeToEnterDTO = event.getToEnter();
+
         NodeDTO nodeWithHashDTO = userService.getNodeWithHash(hash);
         boolean isDefaultNode = userService.getCurrentNode().checkDefaultNode(ipDefault, portDefault);
-        NodeDTO nodeToEnterDTO = event.getToEnter();
         UserDTO currentUserDTO = userService.getCurrentUser();
         NodeDTO currentNodeDTO = userService.getCurrentNodeDTO();
         Node currentNode = userService.getCurrentNode();
@@ -55,6 +56,23 @@ public class EventHandler {
         }
     }
 
+    public void exitNode() { // What about the threads?
+        NodeDTO prevNodeDTO = userService.getCurrentNode().getPreviousNode();
+        NodeDTO nextNodeDTO = userService.getCurrentNode().getNextNode();
+        Node currentNode = userService.getCurrentNode();
+
+        if (prevNodeDTO == null && nextNodeDTO == null) // the current node is the only node in the network (default node) 
+            return;
+        
+        // mudar next do prev para o next do current
+        ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateNeighbors, userService.getCurrentUser(), null, currentNode.getNextNode(), null);
+        userService.startClient(currentNode.getPreviousNode().getIp(), currentNode.getPreviousNode().getPort(), message);
+        
+        // mudar prev do next para o prev do current
+        message = new ChordInternalMessage(MessageType.UpdateNeighbors, userService.getCurrentUser(), null, null, currentNode.getPreviousNode());
+        userService.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), message);
+    }
+
     public void updateNeighbors(UpdateNeighboringNodesEvent event) {
         BigInteger hash = event.getMessage().getReciverHash();
         NodeDTO nodeWithHashDTO = userService.getNodeWithHash(hash);
@@ -73,23 +91,6 @@ public class EventHandler {
         } else { // foward to the next node
             userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage());
         }
-    }
-
-    public void exitNode(ExitNodeEvent event) { // What about the threads?
-        NodeDTO prevNodeDTO = userService.getCurrentNode().getPreviousNode();
-        NodeDTO nextNodeDTO = userService.getCurrentNode().getNextNode();
-        Node currentNode = userService.getCurrentNode();
-
-        if (prevNodeDTO == null && nextNodeDTO == null) // the current node is the only node in the network (default node) 
-            return;
-        
-        // mudar next do prev para o next do current
-        ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateNeighbors, userService.getCurrentUser(), null, currentNode.getNextNode(), null);
-        userService.startClient(currentNode.getPreviousNode().getIp(), currentNode.getPreviousNode().getPort(), message);
-        
-        // mudar prev do next para o prev do current
-        message = new ChordInternalMessage(MessageType.UpdateNeighbors, userService.getCurrentUser(), null, null, currentNode.getPreviousNode());
-        userService.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), message);
     }
 
     public void updateFingerTable(UpdateNodeFingerTableEvent event) {
