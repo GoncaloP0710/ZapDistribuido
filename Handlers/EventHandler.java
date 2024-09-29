@@ -32,7 +32,7 @@ public class EventHandler {
         Node currentNode = userService.getCurrentNode();
 
         if (nodeWithHashDTO == null  && isDefaultNode) { // network is empty and the current node is the default node
-            // Update the default node
+            // Update the default node (next and prev are now the new node)
             userService.getCurrentNode().setNextNode(event.getToEnter());
             userService.getCurrentNode().setPreviousNode(event.getToEnter());
 
@@ -51,6 +51,26 @@ public class EventHandler {
             userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, currentUserDTO, null, null, currentNodeDTO)); // mudar prev do novo node para o current
 
             // TODO: Update the finger tables
+        } else { // foward to the next node
+            userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage());
+        }
+    }
+
+    public void updateNeighbors(UpdateNeighboringNodesEvent event) {
+        BigInteger hash = event.getMessage().getReciverHash();
+        NodeDTO nodeWithHashDTO = userService.getNodeWithHash(hash);
+        boolean isDefaultNode = userService.getCurrentNode().checkDefaultNode(ipDefault, portDefault);
+
+        if (nodeWithHashDTO == null  && isDefaultNode) { // network is empty and the current node is the default node
+            return;
+        } else if (nodeWithHashDTO == null) { // target node 
+            NodeDTO nextNode = event.getNext();
+            NodeDTO previousNode = event.getPrevious();
+
+            if (nextNode != null)
+                userService.getCurrentNode().setNextNode(nextNode);
+            if (previousNode != null)
+                userService.getCurrentNode().setPreviousNode(previousNode);
         } else { // foward to the next node
             userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage());
         }

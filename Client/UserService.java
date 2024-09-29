@@ -150,7 +150,8 @@ public class UserService implements UserServiceInterface{
     }
 
     /**
-     * Discovers the node that has the given hash or the closest one to it to continue the search
+     * Discovers the node that has the given hash or the closest one to it to continue the search. 
+     * If the network is empty or the node with a given hash does not exist, null is returned.
      * 
      * @param startNode
      * @param node
