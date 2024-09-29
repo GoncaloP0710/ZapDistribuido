@@ -1,6 +1,7 @@
 package handlers;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 
 import Events.*;
 import Message.*;
@@ -21,7 +22,7 @@ public class EventHandler {
         portDefault = userService.getPortDefault();
     }
 
-    public void enterNode(EnterNodeEvent event) {
+    public synchronized void enterNode(EnterNodeEvent event) {
         BigInteger hash = event.getToEnterHash();
         NodeDTO nodeToEnterDTO = event.getToEnter();
 
@@ -71,9 +72,11 @@ public class EventHandler {
         // mudar prev do next para o prev do current
         message = new ChordInternalMessage(MessageType.UpdateNeighbors, userService.getCurrentUser(), null, null, currentNode.getPreviousNode());
         userService.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), message);
+
+        // TODO: Update the finger tables
     }
 
-    public void updateNeighbors(UpdateNeighboringNodesEvent event) {
+    public synchronized void updateNeighbors(UpdateNeighboringNodesEvent event) {
         BigInteger hash = event.getMessage().getReciverHash();
         NodeDTO nodeWithHashDTO = userService.getNodeWithHash(hash);
         boolean isDefaultNode = userService.getCurrentNode().checkDefaultNode(ipDefault, portDefault);
@@ -93,7 +96,40 @@ public class EventHandler {
         }
     }
 
-    public void updateFingerTable(UpdateNodeFingerTableEvent event) {
-        
+    public synchronized void updateFingerTable(UpdateNodeFingerTableEvent event) {
+        ChordInternalMessage message = (ChordInternalMessage) event.getMessage();
+        int counter = event.getCounter();
+        NodeDTO currNodeDTO = userService.getCurrentNodeDTO();
+        NodeDTO nodeToUpdateDTO = event.getNodeToUpdate();
+        ArrayList<NodeDTO> fingerTable = userService.getCurrentNode().getFingerTable();
+        int ringSize = userService.getRingSize();
+
+        if (currNodeDTO.equals(nodeToUpdateDTO)) {
+            userService.getCurrentNode().setFingerTable(fingerTable);
+            return;
+        } else if (counter == userService.getHashLength()) {
+            userService.startClient(nodeToUpdateDTO.getIp(), nodeToUpdateDTO.getPort(), message);
+            return;
+        }
+
+        int distance = (nodeToUpdateDTO.getHash().intValue() - currNodeDTO.getHash().intValue()+ ringSize) % ringSize;
+        if (distance >= Math.pow(2, counter)) {
+            message.addNodeToFingerTable(currNodeDTO);
+
+            // Skip the next counters if 2^counter is lower than the distance between this and the next node to try
+            while (Math.pow(2, counter) <= distance) 
+                counter++;
+                message.incCounter();
+        }
+
+        NodeDTO nextNode = userService.getCurrentNode().getNextNode();
+        userService.startClient(nextNode.getIp(), nextNode.getPort(), message);
+    }
+    
+    public void broadcastMessage(BroadcastUpdateFingerTableEvent event) {
+        ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateFingerTable, null, userService.getCurrentNodeDTO(), 0);
+        updateFingerTable(new UpdateNodeFingerTableEvent(message));
+        if (!event.getInitializer().equals(userService.getCurrentNodeDTO())) // foward to the next node
+            userService.startClient(ipDefault, portDefault, event.getMessage());
     }
 }

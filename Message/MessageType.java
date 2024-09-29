@@ -5,5 +5,6 @@ public enum MessageType {
     ExitNode,
     UpdateFingerTable,
     SendMsg,
-    UpdateNeighbors;
+    UpdateNeighbors,
+    broadcastUpdateFingerTable;
 }

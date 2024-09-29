@@ -1,12 +1,25 @@
 package Events;
 
 import Message.ChordInternalMessage;
+import dtos.NodeDTO;
 
-// TODO: chose a way to say if the update is to a specific node or to all nodes
 public class UpdateNodeFingerTableEvent extends NodeEvent { 
+
+    private NodeDTO nodeToUpdate;
+    private int counter;
 
     public UpdateNodeFingerTableEvent(ChordInternalMessage msg) {
         super(msg);
+        counter = msg.getCounter();
+        this.nodeToUpdate = msg.getNodeToUpdate();
+    }
+
+    public NodeDTO getNodeToUpdate() {
+        return nodeToUpdate;
+    }
+
+    public int getCounter() {
+        return counter;
     }
 
 }

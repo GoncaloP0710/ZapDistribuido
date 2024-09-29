@@ -81,6 +81,10 @@ public class UserService implements UserServiceInterface{
         return currentNodeDTO;
     }
 
+    public int getHashLength() {
+        return hashLength;
+    }
+
     public void startServer(Node node) throws IOException {
 
         this.currentNode = node;
@@ -185,9 +189,11 @@ public class UserService implements UserServiceInterface{
         } else if (e instanceof UpdateNeighboringNodesEvent) {
             eventHandler.updateNeighbors((UpdateNeighboringNodesEvent) e);
         } else if (e instanceof UpdateNodeFingerTableEvent) {
-
+            eventHandler.updateFingerTable((UpdateNodeFingerTableEvent) e);
+        } else if (e instanceof BroadcastUpdateFingerTableEvent) {
+            eventHandler.broadcastMessage(((BroadcastUpdateFingerTableEvent) e));
         } else if (e instanceof NodeSendMessageEvent) {
-        
+            // TODO: Send message to the node
         } else {
             throw new UnsupportedOperationException("Unhandled event type");
         }

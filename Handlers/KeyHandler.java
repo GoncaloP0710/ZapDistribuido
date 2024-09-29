@@ -1,5 +1,6 @@
 package handlers;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -16,11 +17,25 @@ public class KeyHandler {
     
     private KeyStore keyStore;
     private String keyStorePassword;
-    private String keyStoreFile;
+    //private String keyStoreFile;
+    private File userFile;
 
-    public KeyHandler(String keyStoreFile, String keyStorePassword) throws Exception {
-        this.keyStoreFile = keyStoreFile;
+    public KeyHandler(String keyStorePassword, String user_id) throws Exception {
         this.keyStorePassword = keyStorePassword;
+
+        this.userFile = new File("../files/"+user_id);
+        
+        if(!userFile.createNewFile()){
+            
+        } else {
+
+        }
+
+        
+
+
+
+
         this.keyStore = initializeKeyStore();
     }
 
@@ -31,6 +46,7 @@ public class KeyHandler {
         } catch (IOException e) { // If the file does not exist, create a new one
             ks.load(null, keyStorePassword.toCharArray());
         }
+        
         return ks;
     }
 

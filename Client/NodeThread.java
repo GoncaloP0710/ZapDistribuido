@@ -87,6 +87,8 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                 emitEvent(new UpdateNeighboringNodesEvent((ChordInternalMessage) messageToProcess));
             case UpdateFingerTable:
                 emitEvent(new UpdateNodeFingerTableEvent((ChordInternalMessage) messageToProcess));
+            case broadcastUpdateFingerTable:
+                emitEvent(new BroadcastUpdateFingerTableEvent((ChordInternalMessage) messageToProcess));
             case SendMsg:
                 emitEvent(new NodeSendMessageEvent((UserMessage) messageToProcess));
             default:

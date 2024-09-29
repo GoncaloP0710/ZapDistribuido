@@ -1,28 +1,55 @@
 package Message;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 
-import client.Node;
 import dtos.NodeDTO;
-import dtos.UserDTO;
 
-public class ChordInternalMessage extends Message { // TODO: Implement Add the UpdateNodeFingerTableEvent
+public class ChordInternalMessage extends Message {
 
     private NodeDTO nextNode; // UpdateNeighbors Event
     private NodeDTO previousNode; // UpdateNeighbors Event
     private NodeDTO nodeToEnter; // EnterNode Event
+    private NodeDTO nodeToUpdate; // UpdateNodeFingerTableEvent
+    private int counter; // UpdateNodeFingerTableEvent
+    private ArrayList<NodeDTO> fingerTable; // UpdateNodeFingerTableEvent
+    private NodeDTO initializer; // BroadcastUpdateFingerTableEvent
+    private boolean finishedBroadcasting; // BroadcastUpdateFingerTableEvent
+
+    // TODO: Check if the receiverHash is necessary
 
     // UpdateNeighboringNodesEvent
-    public ChordInternalMessage(MessageType messageType, UserDTO senderDTO, BigInteger reciverHash, NodeDTO nextNode, NodeDTO previousNode) {
-        super(messageType, senderDTO, reciverHash);
+    public ChordInternalMessage(MessageType messageType, NodeDTO nodeToUpdate, BigInteger reciverHash, NodeDTO nextNode, NodeDTO previousNode) {
+        super(messageType, reciverHash);
         this.nextNode = nextNode;
         this.previousNode = previousNode;
     }
 
     // EnterNodeEvent
-    public ChordInternalMessage(MessageType messageType, BigInteger reciverHash, UserDTO senderDTO, NodeDTO nodeToEnter) {
-        super(messageType, senderDTO, reciverHash);
+    public ChordInternalMessage(MessageType messageType, BigInteger reciverHash, NodeDTO nodeToEnter) {
+        super(messageType, reciverHash);
         this.nodeToEnter = nodeToEnter;
+    }
+    
+    /**
+     * UpdateNodeFingerTableEvent
+     * @requires counter == 0
+     */
+    public ChordInternalMessage(MessageType messageType, BigInteger reciverHash, NodeDTO nodeToUpdate, int counter) {
+        super(messageType, reciverHash);
+        this.nodeToUpdate = nodeToUpdate;
+        this.counter = counter;
+        this.fingerTable = new ArrayList<>();
+    }
+
+    /**
+     * BroadcastUpdateFingerTableEvent
+     * @requires finishedBroadcasting == false
+     */
+    public ChordInternalMessage(MessageType messageType, BigInteger reciverHash, Boolean finishedBroadcasting, NodeDTO initializer) {
+        super(messageType, reciverHash);
+        this.initializer = initializer;
+        this.finishedBroadcasting = finishedBroadcasting;
     }
 
     public NodeDTO getNextNode(){
@@ -35,6 +62,34 @@ public class ChordInternalMessage extends Message { // TODO: Implement Add the U
 
     public NodeDTO getNodeToEnter(){
         return this.nodeToEnter;
+    }
+
+    public NodeDTO getNodeToUpdate(){
+        return this.nodeToUpdate;
+    }
+
+    public int getCounter(){
+        return this.counter;
+    }
+
+    public void incCounter(){
+        this.counter++;
+    }
+
+    public ArrayList<NodeDTO> getFingerTable(){
+        return this.fingerTable;
+    }
+
+    public void addNodeToFingerTable(NodeDTO node){
+        this.fingerTable.add(node);
+    }
+
+    public NodeDTO getInitializer(){
+        return this.initializer;
+    }
+
+    public boolean getFinishedBroadcasting(){
+        return this.finishedBroadcasting;
     }
 
 }
