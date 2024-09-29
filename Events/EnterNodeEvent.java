@@ -1,7 +1,6 @@
 package Events;
 
 import Message.Message;
-import client.Node;
 import dtos.NodeDTO;
 
 public class EnterNodeEvent extends NodeEvent {
