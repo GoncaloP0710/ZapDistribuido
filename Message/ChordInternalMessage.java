@@ -16,7 +16,7 @@ public class ChordInternalMessage extends Message {
     private NodeDTO initializer; // BroadcastUpdateFingerTableEvent
     private boolean finishedBroadcasting; // BroadcastUpdateFingerTableEvent
 
-    // TODO: Check if the receiverHash is necessary
+    // TODO: Check if the receiverHash is necessary - Maybe can only be on the User message
 
     // UpdateNeighboringNodesEvent
     public ChordInternalMessage(MessageType messageType, NodeDTO nodeToUpdate, BigInteger reciverHash, NodeDTO nextNode, NodeDTO previousNode) {
@@ -33,6 +33,8 @@ public class ChordInternalMessage extends Message {
     
     /**
      * UpdateNodeFingerTableEvent
+     * 
+     * @param nodeToUpdate this is the that first started the event
      * @requires counter == 0
      */
     public ChordInternalMessage(MessageType messageType, BigInteger reciverHash, NodeDTO nodeToUpdate, int counter) {
