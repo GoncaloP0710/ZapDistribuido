@@ -1,6 +1,5 @@
 package Message;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 
 import dtos.NodeDTO;
@@ -16,18 +15,16 @@ public class ChordInternalMessage extends Message {
     private NodeDTO initializer; // BroadcastUpdateFingerTableEvent
     private boolean finishedBroadcasting; // BroadcastUpdateFingerTableEvent
 
-    // TODO: Check if the receiverHash is necessary - Maybe can only be on the User message
-
     // UpdateNeighboringNodesEvent
-    public ChordInternalMessage(MessageType messageType, NodeDTO nodeToUpdate, BigInteger reciverHash, NodeDTO nextNode, NodeDTO previousNode) {
-        super(messageType, reciverHash);
+    public ChordInternalMessage(MessageType messageType, NodeDTO nextNode, NodeDTO previousNode) {
+        super(messageType);
         this.nextNode = nextNode;
         this.previousNode = previousNode;
     }
 
     // EnterNodeEvent
-    public ChordInternalMessage(MessageType messageType, BigInteger reciverHash, NodeDTO nodeToEnter) {
-        super(messageType, reciverHash);
+    public ChordInternalMessage(MessageType messageType, NodeDTO nodeToEnter) {
+        super(messageType);
         this.nodeToEnter = nodeToEnter;
     }
     
@@ -37,8 +34,8 @@ public class ChordInternalMessage extends Message {
      * @param nodeToUpdate this is the that first started the event
      * @requires counter == 0
      */
-    public ChordInternalMessage(MessageType messageType, BigInteger reciverHash, NodeDTO nodeToUpdate, int counter) {
-        super(messageType, reciverHash);
+    public ChordInternalMessage(MessageType messageType, NodeDTO nodeToUpdate, int counter) {
+        super(messageType);
         this.nodeToUpdate = nodeToUpdate;
         this.counter = counter;
         this.fingerTable = new ArrayList<>();
@@ -48,8 +45,8 @@ public class ChordInternalMessage extends Message {
      * BroadcastUpdateFingerTableEvent
      * @requires finishedBroadcasting == false
      */
-    public ChordInternalMessage(MessageType messageType, BigInteger reciverHash, Boolean finishedBroadcasting, NodeDTO initializer) {
-        super(messageType, reciverHash);
+    public ChordInternalMessage(MessageType messageType, Boolean finishedBroadcasting, NodeDTO initializer) {
+        super(messageType);
         this.initializer = initializer;
         this.finishedBroadcasting = finishedBroadcasting;
     }

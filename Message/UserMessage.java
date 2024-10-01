@@ -3,7 +3,6 @@ package Message;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
 
-import dtos.NodeDTO;
 import dtos.UserDTO;
 
 public class UserMessage extends Message {
@@ -12,10 +11,12 @@ public class UserMessage extends Message {
     private MessageStatus msgStatus;
     private LocalDateTime time;
     private UserDTO senderDTO;
+    private BigInteger reciverHash;
     private UserDTO receiverDTO; // Only known once the message is received
 
     public UserMessage(MessageType messageType, UserDTO senderDTO, BigInteger reciverHash, byte[] message) {
-        super(messageType, reciverHash);
+        super(messageType);
+        this.reciverHash = reciverHash;
         this.senderDTO = senderDTO;
         this.msgStatus = MessageStatus.SENDING;
         this.time = LocalDateTime.now();
