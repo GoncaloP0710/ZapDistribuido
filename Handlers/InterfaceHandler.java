@@ -8,12 +8,19 @@ public class InterfaceHandler {
 
     //Funções de output
 
-    public void startUp(){
+    public String startUp(){
         System.out.println("----------------------------------");
         System.out.println("-------WHATSAPP DISTRIBUIDO-------");
         System.out.println("----------------------------------");
-        // System.out.print("Insira as suas credenciais: ");
-        
+        System.out.print("Insira o seu Username: ");
+        System.out.println("");
+        return getInput();
+    }
+
+    public String getPassword(){
+        System.out.print("Insira a sua password: ");
+        System.out.println("");
+        return getInput();
     }
 
     public void erro(){

@@ -112,8 +112,8 @@ public class Node {
             return true;
         if (obj == null || obj.getClass() != this.getClass())
             return false;
-        var that = (Node) obj;
-        return this.ip == that.ip && this.port == that.port;
+        Node that = (Node) obj;
+        return this.ip.equals(that.ip) && this.port == that.port;
     }
 
     /**

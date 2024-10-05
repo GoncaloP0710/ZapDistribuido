@@ -16,6 +16,12 @@ import java.security.cert.CertificateException;
 import java.util.Scanner;
 import java.security.NoSuchAlgorithmException;
 
+import java.math.BigInteger;
+import java.security.*;
+import java.security.cert.X509Certificate;
+import java.util.Date;
+import javax.security.auth.x500.X500Principal;
+import sun.security.x509.*; // Internal package for creating self-signed certificates
 
 public class KeyHandler {
     
@@ -44,12 +50,6 @@ public class KeyHandler {
         }
         
         //encontra userName no ficheiro -> apanha a keystore
-        
-        
-
-
-
-
         this.keyStore = initializeKeyStore();
     }
 
@@ -74,17 +74,40 @@ public class KeyHandler {
         PublicKey publicKey = keyPair.getPublic();
         char[] passwordBytes = keyStorePassword.toCharArray();
 
-        
+        // Create a self-signed certificate
+        X509Certificate certificate = generateSelfSignedCertificate(userName, keyPair);
 
         // Store the key pair in the keystore
-        ks.setKeyEntry(userName, privateKey, passwordBytes, new Certificate[]{cert});
+        ks.setKeyEntry(userName, privateKey, passwordBytes, new Certificate[]{certificate});
         
         return ks;
     }
 
+    private X509Certificate generateSelfSignedCertificate(String userName, KeyPair keyPair) throws Exception {
+        long validity = 365 * 24 * 60 * 60; // 1 year in seconds
+        Date startDate = new Date();
+        Date endDate = new Date(startDate.getTime() + validity * 1000);
+        X500Name owner = new X500Name("CN=" + userName);
+
+        X509CertInfo certInfo = new X509CertInfo();
+        certInfo.set(X509CertInfo.VALIDITY, new CertificateValidity(startDate, endDate));
+        certInfo.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber((int) (startDate.getTime() / 1000)));
+        certInfo.set(X509CertInfo.SUBJECT, owner);
+        certInfo.set(X509CertInfo.ISSUER, owner);
+        certInfo.set(X509CertInfo.KEY, new sun.security.x509.CertificateX509Key(keyPair.getPublic()));
+        certInfo.set(X509CertInfo.VERSION, new sun.security.x509.CertificateVersion(2));
+        certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(AlgorithmId.get("SHA256withRSA")));
+
+        X509CertImpl certificate = new X509CertImpl(certInfo);
+        certificate.sign(keyPair.getPrivate(), "SHA256withRSA");
+
+        return certificate;
+    }
+
+
     private KeyStore initializeKeyStore() throws Exception {
         KeyStore ks = KeyStore.getInstance("JKS"); 
-        try (FileInputStream in = new FileInputStream(keyStoreFile)) {
+        try (FileInputStream in = new FileInputStream(keystoreFile)) {
             ks.load(in, keyStorePassword.toCharArray());
         } catch (IOException e) { // If the file does not exist, create a new one
             ks.load(null, keyStorePassword.toCharArray());
@@ -94,7 +117,7 @@ public class KeyHandler {
     }
 
     private void saveKeyStore() throws Exception {
-        try (FileOutputStream out = new FileOutputStream(keyStoreFile)) {
+        try (FileOutputStream out = new FileOutputStream(keystoreFile)) {
             keyStore.store(out, keyStorePassword.toCharArray());
         }
     }
