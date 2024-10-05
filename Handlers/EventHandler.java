@@ -42,7 +42,7 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
         NodeDTO nodeToEnterDTO = event.getToEnter();
         NodeDTO nodeWithHashDTO = userService.getNodeWithHash(hash);
 
-        if (nodeWithHashDTO == null  && isDefaultNode) { // network is empty and the current node is the default node
+        if (nodeWithHashDTO == null  && isDefaultNode && (currentNode.getFingerTable() == null)) { // network is empty and the current node is the default node
             // Update the default node (next and prev are now the new node)
             userService.getCurrentNode().setNextNode(event.getToEnter());
             userService.getCurrentNode().setPreviousNode(event.getToEnter());
@@ -70,7 +70,7 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
         }
     }
 
-    public void exitNode() { // What about the threads?
+    public synchronized void exitNode() { // What about the threads?
         NodeDTO prevNodeDTO = currentNode.getPreviousNode();
         NodeDTO nextNodeDTO = currentNode.getNextNode();
 
@@ -119,7 +119,7 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
         userService.startClient(nextNode.getIp(), nextNode.getPort(), message);
     }
     
-    public void broadcastMessage(BroadcastUpdateFingerTableEvent event) {
+    public synchronized void broadcastMessage(BroadcastUpdateFingerTableEvent event) {
         ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateFingerTable, currentNodeDTO, 0);
         updateFingerTable(new UpdateNodeFingerTableEvent(message));
         if (!event.getInitializer().equals(currentNodeDTO)) { // foward to the next node
