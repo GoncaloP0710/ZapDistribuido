@@ -21,7 +21,7 @@ import utils.*;
 /**
  * This class is responsible for the node comunication on the network
  */
-public class UserService implements UserServiceInterface{
+public class UserService implements UserServiceInterface {
 
     // ---------------------- Default Node ----------------------
     private String ipDefault = "";

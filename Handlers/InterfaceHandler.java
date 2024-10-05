@@ -12,7 +12,7 @@ public class InterfaceHandler {
         System.out.println("----------------------------------");
         System.out.println("-------WHATSAPP DISTRIBUIDO-------");
         System.out.println("----------------------------------");
-        System.out.print("Insira as suas credenciais: ");
+        // System.out.print("Insira as suas credenciais: ");
         
     }
 

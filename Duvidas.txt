@@ -1,0 +1,2 @@
+- Suposto ter sistema de verificar uma suposta password do utilizador?
+- Deve ser utilizado um keystore? Se sim, qual a sua utilidade?
