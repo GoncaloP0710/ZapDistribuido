@@ -13,14 +13,16 @@ public class InterfaceHandler {
         System.out.println("-------WHATSAPP DISTRIBUIDO-------");
         System.out.println("----------------------------------");
         System.out.print("Insira o seu Username: ");
+        String ret = getInput();
         System.out.println("");
-        return getInput();
+        return ret;
     }
 
     public String getPassword(){
         System.out.print("Insira a sua password: ");
+        String ret = getInput();
         System.out.println("");
-        return getInput();
+        return ret;
     }
 
     public void erro(){
