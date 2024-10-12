@@ -13,7 +13,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import Events.*;
 import Interface.UserServiceInterface;
-import Message.Message;
+import Message.*;
 import dtos.*;
 import Handlers.EventHandler;
 import Utils.*;
@@ -33,6 +33,7 @@ public class UserService implements UserServiceInterface {
     String truststoreFile;
     // String truststorePassword;
 
+    private String username; // For print purposes, easier debugging
     private UserDTO currentUser;
     private Node currentNode;
     private NodeDTO currentNodeDTO;
@@ -43,13 +44,23 @@ public class UserService implements UserServiceInterface {
     private int hashLength = 160; // Length of the hash in bits (SHA-1)
     private int ringSize = (int) Math.pow(2, hashLength); // Size of the ring (2^160)
 
-    public UserService(Node currentNode, String keystoreFile, String keystorePassword, String truststoreFile) throws IOException {
+    public UserService(String username, Node currentNode, String keystoreFile, String keystorePassword, String truststoreFile) throws IOException {
         this.currentNode = currentNode;
         this.keystoreFile = keystoreFile;
         this.keystorePassword = keystorePassword;
         this.truststoreFile = truststoreFile;
         this.eventHandler = new EventHandler(this);
-        currentNodeDTO = new NodeDTO(currentNode.getIp(), currentNode.getPort(), currentNode.getHashNumber());
+        currentNodeDTO = new NodeDTO(username, currentNode.getIp(), currentNode.getPort(), currentNode.getHashNumber());
+
+        // Check for default node
+        if (ipDefault.equals(currentNode.getIp()) && portDefault == currentNode.getPort()) {
+            currentNode.setNextNode(currentNodeDTO);
+            currentNode.setPreviousNode(currentNodeDTO);
+        } else {
+            ChordInternalMessage message = new ChordInternalMessage(MessageType.EnterNode, currentNodeDTO);
+            startClient(ipDefault, portDefault, message);
+        }
+
         startServer(currentNode);
     }
 

@@ -36,7 +36,7 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
     }
 
     public synchronized void enterNode(EnterNodeEvent event) { // TODO: Check the nodeWithHashDTO part
-        // TODO: If default node is the actual target it does not work
+        // TODO: If default node is the actual target it does not work??????
         
         BigInteger hash = event.getToEnterHash();
         NodeDTO nodeToEnterDTO = event.getToEnter();

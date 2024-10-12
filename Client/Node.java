@@ -144,4 +144,8 @@ public class Node {
                 "port = " + port + ", " +
                 "hash = " + hash + ']';
     }
+
+    public String neighborsStatus() {
+        return previousNode.getUsername() + " - " + " current node " + " - " + nextNode.getUsername();
+    }
 }

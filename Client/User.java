@@ -63,19 +63,38 @@ public class User {
         node = new Node(name, serverIp, serverPort);
         userService = new UserService(node, keystoreFile, password, truststoreFile);
 
-        // if node ip and port = defeult then next and previous = same node
-        startClient("Enter Node");
-        // TODO: Implement main loop to get the user input (commands)
-    }
-
-    public static void startClient (String command) {
-        if (command.equals("Enter Node")) {
-            // Message msg = new Message(MessageType.EnterNode,);
-            // Start client: userService.startClient();
-        } else {
-
+        // Main loop
+        while (true) { // TODO: Change this. Now its like tehse for debugging purposes
+            interfaceHandler.printMenu();
+            int option = Integer.parseInt(interfaceHandler.getInput());
+            switch (option) {
+                case 1:
+                    System.out.println(node.neighborsStatus());
+                    break;
+                case 2:
+                    break;
+                case 3:
+                    break;
+                case 4:
+                    break;
+                case 5:
+                    break;
+                case 6:
+                    break;
+                case 7:
+                    break;
+                case 8:
+                    break;
+                case 9:
+                    break;
+                case 10:
+                    System.exit(0);
+                    break;
+                default:
+                    interfaceHandler.erro("Opção inválida");
+                    break;
+            }
         }
-        
     }
     
 }
