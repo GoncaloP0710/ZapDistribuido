@@ -101,32 +101,40 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
     public synchronized void updateFingerTable(UpdateNodeFingerTableEvent event) {
         ChordInternalMessage message = (ChordInternalMessage) event.getMessage();
         int counter = event.getCounter();
-        NodeDTO nodeToUpdateDTO = event.getNodeToUpdate(); // node that started the event
+        NodeDTO nodeToUpdateDTO = event.getNodeToUpdate(); // Node that started the event
         ArrayList<NodeDTO> fingerTable = userService.getCurrentNode().getFingerTable();
         int ringSize = userService.getRingSize();
-
+    
         if (currentNodeDTO.equals(nodeToUpdateDTO)) {
             userService.getCurrentNode().setFingerTable(message.getFingerTable());
             return;
-        } else if (counter == userService.getHashLength()) { // No more nodes to add 
+        } else if (counter == userService.getHashLength()) { // No more nodes to add
             userService.startClient(nodeToUpdateDTO.getIp(), nodeToUpdateDTO.getPort(), message); // Send the message back to the node that started the event
             return;
         }
-
-        int distance = (nodeToUpdateDTO.getHash().intValue() - currentNodeDTO.getHash().intValue()+ ringSize) % ringSize;
-        if (distance >= Math.pow(2, counter)) {
+    
+        BigInteger nodeToUpdateDTOIndex = nodeToUpdateDTO.getHash();
+        BigInteger currentNodeDTOIndex = currentNodeDTO.getHash();
+        BigInteger ringSizeBig = BigInteger.valueOf(ringSize);
+    
+        BigInteger distance = nodeToUpdateDTOIndex.subtract(currentNodeDTOIndex).add(ringSizeBig).mod(ringSizeBig);
+        BigInteger twoPowerCounter = BigInteger.valueOf(2).pow(counter);
+    
+        if (distance.compareTo(twoPowerCounter) >= 0) {
             message.addNodeToFingerTable(currentNodeDTO);
-
+    
             // Skip the next counters if 2^counter is lower than the distance between this and the next node to try
-            while (Math.pow(2, counter) <= distance) {
+            while (twoPowerCounter.compareTo(distance) <= 0) {
                 counter++;
+                twoPowerCounter = BigInteger.valueOf(2).pow(counter); // Update twoPowerCounter for the new value of counter
                 message.incCounter();
             }
         }
-
+    
         NodeDTO nextNode = currentNode.getNextNode();
         userService.startClient(nextNode.getIp(), nextNode.getPort(), message);
     }
+    
     
     public synchronized void broadcastMessage(BroadcastUpdateFingerTableEvent event) {
         ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateFingerTable, currentNodeDTO, 0);
