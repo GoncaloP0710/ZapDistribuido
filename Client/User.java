@@ -74,6 +74,7 @@ public class User {
                     System.out.println(node.neighborsStatus());
                     break;
                 case 2:
+                    System.out.println(node.toString());
                     break;
                 case 3:
                     break;

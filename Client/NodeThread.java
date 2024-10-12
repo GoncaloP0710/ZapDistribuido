@@ -8,7 +8,6 @@ import java.net.Socket;
 import Events.*;
 import Message.ChordInternalMessage;
 import Message.Message;
-import Message.MessageType;
 import Message.UserMessage;
 import Utils.observer.*;
 
@@ -47,7 +46,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             try {
                 out.writeObject(msg);
                 System.out.println("Message sent: " + msg.toString());
-                out.writeObject("End Connection");
                 endThread();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -57,7 +55,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                 Message messageToProcess = (Message) in.readObject();
                 System.out.println("Message received: " + messageToProcess.toString());
                 processCommand(messageToProcess);
-                String commandToProcess = (String) in.readObject(); // "End Connection"
                 endThread();
             } catch (ClassNotFoundException | IOException e) {
                 e.printStackTrace();
@@ -82,7 +79,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
      * @throws ClassNotFoundException 
      */
     public void processCommand(Message messageToProcess) throws ClassNotFoundException, IOException {
-        MessageType msgT = messageToProcess.getMsgType();
         switch (messageToProcess.getMsgType()) {
             case EnterNode:
                 System.out.println("EnterNode event to process"); 

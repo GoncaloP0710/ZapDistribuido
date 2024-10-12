@@ -70,7 +70,9 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
 
             // Update the finger tables
             ChordInternalMessage messageFT = new ChordInternalMessage(MessageType.UpdateFingerTable, currentNodeDTO, 0);
+            System.out.println(messageFT.toString());
             userService.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), messageFT);
+        
         } else { // foward to the next node
             userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage());
         }
@@ -104,7 +106,7 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
         int ringSize = userService.getRingSize();
 
         if (currentNodeDTO.equals(nodeToUpdateDTO)) {
-            userService.getCurrentNode().setFingerTable(fingerTable);
+            userService.getCurrentNode().setFingerTable(message.getFingerTable());
             return;
         } else if (counter == userService.getHashLength()) { // No more nodes to add 
             userService.startClient(nodeToUpdateDTO.getIp(), nodeToUpdateDTO.getPort(), message); // Send the message back to the node that started the event
