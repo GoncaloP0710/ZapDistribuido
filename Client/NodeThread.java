@@ -81,8 +81,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
      * @throws ClassNotFoundException 
      */
     public void processCommand(Message messageToProcess) throws ClassNotFoundException, IOException {
-        lock.lock();
-        try {
         switch (messageToProcess.getMsgType()) {
             case EnterNode:
                 System.out.println("EnterNode event to process"); 
@@ -105,9 +103,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                 break;
             default:
                 break;
-        }
-        } finally {
-            lock.unlock();
         }
         return;
     }

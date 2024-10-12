@@ -72,8 +72,6 @@ public class User {
         while (true) { // TODO: Change this. Now its like tehse for debugging purposes
             interfaceHandler.printMenu();
             int option = Integer.parseInt(interfaceHandler.getInput());
-            lock.lock();
-            try {
                switch (option) {
                 case 1:
                     System.out.println(node.neighborsStatus());
@@ -102,9 +100,7 @@ public class User {
                     interfaceHandler.erro("Opção inválida");
                     break;
             }
-        } finally {
-        lock.unlock();
-        }   
+
 }
 }
 }

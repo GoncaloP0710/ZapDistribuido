@@ -130,6 +130,8 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
                 message.incCounter();
             }
         }
+
+        while (currentNode.getNextNode() == null) {}
     
         NodeDTO nextNode = currentNode.getNextNode();
         userService.startClient(nextNode.getIp(), nextNode.getPort(), message);
