@@ -1,7 +1,7 @@
 package Events;
 
 import Message.Message;
-import utils.observer.Event;
+import Utils.observer.Event;
 
 public abstract class NodeEvent implements Event {
     

@@ -1,4 +1,4 @@
-package client;
+package Client;
 
 import java.security.KeyPair;
 import java.security.KeyStore;
@@ -8,8 +8,8 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 
 import Message.*;
-import handlers.*;
-import utils.*;
+import Handlers.*;
+import Utils.*;
 import dtos.*;
 
 public class User {

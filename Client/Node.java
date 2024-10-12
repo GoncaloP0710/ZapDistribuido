@@ -1,4 +1,4 @@
-package client;
+package Client;
 
 import java.util.ArrayList;
 import java.security.MessageDigest;

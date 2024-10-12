@@ -1,6 +1,6 @@
 package Interface;
 
-import utils.observer.Listener;
+import Utils.observer.Listener;
 import Events.*;
 
 public interface UserServiceInterface extends Listener<NodeEvent> {

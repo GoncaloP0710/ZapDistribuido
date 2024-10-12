@@ -1,4 +1,4 @@
-package handlers;
+package Handlers;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;

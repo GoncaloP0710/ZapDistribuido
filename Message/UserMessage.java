@@ -34,4 +34,8 @@ public class UserMessage extends Message {
     public byte[] getMessage(){
         return this.message;
     }
+
+    public BigInteger getReciverHash(){
+        return this.reciverHash;
+    }
 }

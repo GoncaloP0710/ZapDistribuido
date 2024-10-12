@@ -1,4 +1,4 @@
-package utils.observer;
+package Utils.observer;
 
 public interface Event {
 

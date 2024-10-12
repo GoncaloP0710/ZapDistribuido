@@ -1,12 +1,12 @@
-package handlers;
+package Handlers;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 
 import Events.*;
 import Message.*;
-import client.Node;
-import client.UserService;
+import Client.Node;
+import Client.UserService;
 import dtos.*;
 
 public class EventHandler { //TODO: Will there not be problems with the threads? Like the updates havent propagated yet?

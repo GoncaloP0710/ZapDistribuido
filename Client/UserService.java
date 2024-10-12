@@ -1,4 +1,4 @@
-package client;
+package Client;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -15,8 +15,8 @@ import Events.*;
 import Interface.UserServiceInterface;
 import Message.Message;
 import dtos.*;
-import handlers.EventHandler;
-import utils.*;
+import Handlers.EventHandler;
+import Utils.*;
 
 /**
  * This class is responsible for the node comunication on the network

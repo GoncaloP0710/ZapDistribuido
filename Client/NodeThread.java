@@ -1,4 +1,4 @@
-package client;
+package Client;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -9,7 +9,7 @@ import Events.*;
 import Message.ChordInternalMessage;
 import Message.Message;
 import Message.UserMessage;
-import utils.observer.*;
+import Utils.observer.*;
 
 public class NodeThread extends Thread implements Subject<NodeEvent> {
 
