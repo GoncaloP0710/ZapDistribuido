@@ -6,6 +6,7 @@ import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
+import java.util.concurrent.locks.ReentrantLock;
 
 import Message.*;
 import Handlers.*;
@@ -13,6 +14,8 @@ import Utils.*;
 import dtos.*;
 
 public class User {
+
+    private static final ReentrantLock lock = new ReentrantLock();
 
     private static UserDTO currentUser;
     private static String user_name;
@@ -69,7 +72,9 @@ public class User {
         while (true) { // TODO: Change this. Now its like tehse for debugging purposes
             interfaceHandler.printMenu();
             int option = Integer.parseInt(interfaceHandler.getInput());
-            switch (option) {
+            lock.lock();
+            try {
+               switch (option) {
                 case 1:
                     System.out.println(node.neighborsStatus());
                     break;
@@ -97,7 +102,9 @@ public class User {
                     interfaceHandler.erro("Opção inválida");
                     break;
             }
-        }
-    }
-    
+        } finally {
+        lock.unlock();
+        }   
+}
+}
 }

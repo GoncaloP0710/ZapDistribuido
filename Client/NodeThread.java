@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.concurrent.locks.ReentrantLock;
 
 import Events.*;
 import Message.ChordInternalMessage;
@@ -13,6 +14,7 @@ import Utils.observer.*;
 
 public class NodeThread extends Thread implements Subject<NodeEvent> {
 
+    private final ReentrantLock lock = new ReentrantLock();
     private Socket socket = null;
     private ObjectInputStream in = null;
     private ObjectOutputStream out = null;
@@ -79,6 +81,8 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
      * @throws ClassNotFoundException 
      */
     public void processCommand(Message messageToProcess) throws ClassNotFoundException, IOException {
+        lock.lock();
+        try {
         switch (messageToProcess.getMsgType()) {
             case EnterNode:
                 System.out.println("EnterNode event to process"); 
@@ -101,6 +105,9 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                 break;
             default:
                 break;
+        }
+        } finally {
+            lock.unlock();
         }
         return;
     }
