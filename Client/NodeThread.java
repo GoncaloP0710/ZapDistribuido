@@ -8,6 +8,7 @@ import java.net.Socket;
 import Events.*;
 import Message.ChordInternalMessage;
 import Message.Message;
+import Message.MessageType;
 import Message.UserMessage;
 import Utils.observer.*;
 
@@ -45,6 +46,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         if (msg != null) {
             try {
                 out.writeObject(msg);
+                System.out.println("Message sent: " + msg.toString());
                 out.writeObject("End Connection");
                 endThread();
             } catch (IOException e) {
@@ -53,8 +55,8 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         } else {
             try {
                 Message messageToProcess = (Message) in.readObject();
-                NodeEvent event = processCommand(messageToProcess);
-                emitEvent(event);
+                System.out.println("Message received: " + messageToProcess.toString());
+                processCommand(messageToProcess);
                 String commandToProcess = (String) in.readObject(); // "End Connection"
                 endThread();
             } catch (ClassNotFoundException | IOException e) {
@@ -79,21 +81,32 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
      * @throws IOException 
      * @throws ClassNotFoundException 
      */
-    public NodeEvent processCommand(Message messageToProcess) throws ClassNotFoundException, IOException {
+    public void processCommand(Message messageToProcess) throws ClassNotFoundException, IOException {
+        MessageType msgT = messageToProcess.getMsgType();
         switch (messageToProcess.getMsgType()) {
             case EnterNode:
+                System.out.println("EnterNode event to process"); 
                 emitEvent(new EnterNodeEvent((ChordInternalMessage) messageToProcess));
+                break;
             case UpdateNeighbors:
+                System.out.println("UpdateNeighbors event to process");
                 emitEvent(new UpdateNeighboringNodesEvent((ChordInternalMessage) messageToProcess));
+                break;
             case UpdateFingerTable:
+                System.out.println("UpdateFingerTable event to process");
                 emitEvent(new UpdateNodeFingerTableEvent((ChordInternalMessage) messageToProcess));
+                break;
             case broadcastUpdateFingerTable:
+                System.out.println("BroadcastUpdateFingerTable event to process");
                 emitEvent(new BroadcastUpdateFingerTableEvent((ChordInternalMessage) messageToProcess));
+                break;
             case SendMsg:
                 emitEvent(new NodeSendMessageEvent((UserMessage) messageToProcess));
+                break;
             default:
-                return null;
+                break;
         }
+        return;
     }
 
     @Override

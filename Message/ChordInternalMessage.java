@@ -91,4 +91,18 @@ public class ChordInternalMessage extends Message {
         return this.finishedBroadcasting;
     }
 
+    @Override
+    public String toString() {
+        return "ChordInternalMessage{" +
+                "nextNode=" + nextNode +
+                ", previousNode=" + previousNode +
+                ", nodeToEnter=" + nodeToEnter +
+                ", nodeToUpdate=" + nodeToUpdate +
+                ", counter=" + counter +
+                ", fingerTable=" + fingerTable +
+                ", initializer=" + initializer +
+                ", finishedBroadcasting=" + finishedBroadcasting +
+                '}';
+    }
+
 }

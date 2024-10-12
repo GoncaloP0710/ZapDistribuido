@@ -26,6 +26,9 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
         isDefaultNode = userService.getCurrentNode().checkDefaultNode(ipDefault, portDefault);
         currentNodeDTO = userService.getCurrentNodeDTO();
         currentNode = userService.getCurrentNode();
+
+        System.out.println("Starting event handler...");
+        System.out.println("nodeDTO: " + currentNodeDTO.toString());
     }
 
     public synchronized void updateNeighbors(UpdateNeighboringNodesEvent event) {
@@ -42,7 +45,7 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
         NodeDTO nodeToEnterDTO = event.getToEnter();
         NodeDTO nodeWithHashDTO = userService.getNodeWithHash(hash);
 
-        if (nodeWithHashDTO == null  && isDefaultNode && (currentNode.getFingerTable() == null)) { // network is empty and the current node is the default node
+        if (nodeWithHashDTO == null  && isDefaultNode && (currentNode.getFingerTable().size()==0)) { // network is empty and the current node is the default node
             // Update the default node (next and prev are now the new node)
             userService.getCurrentNode().setNextNode(event.getToEnter());
             userService.getCurrentNode().setPreviousNode(event.getToEnter());
@@ -53,7 +56,10 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
             
             // Update the finger tables
             ChordInternalMessage messageFT = new ChordInternalMessage(MessageType.UpdateFingerTable, currentNodeDTO, 0);
+            System.out.println(messageFT.toString());
             userService.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), messageFT);
+
+            // TODO: update all the finger tables
 
         } else if (nodeWithHashDTO == null) { // target node (Prev to the new Node) is the current node
             // Update the neighbors
@@ -110,9 +116,10 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
             message.addNodeToFingerTable(currentNodeDTO);
 
             // Skip the next counters if 2^counter is lower than the distance between this and the next node to try
-            while (Math.pow(2, counter) <= distance) 
+            while (Math.pow(2, counter) <= distance) {
                 counter++;
                 message.incCounter();
+            }
         }
 
         NodeDTO nextNode = currentNode.getNextNode();

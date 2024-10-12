@@ -45,4 +45,23 @@ public class NodeDTO implements Serializable {
         return this.username;
     }
     
+    @Override
+    public String toString() {
+        return "Node[" +
+                "ip = " + ip + ", " +
+                "port = " + port + ", " +
+                "username = " + username + ']';
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof NodeDTO)) {
+            return false;
+        }
+        NodeDTO node = (NodeDTO) obj;
+        return node.getIp().equals(ip) && node.getPort() == port && node.getUsername().equals(username);
+    }
 }

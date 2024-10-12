@@ -18,6 +18,7 @@ public class Node {
     private BigInteger hash; // Hash of the ip and port to identify the node order
 
     public Node(String name, String ip, int port) throws NoSuchAlgorithmException {
+        System.out.println("Creating node...");
         this.fingerTable = new ArrayList<>();
         this.ip = ip;
         this.port = port;

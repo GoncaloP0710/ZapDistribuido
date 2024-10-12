@@ -4,7 +4,11 @@ import java.util.Scanner;
 
 public class InterfaceHandler {
 
-    public InterfaceHandler(){}
+    private Scanner scanner;
+
+    public InterfaceHandler() {
+        this.scanner = new Scanner(System.in);
+    }
 
     //Funções de output
 
@@ -20,6 +24,13 @@ public class InterfaceHandler {
 
     public String getPassword(){
         System.out.print("Insira a sua password: ");
+        String ret = getInput();
+        System.out.println("");
+        return ret;
+    }
+
+    public String getPort(){
+        System.out.print("Insira port: ");
         String ret = getInput();
         System.out.println("");
         return ret;
@@ -50,11 +61,13 @@ public class InterfaceHandler {
 
     //Funções de input
 
-    public String getInput(){
-        Scanner sc = new Scanner(System.in);
-        String s = sc.nextLine();
-        sc.close();
-        return s;
+    public String getInput() {
+        if (scanner.hasNextLine()) {
+            return scanner.nextLine();
+        } else {
+            System.err.println("No input available");
+            return "";
+        }
     }
 
     public String[] getMultipleInput(int n){

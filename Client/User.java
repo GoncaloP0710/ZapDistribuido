@@ -39,29 +39,31 @@ public class User {
 
     public static void main(String[] args) throws Exception {
 
+        System.out.println("Starting User...");
+
         interfaceHandler = new InterfaceHandler();
         String name = interfaceHandler.startUp();
         String password = interfaceHandler.getPassword();
 
         // Load keystore and truststore as well as verify password
-        boolean correctPassword = false;
-        keyHandler = new KeyHandler(password, name);
-        KeyStore keyStore = keyHandler.loadKeyStore();
-        if (keyStore != null)
-            correctPassword = true;
-        while (!correctPassword) {
-            password = interfaceHandler.getPassword();
-            keyHandler = new KeyHandler(password, name);
-            keyStore = keyHandler.loadKeyStore();
-            if (keyStore != null)
-                correctPassword = true;
-        }
+        // boolean correctPassword = false;
+        // keyHandler = new KeyHandler(password, name);
+        // KeyStore keyStore = keyHandler.loadKeyStore();
+        // if (keyStore != null)
+        //     correctPassword = true;
+        // while (!correctPassword) {
+        //     password = interfaceHandler.getPassword();
+        //     keyHandler = new KeyHandler(password, name);
+        //     keyStore = keyHandler.loadKeyStore();
+        //     if (keyStore != null)
+        //         correctPassword = true;
+        // }
 
-        String serverIp = args[0];
-        int serverPort = Integer.parseInt(args[1]);
+        String serverIp = "localhost";
+        int serverPort = Integer.parseInt(interfaceHandler.getPort());
 
         node = new Node(name, serverIp, serverPort);
-        userService = new UserService(node, keystoreFile, password, truststoreFile);
+        userService = new UserService(name, node, "keystoreFile", password, "truststoreFile");
 
         // Main loop
         while (true) { // TODO: Change this. Now its like tehse for debugging purposes
