@@ -30,19 +30,14 @@ public class EventHandler {
         isDefaultNode = userService.getCurrentNode().checkDefaultNode(ipDefault, portDefault);
         currentNodeDTO = userService.getCurrentNodeDTO();
         currentNode = userService.getCurrentNode();
-
-        System.out.println("Starting event handler...");
-        System.out.println("nodeDTO: " + currentNodeDTO.toString());
     }
 
     public synchronized void updateNeighbors(UpdateNeighboringNodesEvent event) {
         if (event.getNext() != null) {
             currentNode.setNextNode(event.getNext());
-            System.out.println("Next node: " + event.getNext().toString());
         }
         if (event.getPrevious() != null) {
             currentNode.setPreviousNode(event.getPrevious());
-            System.out.println("Previous node: " + event.getPrevious().toString());
         }
     }
 

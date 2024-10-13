@@ -35,7 +35,6 @@ public class UserService implements UserServiceInterface {
     String truststoreFile;
     // String truststorePassword;
 
-    private String username; // For print purposes, easier debugging
     private UserDTO currentUser;
     private Node currentNode;
     private NodeDTO currentNodeDTO;
@@ -48,7 +47,6 @@ public class UserService implements UserServiceInterface {
 
     public synchronized void initializeCurrentNodeDTO(String username, Node currentNode) {
         this.currentNodeDTO = new NodeDTO(username, currentNode.getIp(), currentNode.getPort(), currentNode.getHashNumber());
-        System.out.println("currentNodeDTO: " + currentNodeDTO.toString());
     }
 
     public UserService(String username, Node currentNode, String keystoreFile, String keystorePassword, String truststoreFile) throws IOException {
@@ -65,7 +63,6 @@ public class UserService implements UserServiceInterface {
 
         // Check for default node
         if (ipDefault.equals(currentNode.getIp()) && portDefault == currentNode.getPort()) {
-            System.out.println("Default node");
             currentNode.setNextNode(currentNodeDTO);
             currentNode.setPreviousNode(currentNodeDTO);
         } else {
@@ -163,7 +160,6 @@ public class UserService implements UserServiceInterface {
     
             if (waitForResponse) {
                 newClientThread.join(); // Wait for the thread to finish
-                System.out.println("thread finished!!!!!!!!!!!!!!");
             }
     
         } catch (Exception e) {

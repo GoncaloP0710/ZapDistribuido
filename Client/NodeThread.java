@@ -51,7 +51,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     private void sendMsg() {
         try {
             out.writeObject(msg);
-            System.out.println("Message sent: " + msg.toString());
 
             switch (msg.getMsgType()) {
                 case UpdateNeighbors:
@@ -72,7 +71,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     private void reciveMsg() {
         try {
             Message messageToProcess = (Message) in.readObject();
-            System.out.println("Message received: " + messageToProcess.toString());
             processCommand(messageToProcess);
 
             switch (messageToProcess.getMsgType()) {
@@ -80,7 +78,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                     out.writeObject("Neighbors updated");
                     break;
                 case UpdateFingerTable:
-                    out.writeObject("Finger table updated");
+                    out.writeObject("Finger table update msg recived");
                     break;
                 default:
                     break;
@@ -111,19 +109,15 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     public void processCommand(Message messageToProcess) throws ClassNotFoundException, IOException {
         switch (messageToProcess.getMsgType()) {
             case EnterNode:
-                System.out.println("EnterNode event to process"); 
                 emitEvent(new EnterNodeEvent((ChordInternalMessage) messageToProcess));
                 break;
             case UpdateNeighbors:
-                System.out.println("UpdateNeighbors event to process");
                 emitEvent(new UpdateNeighboringNodesEvent((ChordInternalMessage) messageToProcess));
                 break;
             case UpdateFingerTable:
-                System.out.println("UpdateFingerTable event to process");
                 emitEvent(new UpdateNodeFingerTableEvent((ChordInternalMessage) messageToProcess));
                 break;
             case broadcastUpdateFingerTable:
-                System.out.println("BroadcastUpdateFingerTable event to process");
                 emitEvent(new BroadcastUpdateFingerTableEvent((ChordInternalMessage) messageToProcess));
                 break;
             case SendMsg:
