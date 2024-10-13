@@ -81,6 +81,7 @@ public class User {
                 case 4:
                     break;
                 case 5:
+                    userService.exitNode();
                     System.exit(0);
                     break;
                 default:
