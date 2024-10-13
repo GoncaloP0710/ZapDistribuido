@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.concurrent.locks.ReentrantLock;
 
 import Events.*;
 import Message.ChordInternalMessage;
@@ -14,7 +13,6 @@ import Utils.observer.*;
 
 public class NodeThread extends Thread implements Subject<NodeEvent> {
 
-    private final ReentrantLock lock = new ReentrantLock();
     private Socket socket = null;
     private ObjectInputStream in = null;
     private ObjectOutputStream out = null;

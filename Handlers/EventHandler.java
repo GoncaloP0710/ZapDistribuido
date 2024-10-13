@@ -38,9 +38,8 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
             currentNode.setPreviousNode(event.getPrevious());
     }
 
-    public synchronized void enterNode(EnterNodeEvent event) { // TODO: Check the nodeWithHashDTO part
-        // TODO: If default node is the actual target it does not work??????
-        
+    public synchronized void enterNode(EnterNodeEvent event) {
+
         BigInteger hash = event.getToEnterHash();
         NodeDTO nodeToEnterDTO = event.getToEnter();
         NodeDTO nodeWithHashDTO = userService.getNodeWithHash(hash);
@@ -54,12 +53,8 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
             ChordInternalMessage messageN = new ChordInternalMessage(MessageType.UpdateNeighbors, currentNodeDTO, currentNodeDTO); // prev and next are the current node
             userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), messageN);
             
-            // Update the finger tables
-            ChordInternalMessage messageFT = new ChordInternalMessage(MessageType.UpdateFingerTable, currentNodeDTO, 0);
-            System.out.println(messageFT.toString());
-            userService.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), messageFT);
-
-            // TODO: update all the finger tables
+            // Update all the finger tables
+            userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, currentNodeDTO));
 
         } else if (nodeWithHashDTO == null) { // target node (Prev to the new Node) is the current node
             // Update the neighbors
@@ -68,11 +63,9 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
             currentNode.setNextNode(nodeToEnterDTO);// mudar next do current para o novo node
             userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, currentNodeDTO)); // mudar prev do novo node para o current
 
-            // Update the finger tables
-            ChordInternalMessage messageFT = new ChordInternalMessage(MessageType.UpdateFingerTable, currentNodeDTO, 0);
-            System.out.println(messageFT.toString());
-            userService.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), messageFT);
-        
+            // Update all the finger tables
+            userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, currentNodeDTO));
+
         } else { // foward to the next node
             userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage());
         }
@@ -102,7 +95,6 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
         ChordInternalMessage message = (ChordInternalMessage) event.getMessage();
         int counter = event.getCounter();
         NodeDTO nodeToUpdateDTO = event.getNodeToUpdate(); // Node that started the event
-        ArrayList<NodeDTO> fingerTable = userService.getCurrentNode().getFingerTable();
         int ringSize = userService.getRingSize();
     
         if (currentNodeDTO.equals(nodeToUpdateDTO)) {
@@ -116,7 +108,6 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
         BigInteger nodeToUpdateDTOIndex = nodeToUpdateDTO.getHash();
         BigInteger currentNodeDTOIndex = currentNodeDTO.getHash();
         BigInteger ringSizeBig = BigInteger.valueOf(ringSize);
-    
         BigInteger distance = nodeToUpdateDTOIndex.subtract(currentNodeDTOIndex).add(ringSizeBig).mod(ringSizeBig);
         BigInteger twoPowerCounter = BigInteger.valueOf(2).pow(counter);
     
@@ -130,9 +121,8 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
                 message.incCounter();
             }
         }
-
-        while (currentNode.getNextNode() == null) {}
     
+        while (currentNode.getNextNode()==null) {} // Wait for the next node to be set
         NodeDTO nextNode = currentNode.getNextNode();
         userService.startClient(nextNode.getIp(), nextNode.getPort(), message);
     }
@@ -140,7 +130,7 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
     
     public synchronized void broadcastMessage(BroadcastUpdateFingerTableEvent event) {
         ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateFingerTable, currentNodeDTO, 0);
-        updateFingerTable(new UpdateNodeFingerTableEvent(message));
+        updateFingerTable(new UpdateNodeFingerTableEvent(message)); 
         if (!event.getInitializer().equals(currentNodeDTO)) { // foward to the next node
             NodeDTO nextNodeDTO = currentNode.getNextNode();
             userService.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), event.getMessage());

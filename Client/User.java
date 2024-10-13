@@ -6,7 +6,6 @@ import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
-import java.util.concurrent.locks.ReentrantLock;
 
 import Message.*;
 import Handlers.*;
@@ -14,8 +13,6 @@ import Utils.*;
 import dtos.*;
 
 public class User {
-
-    private static final ReentrantLock lock = new ReentrantLock();
 
     private static UserDTO currentUser;
     private static String user_name;
