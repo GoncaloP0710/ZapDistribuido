@@ -9,7 +9,7 @@ import Client.Node;
 import Client.UserService;
 import dtos.*;
 
-public class EventHandler { //TODO: Will there not be problems with the threads? Like the updates havent propagated yet?
+public class EventHandler { 
 
     private UserService userService;
 
@@ -34,8 +34,10 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
     public synchronized void updateNeighbors(UpdateNeighboringNodesEvent event) {
         if (event.getNext() != null)
             currentNode.setNextNode(event.getNext());
+            System.out.println("Next node: " + event.getNext().toString());
         if (event.getPrevious() != null)
             currentNode.setPreviousNode(event.getPrevious());
+            System.out.println("Previous node: " + event.getPrevious().toString());
     }
 
     public synchronized void enterNode(EnterNodeEvent event) {
@@ -44,51 +46,39 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
         NodeDTO nodeToEnterDTO = event.getToEnter();
         NodeDTO nodeWithHashDTO = userService.getNodeWithHash(hash);
 
-        if (nodeWithHashDTO == null  && isDefaultNode && (currentNode.getFingerTable().size()==0)) { // network is empty and the current node is the default node
-            // Update the default node (next and prev are now the new node)
-            userService.getCurrentNode().setNextNode(event.getToEnter());
-            userService.getCurrentNode().setPreviousNode(event.getToEnter());
-
-            // Update the new node
-            ChordInternalMessage messageN = new ChordInternalMessage(MessageType.UpdateNeighbors, currentNodeDTO, currentNodeDTO); // prev and next are the current node
-            userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), messageN);
-            
-            // Update all the finger tables
-            userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, currentNodeDTO));
-
-        } else if (nodeWithHashDTO == null) { // target node (Prev to the new Node) is the current node
+        if (nodeWithHashDTO == null) { // target node (Prev to the new Node) is the current node
             // Update the neighbors
-            userService.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, event.getToEnter())); // mudar prev do next para o novo node
-            userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, currentNode.getNextNode(), (NodeDTO) null)); // mudar next do novo node para o next do current
+            System.out.println("111111111111111111111111111111");
+            userService.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, event.getToEnter()), true); // mudar prev do next para o novo node
+            System.out.println("222222222222222222222222222222");
+            userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, currentNode.getNextNode(), (NodeDTO) null), true); // mudar next do novo node para o next do current
+            System.out.println("333333333333333333333333333333");
             currentNode.setNextNode(nodeToEnterDTO);// mudar next do current para o novo node
-            userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, currentNodeDTO)); // mudar prev do novo node para o current
-
+            userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, currentNodeDTO), true); // mudar prev do novo node para o current
+            System.out.println("444444444444444444444444444444");
             // Update all the finger tables
-            userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, currentNodeDTO));
+            userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, currentNodeDTO, currentNodeDTO), true);
 
-        } else { // foward to the next node
-            userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage());
+        } else { // foward to the closest node in the finger table of the current node to the new node
+            userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false);
         }
     }
 
-    public synchronized void exitNode() { // What about the threads?
+    public synchronized void exitNode() {
         NodeDTO prevNodeDTO = currentNode.getPreviousNode();
         NodeDTO nextNodeDTO = currentNode.getNextNode();
-
-        if (prevNodeDTO == null && nextNodeDTO == null) // the current node is the only node in the network (default node) 
-            return;
         
         // mudar next do prev para o next do current
-        ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateNeighbors, currentNode.getNextNode(), (NodeDTO) null);
-        userService.startClient(currentNode.getPreviousNode().getIp(), currentNode.getPreviousNode().getPort(), message);
+        ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateNeighbors, nextNodeDTO, (NodeDTO) null);
+        userService.startClient(prevNodeDTO.getIp(), prevNodeDTO.getPort(), message, true);
         
         // mudar prev do next para o prev do current
-        ChordInternalMessage message2 = new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, currentNode.getPreviousNode());
-        userService.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), message2);
+        ChordInternalMessage message2 = new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, prevNodeDTO);
+        userService.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), message2, true);
 
         // Update the finger tables
         ChordInternalMessage message3 = new ChordInternalMessage(MessageType.UpdateFingerTable, currentNodeDTO, 0);
-        userService.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), message3);
+        userService.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), message3, true);
     }
 
     public synchronized void updateFingerTable(UpdateNodeFingerTableEvent event) {
@@ -101,7 +91,7 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
             userService.getCurrentNode().setFingerTable(message.getFingerTable());
             return;
         } else if (counter == userService.getHashLength()) { // No more nodes to add
-            userService.startClient(nodeToUpdateDTO.getIp(), nodeToUpdateDTO.getPort(), message); // Send the message back to the node that started the event
+            userService.startClient(nodeToUpdateDTO.getIp(), nodeToUpdateDTO.getPort(), message, true); // Send the message back to the node that started the event
             return;
         }
     
@@ -121,19 +111,21 @@ public class EventHandler { //TODO: Will there not be problems with the threads?
                 message.incCounter();
             }
         }
-    
+        
+        // TODO: Try wait() and notify() to avoid the while loop
         while (currentNode.getNextNode()==null) {} // Wait for the next node to be set
         NodeDTO nextNode = currentNode.getNextNode();
-        userService.startClient(nextNode.getIp(), nextNode.getPort(), message);
+        userService.startClient(nextNode.getIp(), nextNode.getPort(), message, false);
     }
     
-    
     public synchronized void broadcastMessage(BroadcastUpdateFingerTableEvent event) {
-        ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateFingerTable, currentNodeDTO, 0);
+        ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateFingerTable, event.getSenderDto(), 0);
         updateFingerTable(new UpdateNodeFingerTableEvent(message)); 
+
         if (!event.getInitializer().equals(currentNodeDTO)) { // foward to the next node
             NodeDTO nextNodeDTO = currentNode.getNextNode();
-            userService.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), event.getMessage());
+            ((ChordInternalMessage) event.getMessage()).setSenderDto(currentNodeDTO);
+            userService.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), event.getMessage(), false);
         }
     }
 }

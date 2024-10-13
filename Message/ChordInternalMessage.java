@@ -13,6 +13,7 @@ public class ChordInternalMessage extends Message {
     private int counter; // UpdateNodeFingerTableEvent
     private ArrayList<NodeDTO> fingerTable; // UpdateNodeFingerTableEvent
     private NodeDTO initializer; // BroadcastUpdateFingerTableEvent
+    private NodeDTO senderDto; // BroadcastUpdateFingerTableEvent
     private boolean finishedBroadcasting; // BroadcastUpdateFingerTableEvent
 
     // UpdateNeighboringNodesEvent
@@ -45,9 +46,10 @@ public class ChordInternalMessage extends Message {
      * BroadcastUpdateFingerTableEvent
      * @requires finishedBroadcasting == false
      */
-    public ChordInternalMessage(MessageType messageType, Boolean finishedBroadcasting, NodeDTO initializer) {
+    public ChordInternalMessage(MessageType messageType, Boolean finishedBroadcasting, NodeDTO initializer, NodeDTO senderDto) {
         super(messageType);
         this.initializer = initializer;
+        this.senderDto = senderDto;
         this.finishedBroadcasting = finishedBroadcasting;
     }
 
@@ -85,6 +87,14 @@ public class ChordInternalMessage extends Message {
 
     public NodeDTO getInitializer(){
         return this.initializer;
+    }
+
+    public NodeDTO getSenderDto(){
+        return this.senderDto;
+    }
+
+    public void setSenderDto(NodeDTO senderDto){
+        this.senderDto = senderDto;
     }
 
     public boolean getFinishedBroadcasting(){

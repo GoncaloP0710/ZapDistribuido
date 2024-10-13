@@ -1,14 +1,13 @@
 package Client;
 
+import java.awt.TrayIcon.MessageType;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 import Events.*;
-import Message.ChordInternalMessage;
-import Message.Message;
-import Message.UserMessage;
+import Message.*;
 import Utils.observer.*;
 
 public class NodeThread extends Thread implements Subject<NodeEvent> {
@@ -43,22 +42,53 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
      */
     public void run() {
         if (msg != null) {
-            try {
-                out.writeObject(msg);
-                System.out.println("Message sent: " + msg.toString());
-                endThread();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            sendMsg();
         } else {
-            try {
-                Message messageToProcess = (Message) in.readObject();
-                System.out.println("Message received: " + messageToProcess.toString());
-                processCommand(messageToProcess);
-                endThread();
-            } catch (ClassNotFoundException | IOException e) {
-                e.printStackTrace();
+            reciveMsg();
+        }
+    }
+
+    private void sendMsg() {
+        try {
+            out.writeObject(msg);
+            System.out.println("Message sent: " + msg.toString());
+
+            switch (msg.getMsgType()) {
+                case UpdateNeighbors:
+                    System.out.println((String) in.readObject());
+                    break;
+                case UpdateFingerTable:
+                    System.out.println((String) in.readObject());
+                    break;
+                default:
+                    break;
             }
+            endThread();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void reciveMsg() {
+        try {
+            Message messageToProcess = (Message) in.readObject();
+            System.out.println("Message received: " + messageToProcess.toString());
+            processCommand(messageToProcess);
+
+            switch (messageToProcess.getMsgType()) {
+                case UpdateNeighbors:
+                    out.writeObject("Neighbors updated");
+                    break;
+                case UpdateFingerTable:
+                    out.writeObject("Finger table updated");
+                    break;
+                default:
+                    break;
+            }
+
+            endThread();
+        } catch (ClassNotFoundException | IOException e) {
+            e.printStackTrace();
         }
     }
 

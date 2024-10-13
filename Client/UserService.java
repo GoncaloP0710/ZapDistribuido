@@ -70,7 +70,7 @@ public class UserService implements UserServiceInterface {
             currentNode.setPreviousNode(currentNodeDTO);
         } else {
             ChordInternalMessage message = new ChordInternalMessage(MessageType.EnterNode, currentNodeDTO);
-            startClient(ipDefault, portDefault, message);
+            startClient(ipDefault, portDefault, message, false); // TODO: Change to true if needed
         }
         
     }
@@ -153,13 +153,18 @@ public class UserService implements UserServiceInterface {
      * @param port
      * @param command
      */
-    public void startClient(String ip, int port, Message msg) {
+    public void startClient(String ip, int port, Message msg, boolean waitForResponse) {
         try {
             // Create normal socket
             Socket clientSocket = new Socket(ip, port);
     
             NodeThread newClientThread = new NodeThread(clientSocket, msg, this);
             newClientThread.start();
+    
+            if (waitForResponse) {
+                newClientThread.join(); // Wait for the thread to finish
+                System.out.println("thread finished!!!!!!!!!!!!!!");
+            }
     
         } catch (Exception e) {
             System.err.println(e.getMessage());

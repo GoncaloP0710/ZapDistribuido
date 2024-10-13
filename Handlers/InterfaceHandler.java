@@ -18,21 +18,18 @@ public class InterfaceHandler {
         System.out.println("----------------------------------");
         System.out.print("Insira o seu Username: ");
         String ret = getInput();
-        System.out.println("");
         return ret;
     }
 
     public String getPassword(){
         System.out.print("Insira a sua password: ");
         String ret = getInput();
-        System.out.println("");
         return ret;
     }
 
     public String getPort(){
         System.out.print("Insira port: ");
         String ret = getInput();
-        System.out.println("");
         return ret;
     }
 
@@ -46,16 +43,11 @@ public class InterfaceHandler {
 
     //TODO: REFAZER
     public void printMenu() {
-        System.out.println("1 - Enviar mensagem");
-        System.out.println("2 - Ver mensagens");
+        System.out.println("1 - Print neighbors");
+        System.out.println("2 - Print node");
         System.out.println("3 - Ver mensagens de um utilizador");
         System.out.println("4 - Ver utilizadores");
-        System.out.println("5 - Ver utilizadores online");
-        System.out.println("6 - Ver utilizadores offline");
-        System.out.println("7 - Ver utilizadores bloqueados");
-        System.out.println("8 - Bloquear utilizador");
-        System.out.println("9 - Desbloquear utilizador");
-        System.out.println("10 - Sair");
+        System.out.println("5 - Exit");
     }
 
 
