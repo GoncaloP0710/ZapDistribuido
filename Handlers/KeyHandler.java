@@ -67,6 +67,8 @@ public class KeyHandler {
             ks.load(fis, keyStorePassword.toCharArray());
             fis.close();
         }
+
+        this.keystoreFile = new File("/files/"+keyStoreString+".jks"); 
             
         return ks;
     }
