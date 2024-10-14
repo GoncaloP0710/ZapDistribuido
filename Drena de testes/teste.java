@@ -23,8 +23,8 @@ public class teste{
 
 
         String keyStorePassword = "password";
-        String keystoreString = "selfsigned";
-        File keystoreFile = new File("keystore.jks"); 
+        String keystoreString = "pipi";
+        File keystoreFile = new File(keystoreString + ".jks"); 
         KeyStore keyStore = initializeKeyStore(keystoreString, keystoreFile, keyStorePassword);
 
         Certificate cer = (Certificate) keyStore.getCertificate(keystoreString);
@@ -42,7 +42,7 @@ public class teste{
         System.out.println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+ keystoreFile.exists());
         
         if (keystoreFile.exists()) {
-            try (FileInputStream fis = new FileInputStream("keystore.jks")) {
+            try (FileInputStream fis = new FileInputStream(keystoreFile)) {
                 ks.load(fis, keyStorePassword.toCharArray());
             }
         } else {
@@ -61,7 +61,7 @@ public class teste{
         //load keystore
         ks.load(null, keyStorePassword.toCharArray());
 
-        FileOutputStream fos = new FileOutputStream(keystoreString + ".jks");
+        FileOutputStream fos = new FileOutputStream(keystoreFile);
         ks.store(fos, keyStorePassword.toCharArray());
         fos.close();
         ks.load(null);
@@ -76,7 +76,7 @@ public class teste{
         PublicKey publicKey = pair.getPublic();
 
         //certificate
-        String[] args = new String[]{"/bin/bash", "-c",
+        String[] args = new String[]{//"/bin/bash", "-c",
             "keytool", "-genkeypair", "-alias", keystoreString, "-keyalg", "RSA", "-keysize", "2048",
             "-validity", "365", "-keystore", keystoreString + ".jks", "-storepass", keyStorePassword,
             "-dname", "CN=a OU=a O=a L=a ST=a C=a", "-storetype", "JKS" //ainda sussy
@@ -91,13 +91,13 @@ public class teste{
             fis.close();
         }
 
-        ks.setKeyEntry(keystoreString, privKey, keyStorePassword.toCharArray(), new Certificate[]{ks.getCertificate(keystoreString)});
+        // ks.setKeyEntry(keystoreString, privKey, keyStorePassword.toCharArray(), new Certificate[]{ks.getCertificate(keystoreString)});
 
-        // Save the keystore again with the new entry
-        try (FileOutputStream fos2 = new FileOutputStream(keystoreFile)) {
-            ks.store(fos2, keyStorePassword.toCharArray());
-            fos2.close();
-        }
+        // // Save the keystore again with the new entry
+        // try (FileOutputStream fos2 = new FileOutputStream(keystoreFile)) {
+        //     ks.store(fos2, keyStorePassword.toCharArray());
+        //     fos2.close();
+        // }
 
             
         return ks;
