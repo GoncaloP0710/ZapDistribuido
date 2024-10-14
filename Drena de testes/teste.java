@@ -31,7 +31,7 @@ public class teste{
         
         
         System.out.println(cer.toString());
-        PrivateKey privK = (PrivateKey) keyStore.getKey(keystoreString, keystoreString.toCharArray());
+        PrivateKey privK = (PrivateKey) keyStore.getKey(keystoreString, keyStorePassword.toCharArray());
         System.out.println(privK.toString());
         PublicKey pubK = cer.getPublicKey();
         System.out.println(pubK.toString());
