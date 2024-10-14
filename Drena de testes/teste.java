@@ -67,13 +67,13 @@ public class teste{
         ks.load(null);
 
 
-        //keypair create
-        KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
+        // keypair create
+        // KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
 
-        keyPairGen.initialize(2048);
-        KeyPair pair = keyPairGen.generateKeyPair();
-        PrivateKey privKey = pair.getPrivate();
-        PublicKey publicKey = pair.getPublic();
+        // keyPairGen.initialize(2048);
+        // KeyPair pair = keyPairGen.generateKeyPair();
+        // PrivateKey privKey = pair.getPrivate();
+        // PublicKey publicKey = pair.getPublic();
 
         //certificate
         String[] args = new String[]{//"/bin/bash", "-c",

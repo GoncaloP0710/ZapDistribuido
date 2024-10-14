@@ -13,37 +13,61 @@ import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import javax.security.auth.x500.X500Principal;
+import java.util.concurrent.TimeUnit;
 // import sun.security.x509.*; // Internal package for creating self-signed certificates
 
 public class KeyHandler {
 
     private KeyStore keyStore;
     private String keyStorePassword;
+    private String keyStoreString;
     private File keystoreFile;
 
     public KeyHandler(String keyStorePassword, String keystoreString) throws Exception {
         this.keyStorePassword = keyStorePassword;
-        this.keystoreFile = new File("/files/"+keystoreString); 
-        this.keyStore = initializeKeyStore(keystoreString);
-        Certificate cer = (Certificate) keyStore.getCertificate("user");
-        PrivateKey privK = (PrivateKey) keyStore.getKey("user", keystoreString.toCharArray());
-        PublicKey pubK = cer.getPublicKey();
+        this.keystoreFile = new File("/files/"+keystoreString+".jks"); 
+        this.keyStore = initializeKeyStore(); 
 
     }
 
-    private KeyStore initializeKeyStore(String keystoreString) throws Exception {
+    private KeyStore initializeKeyStore() throws Exception {
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
         
         if (keystoreFile.exists()) {
-            try (FileInputStream fis = new FileInputStream(keystoreString)) {
+            try (FileInputStream fis = new FileInputStream(keystoreFile)) {
                 ks.load(fis, keyStorePassword.toCharArray());
             }
         } else {
-            Exception e = new Exception("Keystore file not found");
-            e.printStackTrace();
-            //ks.load(null, keyStorePassword.toCharArray());
+            firstTimeUser(ks);
             
         }
+        return ks;
+    }
+
+    private KeyStore firstTimeUser(KeyStore ks ) throws Exception{
+
+        //load keystore
+        ks.load(null, keyStorePassword.toCharArray());
+
+        FileOutputStream fos = new FileOutputStream(keystoreFile);
+        ks.store(fos, keyStorePassword.toCharArray());
+        fos.close();
+        ks.load(null);
+
+        //certificate
+        String[] args = new String[]{//"/bin/bash", "-c",
+            "keytool", "-genkeypair", "-alias", keyStoreString, "-keyalg", "RSA", "-keysize", "2048",
+            "-validity", "365", "-keystore", keyStoreString + ".jks", "-storepass", keyStorePassword,
+            "-dname", "CN=a OU=a O=a L=a ST=a C=a", "-storetype", "JKS" //ainda sussy
+        };
+        Process proc = new ProcessBuilder(args).start();
+        proc.waitFor(10, TimeUnit.SECONDS);
+          
+        try (FileInputStream fis = new FileInputStream(keystoreFile)) {
+            ks.load(fis, keyStorePassword.toCharArray());
+            fis.close();
+        }
+            
         return ks;
     }
 
