@@ -117,26 +117,7 @@ public class KeyHandler {
     // }
 
     // //this dont work 
-    // // private X509Certificate generateSelfSignedCertificate(String userName, KeyPair keyPair) throws Exception {
-    // //     long validity = 365 * 24 * 60 * 60; // 1 year in seconds
-    // //     Date startDate = new Date();
-    // //     Date endDate = new Date(startDate.getTime() + validity * 1000);
-    // //     X500Name owner = new X500Name("CN=" + userName);
-
-    // //     X509CertInfo certInfo = new X509CertInfo();
-    // //     certInfo.set(X509CertInfo.VALIDITY, new CertificateValidity(startDate, endDate));
-    // //     certInfo.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber((int) (startDate.getTime() / 1000)));
-    // //     certInfo.set(X509CertInfo.SUBJECT, owner);
-    // //     certInfo.set(X509CertInfo.ISSUER, owner);
-    // //     certInfo.set(X509CertInfo.KEY, new sun.security.x509.CertificateX509Key(keyPair.getPublic()));
-    // //     certInfo.set(X509CertInfo.VERSION, new sun.security.x509.CertificateVersion(2));
-    // //     certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(AlgorithmId.get("SHA256withRSA")));
-
-    // //     X509CertImpl certificate = new X509CertImpl(certInfo);
-    // //     certificate.sign(keyPair.getPrivate(), "SHA256withRSA");
-
-    // //     return certificate;
-    // // }
+    
 
 
     // private KeyStore initializeKeyStore() throws Exception {

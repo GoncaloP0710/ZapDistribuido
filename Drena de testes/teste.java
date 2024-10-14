@@ -15,23 +15,25 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.concurrent.TimeUnit;
 
 public class teste{
 
     public static void main(String args[]) throws Exception{
 
 
-        String keyStorePassword = args[0];
-        String keystoreString = args[1];
-        File keystoreFile = new File(keystoreString); 
+        String keyStorePassword = "password";
+        String keystoreString = "selfsigned";
+        File keystoreFile = new File("keystore.jks"); 
         KeyStore keyStore = initializeKeyStore(keystoreString, keystoreFile, keyStorePassword);
 
-        Certificate cer = (Certificate) keyStore.getCertificate("user");
-        PrivateKey privK = (PrivateKey) keyStore.getKey("user", keystoreString.toCharArray());
-        PublicKey pubK = cer.getPublicKey();
-
+        Certificate cer = (Certificate) keyStore.getCertificate(keystoreString);
+        
+        
         System.out.println(cer.toString());
+        PrivateKey privK = (PrivateKey) keyStore.getKey(keystoreString, keystoreString.toCharArray());
         System.out.println(privK.toString());
+        PublicKey pubK = cer.getPublicKey();
         System.out.println(pubK.toString());
     }
 
@@ -40,7 +42,7 @@ public class teste{
         System.out.println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+ keystoreFile.exists());
         
         if (keystoreFile.exists()) {
-            try (FileInputStream fis = new FileInputStream(keystoreString)) {
+            try (FileInputStream fis = new FileInputStream("keystore.jks")) {
                 ks.load(fis, keyStorePassword.toCharArray());
             }
         } else {
@@ -59,7 +61,7 @@ public class teste{
         //load keystore
         ks.load(null, keyStorePassword.toCharArray());
 
-        FileOutputStream fos = new FileOutputStream(keystoreString);
+        FileOutputStream fos = new FileOutputStream(keystoreString + ".jks");
         ks.store(fos, keyStorePassword.toCharArray());
         fos.close();
         ks.load(null);
@@ -74,12 +76,31 @@ public class teste{
         PublicKey publicKey = pair.getPublic();
 
         //certificate
-        
+        String[] args = new String[]{"/bin/bash", "-c",
+            "keytool", "-genkeypair", "-alias", keystoreString, "-keyalg", "RSA", "-keysize", "2048",
+            "-validity", "365", "-keystore", keystoreString + ".jks", "-storepass", keyStorePassword,
+            "-dname", "CN=a OU=a O=a L=a ST=a C=a", "-storetype", "JKS" //ainda sussy
+        };
+        // String[] args = new String[] {"/bin/bash", "-c", "keytool", "-exportcert", "-alias", keystoreString, "-storetype", "JCEKS",
+        // "-keystore", keystoreString+".jceks", "-file",  keystoreString+".cer"};
+        Process proc = new ProcessBuilder(args).start();
+        proc.waitFor(10, TimeUnit.SECONDS);
           
+        try (FileInputStream fis = new FileInputStream(keystoreFile)) {
+            ks.load(fis, keyStorePassword.toCharArray());
+            fis.close();
+        }
 
+        ks.setKeyEntry(keystoreString, privKey, keyStorePassword.toCharArray(), new Certificate[]{ks.getCertificate(keystoreString)});
+
+        // Save the keystore again with the new entry
+        try (FileOutputStream fos2 = new FileOutputStream(keystoreFile)) {
+            ks.store(fos2, keyStorePassword.toCharArray());
+            fos2.close();
+        }
 
             
-        return null;
+        return ks;
     }
     
 }

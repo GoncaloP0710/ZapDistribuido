@@ -68,8 +68,7 @@ public class UserService implements UserServiceInterface {
         } else {
             ChordInternalMessage message = new ChordInternalMessage(MessageType.EnterNode, currentNodeDTO);
             startClient(ipDefault, portDefault, message, false); // TODO: Change to true if needed
-        }
-        
+        }        
     }
 
     public void setNextNode(NodeDTO nextNode) {
