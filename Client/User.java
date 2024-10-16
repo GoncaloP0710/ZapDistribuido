@@ -37,7 +37,7 @@ public class User {
         return user.getUserName().equals(user_name);
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception { // TODO: Change this to call different methods
 
         System.out.println("Starting User...");
 
@@ -46,27 +46,32 @@ public class User {
         String password = interfaceHandler.getPassword();
 
         // Load keystore and truststore as well as verify password
-        // boolean correctPassword = false;
-        // keyHandler = new KeyHandler(password, name);
-        // KeyStore keyStore = keyHandler.loadKeyStore();
-        // if (keyStore != null)
-        //     correctPassword = true;
-        // while (!correctPassword) {
-        //     password = interfaceHandler.getPassword();
-        //     keyHandler = new KeyHandler(password, name);
-        //     keyStore = keyHandler.loadKeyStore();
-        //     if (keyStore != null)
-        //         correctPassword = true;
-        // }
+        boolean correctPassword = false;
+        keyHandler = new KeyHandler(password, name);
+        if (keyHandler.isFirstTimeUser(name)) {
+            keyHandler.firstTimeUser();
+        } else {
+            KeyStore keyStore = keyHandler.loadKeyStore(password);
+            if (keyStore != null)
+                correctPassword = true;
+            while (!correctPassword) {
+                password = interfaceHandler.getPassword();
+                keyStore = keyHandler.loadKeyStore(password);
+                if (keyStore != null)
+                    correctPassword = true;
+            }
+        }
+
+        Certificate cer = keyHandler.getCertificate(name);
 
         String serverIp = "localhost";
         int serverPort = Integer.parseInt(interfaceHandler.getPort());
 
-        node = new Node(name, serverIp, serverPort);
-        userService = new UserService(name, node, "keystoreFile", password, "truststoreFile");
+        node = new Node(name, serverIp, serverPort, cer);
+        userService = new UserService(name, node, "keystoreFile", password, "truststoreFile", cer);
 
         // Main loop
-        while (true) { // TODO: Change this. Now its like tehse for debugging purposes
+        while (true) { // TODO: Change this. Now its like these for debugging purposes
             interfaceHandler.printMenu();
             int option = Integer.parseInt(interfaceHandler.getInput());
                switch (option) {
@@ -77,10 +82,9 @@ public class User {
                     System.out.println(node.toString());
                     break;
                 case 3:
+                    userService.sendMessage(interfaceHandler);
                     break;
                 case 4:
-                    break;
-                case 5:
                     userService.exitNode();
                     System.exit(0);
                     break;

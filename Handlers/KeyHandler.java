@@ -14,6 +14,8 @@ import java.security.cert.X509Certificate;
 import java.util.Date;
 import javax.security.auth.x500.X500Principal;
 import java.util.concurrent.TimeUnit;
+import java.security.cert.Certificate;
+
 // import sun.security.x509.*; // Internal package for creating self-signed certificates
 
 public class KeyHandler {
@@ -30,29 +32,39 @@ public class KeyHandler {
 
     }
 
-    private KeyStore initializeKeyStore() throws Exception {
-        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-        
-        if (keystoreFile.exists()) {
-            try (FileInputStream fis = new FileInputStream(keystoreFile)) {
-                ks.load(fis, keyStorePassword.toCharArray());
+    public Boolean isFirstTimeUser(String userName) {
+        File userFile = new File("/files/" + userName + ".jks");
+        return !userFile.exists();
+    }
+
+    public KeyStore loadKeyStore(String password) throws Exception {
+        KeyStore ks = KeyStore.getInstance("JKS");
+        try (FileInputStream fis = new FileInputStream(keystoreFile)) {
+            ks.load(fis, password.toCharArray());
+        } catch (IOException | NoSuchAlgorithmException | CertificateException e) {
+            if (e.getCause() instanceof UnrecoverableKeyException) {
+                System.err.println("Error initializing KeyStore: Incorrect password");
+                return null;
+            } else {
+                System.err.println("Error initializing KeyStore: " + e.getMessage());
             }
-        } else {
-            firstTimeUser(ks);
-            
+            throw new Exception("Failed to initialize KeyStore", e);
         }
+
         return ks;
     }
 
-    private KeyStore firstTimeUser(KeyStore ks ) throws Exception{
+    public void firstTimeUser() throws Exception{
+
+        keyStore = KeyStore.getInstance("JKS");
 
         //load keystore
-        ks.load(null, keyStorePassword.toCharArray());
+        keyStore.load(null, keyStorePassword.toCharArray());
 
         FileOutputStream fos = new FileOutputStream(keystoreFile);
-        ks.store(fos, keyStorePassword.toCharArray());
+        keyStore.store(fos, keyStorePassword.toCharArray());
         fos.close();
-        ks.load(null);
+        keyStore.load(null);
 
         //certificate
         String[] args = new String[]{//"/bin/bash", "-c",
@@ -64,13 +76,11 @@ public class KeyHandler {
         proc.waitFor(10, TimeUnit.SECONDS);
           
         try (FileInputStream fis = new FileInputStream(keystoreFile)) {
-            ks.load(fis, keyStorePassword.toCharArray());
+            keyStore.load(fis, keyStorePassword.toCharArray());
             fis.close();
         }
 
         this.keystoreFile = new File("/files/"+keyStoreString+".jks"); 
-            
-        return ks;
     }
 
     public PublicKey getPublicKey(String alias) throws Exception {
@@ -79,6 +89,10 @@ public class KeyHandler {
 
     public PrivateKey getPrivateKey(String alias, String keyPassword) throws Exception {
         return (PrivateKey) keyStore.getKey(alias, keyPassword.toCharArray());
+    }
+
+    public Certificate getCertificate(String alias) throws Exception {
+        return keyStore.getCertificate(alias);
     }
 
 }

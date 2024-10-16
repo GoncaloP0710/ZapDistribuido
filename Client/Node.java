@@ -1,6 +1,7 @@
 package Client;
 
 import java.util.ArrayList;
+import java.security.cert.Certificate;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.math.BigInteger;
@@ -15,13 +16,16 @@ public class Node {
     
     private String ip;
     private int port;
+    private Certificate cer;
     private BigInteger hash; // Hash of the ip and port to identify the node order
 
-    public Node(String name, String ip, int port) throws NoSuchAlgorithmException {
+    public Node(String name, String ip, int port, Certificate cer) throws NoSuchAlgorithmException {
         System.out.println("Creating node...");
         this.fingerTable = new ArrayList<>();
         this.ip = ip;
         this.port = port;
+        this.cer = cer;
+        
         setHashNumber(calculateHash(name));
     }
 

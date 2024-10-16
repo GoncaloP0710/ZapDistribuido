@@ -45,11 +45,9 @@ public class InterfaceHandler {
     public void printMenu() {
         System.out.println("1 - Print neighbors");
         System.out.println("2 - Print node");
-        System.out.println("3 - Ver mensagens de um utilizador");
-        System.out.println("4 - Ver utilizadores");
+        System.out.println("3 - Send message");
         System.out.println("5 - Exit");
     }
-
 
     //Funções de input
 

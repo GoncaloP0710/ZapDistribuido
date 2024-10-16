@@ -3,8 +3,11 @@ package Client;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.cert.Certificate;
+
 
 import javax.net.ServerSocketFactory;
 import javax.net.SocketFactory;
@@ -18,6 +21,7 @@ import Interface.UserServiceInterface;
 import Message.*;
 import dtos.*;
 import Handlers.EventHandler;
+import Handlers.InterfaceHandler;
 import Utils.*;
 
 /**
@@ -45,17 +49,17 @@ public class UserService implements UserServiceInterface {
     private int hashLength = 160; // Length of the hash in bits (SHA-1)
     private int ringSize = (int) Math.pow(2, hashLength); // Size of the ring (2^160)
 
-    public synchronized void initializeCurrentNodeDTO(String username, Node currentNode) {
-        this.currentNodeDTO = new NodeDTO(username, currentNode.getIp(), currentNode.getPort(), currentNode.getHashNumber());
+    public synchronized void initializeCurrentNodeDTO(String username, Node currentNode, Certificate cer) {
+        this.currentNodeDTO = new NodeDTO(username, currentNode.getIp(), currentNode.getPort(), currentNode.getHashNumber(), cer);
     }
 
-    public UserService(String username, Node currentNode, String keystoreFile, String keystorePassword, String truststoreFile) throws IOException {
+    public UserService(String username, Node currentNode, String keystoreFile, String keystorePassword, String truststoreFile, Certificate cer) throws IOException {
         System.out.println("Starting user service...");
         this.currentNode = currentNode;
         this.keystoreFile = keystoreFile;
         this.keystorePassword = keystorePassword;
         this.truststoreFile = truststoreFile;
-        initializeCurrentNodeDTO(username, currentNode);
+        initializeCurrentNodeDTO(username, currentNode, cer);
         this.eventHandler = new EventHandler(this);
 
         startServerInThread(currentNode);
@@ -119,13 +123,23 @@ public class UserService implements UserServiceInterface {
 
     public void startServer(Node node) throws IOException {
 
+        System.setProperty("javax.net.ssl.keyStore", keystoreFile);
+        System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
+        System.setProperty("javax.net.ssl.keyStoreType", "JCEKS");
+
         this.currentNode = node;
         String ip = node.getIp();
         int port = node.getPort();
 
         System.out.println("Starting server on " + ip + ":" + port);
-        // Use normal ServerSocket instead of SSLServerSocket
-        this.serverSocket = new ServerSocket(port);
+
+        // Get an SSLSocketFactory from the SSLContext
+        ServerSocketFactory factory = SSLServerSocketFactory.getDefault();
+        this.serverSocket = (SSLServerSocket) factory.createServerSocket(port);
+
+        // TODO: Check if this works
+        // Bind the server socket to the specified IP address and port
+        this.serverSocket.bind(new InetSocketAddress(ip, port));
 
         while (true) {
             Socket clientSocket = null; // other node sockets
@@ -150,11 +164,21 @@ public class UserService implements UserServiceInterface {
      * @param command
      */
     public void startClient(String ip, int port, Message msg, boolean waitForResponse) {
+        
+        System.setProperty("javax.net.ssl.keyStore", keystoreFile);
+        System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
+        System.setProperty("javax.net.ssl.keyStoreType", "JCEKS");
+
+        System.setProperty("javax.net.ssl.trustStore", truststoreFile);
+        System.setProperty("javax.net.ssl.trustStorePassword", keystorePassword);
+        System.setProperty("javax.net.ssl.trustStoreType", "JCEKS");
+        
         try {
-            // Create normal socket
-            Socket clientSocket = new Socket(ip, port);
-    
-            NodeThread newClientThread = new NodeThread(clientSocket, msg, this);
+            // Create SSL socket
+            SocketFactory factory = SSLSocketFactory.getDefault();
+            SSLSocket sslClientSocket = (SSLSocket) factory.createSocket(ip, port);
+
+            NodeThread newClientThread = new NodeThread(sslClientSocket, msg, this);
             newClientThread.start();
     
             if (waitForResponse) {
@@ -204,6 +228,13 @@ public class UserService implements UserServiceInterface {
      */
     public void exitNode() {
         eventHandler.exitNode();
+    }
+
+    public void sendMessage(InterfaceHandler interfaceHandler) {
+        System.out.println("Select the user you want to send a message to: ");
+        String reciver = interfaceHandler.getInput();
+        System.out.println("Write the message: ");
+        String message = interfaceHandler.getInput();
     }
 
     @Override

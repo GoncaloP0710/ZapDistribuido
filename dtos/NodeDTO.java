@@ -2,18 +2,21 @@ package dtos;
 
 import java.io.Serializable;
 import java.math.BigInteger;
+import java.security.cert.Certificate;
 
 public class NodeDTO implements Serializable {
 
     private String username;
     private String ip;
     private int port;
+    private Certificate cer;
     private BigInteger hash;
 
-    public NodeDTO(String username, String ip, int port, BigInteger hash) {
+    public NodeDTO(String username, String ip, int port, BigInteger hash, Certificate cer) {
         this.username = username;
         this.ip = ip;
         this.port = port;
+        this.cer = cer;
         this.hash = hash;
     }
 

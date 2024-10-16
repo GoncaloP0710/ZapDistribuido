@@ -8,7 +8,6 @@ import dtos.UserDTO;
 public class UserMessage extends Message {
 
     private byte[] message;
-    private MessageStatus msgStatus;
     private LocalDateTime time;
     private UserDTO senderDTO;
     private BigInteger reciverHash;
@@ -18,7 +17,6 @@ public class UserMessage extends Message {
         super(messageType);
         this.reciverHash = reciverHash;
         this.senderDTO = senderDTO;
-        this.msgStatus = MessageStatus.SENDING;
         this.time = LocalDateTime.now();
         this.message = message;
     }
