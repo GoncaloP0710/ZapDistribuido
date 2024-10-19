@@ -99,7 +99,7 @@ public class Node {
      * @return
      * @throws NoSuchAlgorithmException
      */
-    private BigInteger calculateHash(String name) throws NoSuchAlgorithmException {
+    public BigInteger calculateHash(String name) throws NoSuchAlgorithmException {
         // Instead of the ip and port we use name to be easier to find the user in the ring
         MessageDigest md = MessageDigest.getInstance("SHA-1");
         byte[] hashBytes = md.digest(name.getBytes());

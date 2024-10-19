@@ -3,6 +3,7 @@ package dtos;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.cert.Certificate;
+import java.security.PublicKey;
 
 public class NodeDTO implements Serializable {
 
@@ -47,6 +48,10 @@ public class NodeDTO implements Serializable {
     public String getUsername() {
         return this.username;
     }
+
+    public PublicKey getPubK() {
+        return this.cer.getPublicKey();
+    } 
     
     @Override
     public String toString() {

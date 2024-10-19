@@ -6,6 +6,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 
 
@@ -20,6 +21,7 @@ import Events.*;
 import Interface.UserServiceInterface;
 import Message.*;
 import dtos.*;
+import Handlers.EncryptionHandler;
 import Handlers.EventHandler;
 import Handlers.InterfaceHandler;
 import Utils.*;
@@ -45,6 +47,7 @@ public class UserService implements UserServiceInterface {
 
     private ServerSocket serverSocket;
     private EventHandler eventHandler;
+    private EncryptionHandler encryptionHandler;
 
     private int hashLength = 160; // Length of the hash in bits (SHA-1)
     private int ringSize = (int) Math.pow(2, hashLength); // Size of the ring (2^160)
@@ -61,6 +64,7 @@ public class UserService implements UserServiceInterface {
         this.truststoreFile = truststoreFile;
         initializeCurrentNodeDTO(username, currentNode, cer);
         this.eventHandler = new EventHandler(this);
+        this.encryptionHandler = new EncryptionHandler();
 
         startServerInThread(currentNode);
         System.out.println("Server started in a separate thread. Continuing with main flow...");
@@ -230,18 +234,25 @@ public class UserService implements UserServiceInterface {
         eventHandler.exitNode();
     }
 
-    public void sendMessage(InterfaceHandler interfaceHandler) {
+    public void sendMessage(InterfaceHandler interfaceHandler) throws NoSuchAlgorithmException {
         System.out.println("Select the user you want to send a message to: ");
         String reciver = interfaceHandler.getInput();
         System.out.println("Write the message: ");
         String message = interfaceHandler.getInput();
-
+        
         NodeDTO reciverNode = currentNode.belongsToFingerTable(reciver);
-        BigInteger reciverHash = currentNode.
-        UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentUser, reciver, message.getBytes());
+        BigInteger reciverHash = currentNode.calculateHash(reciver);
+
+        // TODO: Add a param to be the pubKey
+        UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentUser, reciverHash, null);
+        
         if (reciverNode != null) {
-            
+            Byte[] messageEncrypBytes = encryptionHandler.encryptWithPubK(message, reciverNode.getPubK());
+            userMessage.setMessage = 
+            startClient(reciverNode.getIp(), reciverNode.getPort(), userMessage, false);
         } else {
+            GetPubKeyEvent getPubKey = 
+            startClient(); // Create new event (getPubKey)
 
         }
     }
