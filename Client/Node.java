@@ -153,4 +153,13 @@ public class Node {
     public String neighborsStatus() {
         return previousNode.getUsername() + " - " + " current node " + " - " + nextNode.getUsername();
     }
+
+    public NodeDTO belongsToFingerTable(String name) {
+        for (NodeDTO node : fingerTable) {
+            if (node.getUsername().equals(name)) {
+                return node;
+            }
+        }
+        return null;
+    }
 }

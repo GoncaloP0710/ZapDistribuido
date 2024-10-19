@@ -235,6 +235,15 @@ public class UserService implements UserServiceInterface {
         String reciver = interfaceHandler.getInput();
         System.out.println("Write the message: ");
         String message = interfaceHandler.getInput();
+
+        NodeDTO reciverNode = currentNode.belongsToFingerTable(reciver);
+        BigInteger reciverHash = currentNode.
+        UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentUser, reciver, message.getBytes());
+        if (reciverNode != null) {
+            
+        } else {
+
+        }
     }
 
     @Override
