@@ -25,20 +25,18 @@ public class EncryptionHandler{ //Assume que as chaves já existem
     public EncryptionHandler(){}
 
 
-    public byte[] encryptWithPrivK(UserMessage message, PrivateKey chave) //encripta com chave privada do emissor
+    public byte[] encryptWithPrivK(byte[] data, PrivateKey chave) //encripta com chave privada do emissor
     throws  IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
         
-        byte[] data = message.getMessage();
         Cipher c = Cipher.getInstance("RSA");
 		c.init(Cipher.ENCRYPT_MODE, chave);
 
         return c.doFinal(data);
     }
 
-    public byte[] encryptWithPubK(UserMessage message, PublicKey chave) //encripta com a chave publica do recetor
+    public byte[] encryptWithPubK(byte[] data, PublicKey chave) //encripta com a chave publica do recetor
     throws  IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
   
-        byte[] data = message.getMessage();
         Cipher c = Cipher.getInstance("RSA");
         c.init(Cipher.ENCRYPT_MODE, chave);
 

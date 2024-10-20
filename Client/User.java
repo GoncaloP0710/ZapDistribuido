@@ -68,7 +68,8 @@ public class User {
         int serverPort = Integer.parseInt(interfaceHandler.getPort());
 
         node = new Node(name, serverIp, serverPort, cer);
-        userService = new UserService(name, node, "keystoreFile", password, "truststoreFile", cer);
+        // TODO: Change this to the correct truststore and keystore files - Maybe insted just pass the keyHandler and have tow funcs that reutn those names
+        userService = new UserService(name, node, keyHandler);
 
         // Main loop
         while (true) { // TODO: Change this. Now its like these for debugging purposes

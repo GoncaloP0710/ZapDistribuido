@@ -8,7 +8,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
-
+import java.security.PublicKey;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.net.ServerSocketFactory;
 import javax.net.SocketFactory;
@@ -24,6 +26,7 @@ import dtos.*;
 import Handlers.EncryptionHandler;
 import Handlers.EventHandler;
 import Handlers.InterfaceHandler;
+import Handlers.KeyHandler;
 import Utils.*;
 
 /**
@@ -36,6 +39,7 @@ public class UserService implements UserServiceInterface {
     private int portDefault = 8080;
     // ----------------------------------------------------------
 
+    KeyHandler keyHandler;
     String keystoreFile;
     String keystorePassword;
     String truststoreFile;
@@ -44,6 +48,9 @@ public class UserService implements UserServiceInterface {
     private UserDTO currentUser;
     private Node currentNode;
     private NodeDTO currentNodeDTO;
+
+    private final Lock nodeSendMessageLock = new ReentrantLock();
+    private PublicKey publicKeyReciver;
 
     private ServerSocket serverSocket;
     private EventHandler eventHandler;
@@ -56,13 +63,14 @@ public class UserService implements UserServiceInterface {
         this.currentNodeDTO = new NodeDTO(username, currentNode.getIp(), currentNode.getPort(), currentNode.getHashNumber(), cer);
     }
 
-    public UserService(String username, Node currentNode, String keystoreFile, String keystorePassword, String truststoreFile, Certificate cer) throws IOException {
+    public UserService(String username, Node currentNode, KeyHandler keyHandler) throws Exception {
         System.out.println("Starting user service...");
         this.currentNode = currentNode;
-        this.keystoreFile = keystoreFile;
-        this.keystorePassword = keystorePassword;
-        this.truststoreFile = truststoreFile;
-        initializeCurrentNodeDTO(username, currentNode, cer);
+        this.keyHandler = keyHandler;
+        this.keystoreFile = keyHandler;
+        this.keystorePassword = keyHandler;
+        this.truststoreFile = keyHandler;
+        initializeCurrentNodeDTO(username, currentNode, keyHandler.getCertificate(username));
         this.eventHandler = new EventHandler(this);
         this.encryptionHandler = new EncryptionHandler();
 
@@ -81,6 +89,10 @@ public class UserService implements UserServiceInterface {
 
     public void setNextNode(NodeDTO nextNode) {
         currentNode.setNextNode(nextNode);
+    }
+
+    public void setPubKeyReciver(PublicKey pubK) {
+        this.publicKeyReciver = pubK;
     }
 
     public String getIpDefault() {
@@ -235,25 +247,27 @@ public class UserService implements UserServiceInterface {
     }
 
     public void sendMessage(InterfaceHandler interfaceHandler) throws NoSuchAlgorithmException {
-        System.out.println("Select the user you want to send a message to: ");
-        String reciver = interfaceHandler.getInput();
-        System.out.println("Write the message: ");
-        String message = interfaceHandler.getInput();
-        
-        NodeDTO reciverNode = currentNode.belongsToFingerTable(reciver);
-        BigInteger reciverHash = currentNode.calculateHash(reciver);
-
-        // TODO: Add a param to be the pubKey
-        UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentUser, reciverHash, null);
-        
-        if (reciverNode != null) {
-            Byte[] messageEncrypBytes = encryptionHandler.encryptWithPubK(message, reciverNode.getPubK());
-            userMessage.setMessage = 
-            startClient(reciverNode.getIp(), reciverNode.getPort(), userMessage, false);
-        } else {
-            GetPubKeyEvent getPubKey = 
-            startClient(); // Create new event (getPubKey)
-
+        nodeSendMessageLock.lock();
+        try {
+            System.out.println("Select the user you want to send a message to: ");
+            String reciver = interfaceHandler.getInput();
+            System.out.println("Write the message: ");
+            byte[] message = interfaceHandler.getInput().getBytes();
+            byte[] messageEncrypSender = encryptionHandler.encryptWithPubK(message, keyHandler.getPrivateKey());
+            
+            NodeDTO reciverNode = currentNode.belongsToFingerTable(reciver);
+            BigInteger reciverHash = currentNode.calculateHash(reciver);
+            UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentUser, reciverHash, messageEncrypSender, null);
+            
+            if (reciverNode != null) { // Send directly to the reciver
+                byte[] messageEncrypReciver = encryptionHandler.encryptWithPubK(message, reciverNode.getPubK());
+                userMessage.setMessageEncrypreceiver(messageEncrypReciver);
+                startClient(reciverNode.getIp(), reciverNode.getPort(), userMessage, false);
+            } else { // Get the public key of the reciver and then send to the closest node
+                
+            }
+        } finally {
+            nodeSendMessageLock.unlock();
         }
     }
 
@@ -268,7 +282,7 @@ public class UserService implements UserServiceInterface {
         } else if (e instanceof BroadcastUpdateFingerTableEvent) {
             eventHandler.broadcastMessage(((BroadcastUpdateFingerTableEvent) e));
         } else if (e instanceof NodeSendMessageEvent) {
-            // TODO: Send message to the node
+            eventHandler.sendUserMessage(((NodeSendMessageEvent) e));
         } else {
             throw new UnsupportedOperationException("Unhandled event type");
         }

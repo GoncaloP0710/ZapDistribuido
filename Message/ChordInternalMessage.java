@@ -1,6 +1,8 @@
 package Message;
 
 import java.util.ArrayList;
+import java.security.PublicKey;
+import java.math.BigInteger;
 
 import dtos.NodeDTO;
 
@@ -12,9 +14,11 @@ public class ChordInternalMessage extends Message {
     private NodeDTO nodeToUpdate; // UpdateNodeFingerTableEvent
     private int counter; // UpdateNodeFingerTableEvent
     private ArrayList<NodeDTO> fingerTable; // UpdateNodeFingerTableEvent
-    private NodeDTO initializer; // BroadcastUpdateFingerTableEvent
+    private NodeDTO initializer; // BroadcastUpdateFingerTableEvent | RecivePubKeyEvent
     private NodeDTO senderDto; // BroadcastUpdateFingerTableEvent
     private boolean finishedBroadcasting; // BroadcastUpdateFingerTableEvent
+    private PublicKey receiverPubKey; // RecivePubKeyEvent
+    private BigInteger target; // RecivePubKeyEvent
 
     // UpdateNeighboringNodesEvent
     public ChordInternalMessage(MessageType messageType, NodeDTO nextNode, NodeDTO previousNode) {
@@ -51,6 +55,16 @@ public class ChordInternalMessage extends Message {
         this.initializer = initializer;
         this.senderDto = senderDto;
         this.finishedBroadcasting = finishedBroadcasting;
+    }
+
+    /**
+     * RecivePubKeyEvent
+     */
+    public ChordInternalMessage(MessageType messageType, PublicKey receiverPubKey, BigInteger target, NodeDTO initializer) {    
+        super(messageType);
+        this.receiverPubKey = receiverPubKey;
+        this.target = target;
+        this.initializer = initializer;
     }
 
     public NodeDTO getNextNode(){
@@ -99,6 +113,22 @@ public class ChordInternalMessage extends Message {
 
     public boolean getFinishedBroadcasting(){
         return this.finishedBroadcasting;
+    }
+
+    public PublicKey getReceiverPubKey(){
+        return this.receiverPubKey;
+    }
+
+    public BigInteger getTarget(){
+        return this.target;
+    }
+
+    public void setTarget(BigInteger target){
+        this.target = target;
+    }
+
+    public void setReceiverPubKey(PublicKey receiverPubKey){
+        this.receiverPubKey = receiverPubKey;
     }
 
     @Override

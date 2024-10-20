@@ -36,3 +36,9 @@ To work with `.excalidraw` files, you need to install the "Excalidraw" extension
 5. Click the `Install` button.
 
 Once installed, you will be able to open and edit `.excalidraw` files directly within Visual Studio Code.
+
+
+#### Key related files names
+Keystore: (username).jks
+Certificate: (username).cer
+TrustStore: (username)_TrustStore.jks

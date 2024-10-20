@@ -3,6 +3,8 @@ package Handlers;
 import java.math.BigInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 import Events.*;
 import Message.*;
@@ -126,6 +128,23 @@ public class EventHandler {
             NodeDTO nextNodeDTO = currentNode.getNextNode();
             ((ChordInternalMessage) event.getMessage()).setSenderDto(currentNodeDTO);
             userService.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), event.getMessage(), false);
+        }
+    }
+
+    public synchronized void sendUserMessage(NodeSendMessageEvent event) {
+        
+    }
+
+    public synchronized void recivePubKey(RecivePubKeyEvent event) {
+        if (event.getReceiverPubKey() != null && event.getInitializer() == currentNodeDTO) { // Final destination
+            userService.setPubKeyReciver(event.getReceiverPubKey());
+        } else if (event.getReceiverPubKey() != null) { // Send back to the initializer
+            
+        } else if (event.getTarget() == currentNodeDTO.getHash()) { // Send back to the initializer
+            event.getOut().writeObject(new ChordInternalMessage(MessageType.RecivePubKeyEvent, userService.getPubKey(), currentNodeDTO.getHash(), currentNodeDTO));
+        } else { // Send to the target
+            NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getTarget());
+            userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), true);
         }
     }
 }
