@@ -111,52 +111,65 @@ public class KeyHandler {
         //load keystore
         keyStore.load(null, keyStorePassword.toCharArray());
 
+        File filesDir = new File("files");
+        if (!filesDir.exists()) {
+            filesDir.mkdirs();
+        }
 
-        FileOutputStream fos = new FileOutputStream(keyStoreString + ".jks");
-        keyStore.store(fos, keyStorePassword.toCharArray());
-        fos.close();
+         // Create keystore file path
+         String keystoreFilePath = "files/" + keyStoreString + ".jks";
+
+         try (FileOutputStream fos = new FileOutputStream(keystoreFilePath)) {
+            keyStore.store(fos, keyStorePassword.toCharArray());
+            fos.close();
+        }
+
         keyStore.load(null);
-
 
         //create keystore
         String[] args = new String[]{//"/bin/bash", "-c",
             "keytool", "-genkeypair", "-alias", keyStoreString, "-keyalg", "RSA", "-keysize", "2048",
-            "-validity", "365", "-keystore", "/files/" + keyStoreString + ".jks", "-storepass", keyStorePassword,
+            "-validity", "365", "-keystore", keystoreFilePath, "-storepass", keyStorePassword,
             "-dname", "CN=a OU=a O=a L=a ST=a C=a", "-storetype", "JKS" //ainda sussy
         };
         Process proc = new ProcessBuilder(args).start(); 
         proc.waitFor(1, TimeUnit.SECONDS); //precisamos?
           
-        try (FileInputStream fis = new FileInputStream(keyStoreString + ".jks")) {
+        try (FileInputStream fis = new FileInputStream(keystoreFilePath)) {
             keyStore.load(fis, keyStorePassword.toCharArray());
             fis.close();
         }
 
-        this.keystoreFile = new File("/files/"+keyStoreString+".jks"); 
+        this.keystoreFile = new File(keystoreFilePath); 
 
 
 
         //create certificate File
         createCertificate();
+        String certificateFilePath = "files/" + keyStoreString + ".cer";
 
 
         //load trustStore
         trustStore = KeyStore.getInstance("JKS");
         trustStore.load(null, keyStorePassword.toCharArray());
 
-        FileOutputStream fos2 = new FileOutputStream(keyStoreString + "_TrustStore" + ".jks");
-        trustStore.store(fos2, keyStorePassword.toCharArray());
-        fos2.close();
+        String trustStoreFilePath = "files/" + keyStoreString + "_TrustStore" + ".jks";
+
+        try (FileOutputStream fos2 = new FileOutputStream(trustStoreFilePath)) {
+            trustStore.store(fos2, keyStorePassword.toCharArray());
+            fos2.close();
+        }
+        
         trustStore.load(null);
 
         //create truststore File
         String[] argsTrust = new String[]{
-            "keytool", "-import", "-alias", keyStoreString, "-file", "/files/" + keyStoreString + ".cer", 
-            "-storetype", "JKS","-keystore", keyStoreString + "_TrustStore" + ".jks" //ainda sussy
+            "keytool", "-import", "-alias", keyStoreString, "-file", certificateFilePath, 
+            "-storetype", "JKS","-keystore", trustStoreFilePath //ainda sussy
         };
         Process procTrust = new ProcessBuilder(argsTrust).start(); 
         procTrust.waitFor(1, TimeUnit.SECONDS); //precisamos?
-        this.trustStoreFile = new File("/files/"+keyStoreString + "_TrustStore" + ".jks");
+        this.trustStoreFile = new File(trustStoreFilePath);
 
 
         try (FileInputStream fis2 = new FileInputStream(keyStoreString + "_TrustStore" + ".jks")) {
@@ -168,14 +181,15 @@ public class KeyHandler {
     }
 
     public void createCertificate() throws Exception{
+        String certificateFilePath = "files/" + keyStoreString + ".cer";
         String[] argsCert = new String[]{
             "keytool", "-exportcert", "-alias", keyStoreString, "-storetype", "JKS", "-keystore", 
-            keyStoreString + ".jks", "-file", "/files/" + keyStoreString + ".cer" // caminho completo
+            keyStoreString + ".jks", "-file", certificateFilePath // caminho completo
         };
 
         Process procCert = new ProcessBuilder(argsCert).start(); 
         procCert.waitFor(1, TimeUnit.SECONDS); //precisamos?
-        this.certificateFile = new File("/files/"+keyStoreString+".cer");
+        this.certificateFile = new File(certificateFilePath);
     }
 
 
