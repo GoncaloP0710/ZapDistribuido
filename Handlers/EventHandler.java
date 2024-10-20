@@ -31,7 +31,7 @@ public class EventHandler {
     private final Lock enterNodeLock = new ReentrantLock();
 
     // ConcurrentHashMap to store NodeDTOs
-    private ConcurrentHashMap<BigInteger, PublicKey> keyRequests = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<BigInteger, byte[]> messages = new ConcurrentHashMap<>();
 
     public EventHandler(UserService userService) {
         this.userService = userService;
@@ -147,15 +147,25 @@ public class EventHandler {
 
     public void recivePubKey(RecivePubKeyEvent event) throws IOException, ClassNotFoundException {
         if (event.getReceiverPubKey() != null && event.getInitializer() == currentNodeDTO) { // Final destination
-            userService.setPubKeyReciver(event.getReceiverPubKey());
-        } else if (event.getReceiverPubKey() != null) { // Send back to the initializer 
-            event.getIn().readObject();
-            event.getOut().writeObject(currentNodeDTO.getPubK());
+            if (hasMessageWithTarget(event.getTarget())) {
+                byte[] message = messages.get(event.getTarget());
+                messages.remove(event.getTarget());
+                sendUserMessage(new NodeSendMessageEvent(new UserMessage(MessageType.SendMsg, , event.getTarget(), message)));
+            }
+            
         } else if (event.getTarget() == currentNodeDTO.getHash()) { // Send back to the initializer | Arrived at the target
-            event.getOut().writeObject(currentNodeDTO.getPubK());
-        } else { // Send to the target
+            ChordInternalMessage message = (ChordInternalMessage) event.getMessage();
+            message.setReceiverPubKey(currentNodeDTO.getPubK());
+            userService.startClient(event.getInitializer().getIp(), event.getInitializer().getPort(), message, false);
+        
+        } else { // Send to the target (foward to closest node in the finger table)
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getTarget());
-            userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), true);
+            userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false);
         }
+    }
+
+    // Method to check if a message with the same target exists
+    private boolean hasMessageWithTarget(BigInteger target) {
+        return this.messages.containsKey(target);
     }
 }

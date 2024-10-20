@@ -8,21 +8,20 @@ import dtos.UserDTO;
 
 public class UserMessage extends Message {
 
-    private byte[] messageEncrypSender;
-    private byte[] messageEncrypReceiver;
+    private byte[] messageEncryp;
     PublicKey receiverPubKey;
     private LocalDateTime time;
     private UserDTO senderDTO;
     private BigInteger receiverHash;
     private UserDTO receiverDTO; // Only known once the message is received
 
-    public UserMessage(MessageType messageType, UserDTO senderDTO, BigInteger receiverHash, byte[] messageEncrypSender, byte[] messageEncrypReceiver) {
+    public UserMessage(MessageType messageType, UserDTO senderDTO, BigInteger receiverHash, byte[] messageEncryp) {
         super(messageType);
         this.receiverHash = receiverHash;
         this.senderDTO = senderDTO;
         this.time = LocalDateTime.now();
-        this.messageEncrypSender = messageEncrypSender;
-        this.messageEncrypReceiver = messageEncrypReceiver;
+        this.messageEncryp = messageEncryp;
+
     }
 
     public UserDTO getReceiverDTO(){
@@ -33,12 +32,8 @@ public class UserMessage extends Message {
         this.receiverDTO = receiverDTO;
     }
 
-    public byte[] getMessageEncrypSender(){
-        return this.messageEncrypSender;
-    }
-
-    public byte[] getMessageEncrypReceiver(){
-        return this.messageEncrypReceiver;
+    public byte[] getMessageEncryp(){
+        return this.messageEncryp;
     }
 
     public BigInteger getreceiverHash(){
@@ -47,10 +42,6 @@ public class UserMessage extends Message {
 
     public PublicKey getreceiverPubKey(){
         return this.receiverPubKey;
-    }
-
-    public void setMessageEncrypreceiver(byte[] messageEncrypReceiver){
-        this.messageEncrypReceiver = messageEncrypReceiver;
     }
 
     public void setreceiverPubKey(PublicKey receiverPubKey){

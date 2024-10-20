@@ -40,10 +40,11 @@ public class User {
 
 
         // Load keystore and truststore as well as verify password
+        KeyHandler keyHandler = null;
         boolean correctPassword = false;
         while (!correctPassword) {
             try {
-                KeyHandler keyHandler = KeyHandler.getInstance(password, name);
+                keyHandler = KeyHandler.getInstance(password, name);
                 correctPassword = true;
             } catch (Exception e) {
                 interfaceHandler.erro("Username ou Password inválido");
