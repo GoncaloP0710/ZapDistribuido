@@ -1,17 +1,20 @@
 package Client;
 
 import java.io.IOException;
+import java.io.File;
 import java.math.BigInteger;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
+import java.security.InvalidKeyException;
 import java.security.PublicKey;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.net.ServerSocketFactory;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLServerSocket;
@@ -40,9 +43,9 @@ public class UserService implements UserServiceInterface {
     // ----------------------------------------------------------
 
     KeyHandler keyHandler;
-    String keystoreFile;
+    File keystoreFile;
     String keystorePassword;
-    String truststoreFile;
+    File truststoreFile;
     // String truststorePassword;
 
     private UserDTO currentUser;
@@ -67,9 +70,9 @@ public class UserService implements UserServiceInterface {
         System.out.println("Starting user service...");
         this.currentNode = currentNode;
         this.keyHandler = keyHandler;
-        this.keystoreFile = keyHandler;
-        this.keystorePassword = keyHandler;
-        this.truststoreFile = keyHandler;
+        this.keystoreFile = keyHandler.getKeystoreFile();
+        this.keystorePassword = keyHandler.getKeyStorePassword();
+        this.truststoreFile = keyHandler.getTrustStoreFile();
         initializeCurrentNodeDTO(username, currentNode, keyHandler.getCertificate(username));
         this.eventHandler = new EventHandler(this);
         this.encryptionHandler = new EncryptionHandler();
@@ -139,7 +142,7 @@ public class UserService implements UserServiceInterface {
 
     public void startServer(Node node) throws IOException {
 
-        System.setProperty("javax.net.ssl.keyStore", keystoreFile);
+        System.setProperty("javax.net.ssl.keyStore", keystoreFile.toString());
         System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
         System.setProperty("javax.net.ssl.keyStoreType", "JCEKS");
 
@@ -181,11 +184,11 @@ public class UserService implements UserServiceInterface {
      */
     public void startClient(String ip, int port, Message msg, boolean waitForResponse) {
         
-        System.setProperty("javax.net.ssl.keyStore", keystoreFile);
+        System.setProperty("javax.net.ssl.keyStore", keystoreFile.toString()); // ????????????? deixa assim dps logo se ve
         System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
         System.setProperty("javax.net.ssl.keyStoreType", "JCEKS");
 
-        System.setProperty("javax.net.ssl.trustStore", truststoreFile);
+        System.setProperty("javax.net.ssl.trustStore", truststoreFile.toString());
         System.setProperty("javax.net.ssl.trustStorePassword", keystorePassword);
         System.setProperty("javax.net.ssl.trustStoreType", "JCEKS");
         
@@ -246,14 +249,14 @@ public class UserService implements UserServiceInterface {
         eventHandler.exitNode();
     }
 
-    public void sendMessage(InterfaceHandler interfaceHandler) throws NoSuchAlgorithmException {
+    public void sendMessage(InterfaceHandler interfaceHandler) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException, Exception {
         nodeSendMessageLock.lock();
         try {
             System.out.println("Select the user you want to send a message to: ");
             String reciver = interfaceHandler.getInput();
             System.out.println("Write the message: ");
             byte[] message = interfaceHandler.getInput().getBytes();
-            byte[] messageEncrypSender = encryptionHandler.encryptWithPubK(message, keyHandler.getPrivateKey());
+            byte[] messageEncrypSender = encryptionHandler.encryptWithPubK(message, keyHandler.getPublicKey()); 
             
             NodeDTO reciverNode = currentNode.belongsToFingerTable(reciver);
             BigInteger reciverHash = currentNode.calculateHash(reciver);

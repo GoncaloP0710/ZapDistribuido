@@ -35,14 +35,16 @@ public class KeyHandler {
 
     public void initialize() throws Exception{
         if(!isFirstTimeUser(keyStoreString)){
+            System.out.println("Not first time user");
             loadKeyStore();
             loadTrustStore();
         } else{
+            System.out.println("First time user");
             firstTimeUser();
         }
     }
 
-    public static KeyHandler getInstace(String keyStorePassword, String keystoreString) throws Exception {
+    public static KeyHandler getInstance(String keyStorePassword, String keystoreString) throws Exception {
         if (instance == null) {
             instance = new KeyHandler(keyStorePassword, keystoreString);
         }
@@ -132,8 +134,6 @@ public class KeyHandler {
         //create certificate File
         createCertificate();
 
-
-
         //load trustStore
         trustStore = KeyStore.getInstance("JKS");
         trustStore.load(null, keyStorePassword.toCharArray());
@@ -190,6 +190,18 @@ public class KeyHandler {
 
     public Certificate getCertificate(String alias) throws Exception {
         return keyStore.getCertificate(alias);
+    }
+
+    public PublicKey getPublicKey() throws Exception {
+        return keyStore.getCertificate(keyStoreString).getPublicKey();
+    }
+
+    public PrivateKey getPrivateKey() throws Exception {
+        return (PrivateKey) keyStore.getKey(keyStoreString, keyStorePassword.toCharArray());
+    }
+
+    public Certificate getCertificate() throws Exception {
+        return keyStore.getCertificate(keyStoreString);
     }
 
     public String getKeystoString(){

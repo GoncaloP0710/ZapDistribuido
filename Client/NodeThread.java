@@ -59,9 +59,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                 case UpdateFingerTable:
                     System.out.println((String) in.readObject());
                     break;
-                case RecivePubKeyEvent:
-                    
-                    break;
                 default:
                     break;
             }
@@ -82,9 +79,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                     break;
                 case UpdateFingerTable:
                     out.writeObject("Finger table update msg recived");
-                    break;
-                case RecivePubKeyEvent:
-                    
                     break;
                 default:
                     break;

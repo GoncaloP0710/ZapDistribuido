@@ -1,15 +1,8 @@
 package Client;
 
-import java.security.KeyPair;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.cert.Certificate;
 
-import Message.*;
 import Handlers.*;
-import Utils.*;
 import dtos.*;
 
 public class User {
@@ -45,23 +38,21 @@ public class User {
         String name = interfaceHandler.startUp();
         String password = interfaceHandler.getPassword();
 
+
         // Load keystore and truststore as well as verify password
         boolean correctPassword = false;
-        keyHandler = new KeyHandler(password, name);
-        if (keyHandler.isFirstTimeUser(name)) {
-            keyHandler.firstTimeUser();
-        } else {
-            KeyStore keyStore = keyHandler.loadKeyStore(password);
-            if (keyStore != null)
+        while (!correctPassword) {
+            try {
+                KeyHandler keyHandler = KeyHandler.getInstance(password, name);
                 correctPassword = true;
-            while (!correctPassword) {
+            } catch (Exception e) {
+                interfaceHandler.erro("Username ou Password inválido");
+                name = interfaceHandler.startUp();
                 password = interfaceHandler.getPassword();
-                keyStore = keyHandler.loadKeyStore(password);
-                if (keyStore != null)
-                    correctPassword = true;
+                keyHandler = KeyHandler.getInstance(password, name);
             }
         }
-
+        
         Certificate cer = keyHandler.getCertificate(name);
 
         String serverIp = "localhost";

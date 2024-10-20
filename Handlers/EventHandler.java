@@ -3,8 +3,11 @@ package Handlers;
 import java.math.BigInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.PublicKey;
+import java.util.concurrent.ConcurrentHashMap;
 
 import Events.*;
 import Message.*;
@@ -22,8 +25,13 @@ public class EventHandler {
     NodeDTO currentNodeDTO;
     Node currentNode;
 
+    PublicKey pubKeyReciver;
+
     // private final Lock updateNeighborsLock = new ReentrantLock();
     private final Lock enterNodeLock = new ReentrantLock();
+
+    // ConcurrentHashMap to store NodeDTOs
+    private ConcurrentHashMap<BigInteger, PublicKey> keyRequests = new ConcurrentHashMap<>();
 
     public EventHandler(UserService userService) {
         this.userService = userService;
@@ -132,16 +140,19 @@ public class EventHandler {
     }
 
     public synchronized void sendUserMessage(NodeSendMessageEvent event) {
-        
+        // ChordInternalMessage message = new ChordInternalMessage();
+        // NodeDTO targetNodeDTO = userService.getNodeWithHash(event.getTarget());
+
     }
 
-    public synchronized void recivePubKey(RecivePubKeyEvent event) {
+    public void recivePubKey(RecivePubKeyEvent event) throws IOException, ClassNotFoundException {
         if (event.getReceiverPubKey() != null && event.getInitializer() == currentNodeDTO) { // Final destination
             userService.setPubKeyReciver(event.getReceiverPubKey());
-        } else if (event.getReceiverPubKey() != null) { // Send back to the initializer
-            
-        } else if (event.getTarget() == currentNodeDTO.getHash()) { // Send back to the initializer
-            event.getOut().writeObject(new ChordInternalMessage(MessageType.RecivePubKeyEvent, userService.getPubKey(), currentNodeDTO.getHash(), currentNodeDTO));
+        } else if (event.getReceiverPubKey() != null) { // Send back to the initializer 
+            event.getIn().readObject();
+            event.getOut().writeObject(currentNodeDTO.getPubK());
+        } else if (event.getTarget() == currentNodeDTO.getHash()) { // Send back to the initializer | Arrived at the target
+            event.getOut().writeObject(currentNodeDTO.getPubK());
         } else { // Send to the target
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getTarget());
             userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), true);
