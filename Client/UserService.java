@@ -48,7 +48,6 @@ public class UserService implements UserServiceInterface {
     File truststoreFile;
     // String truststorePassword;
 
-    private UserDTO currentUser;
     private Node currentNode;
     private NodeDTO currentNodeDTO;
 
@@ -108,10 +107,6 @@ public class UserService implements UserServiceInterface {
 
     public Node getCurrentNode() {
         return currentNode;
-    }
-
-    public UserDTO getCurrentUser() {
-        return currentUser;
     }
 
     public int getRingSize() {
@@ -256,18 +251,18 @@ public class UserService implements UserServiceInterface {
             String reciver = interfaceHandler.getInput();
             System.out.println("Write the message: ");
             byte[] message = interfaceHandler.getInput().getBytes();
-            byte[] messageEncrypSender = encryptionHandler.encryptWithPubK(message, keyHandler.getPublicKey()); 
             
             NodeDTO reciverNode = currentNode.belongsToFingerTable(reciver);
             BigInteger reciverHash = currentNode.calculateHash(reciver);
-            UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentUser, reciverHash, messageEncrypSender, null);
             
-            if (reciverNode != null) { // Send directly to the reciver
-                byte[] messageEncrypReciver = encryptionHandler.encryptWithPubK(message, reciverNode.getPubK());
-                userMessage.setMessageEncrypreceiver(messageEncrypReciver);
+            if (reciverNode != null) { // Reciver is on the finger table
+                byte[] messageEncryp = EncryptionHandler.encryptWithPubK(message, reciverNode.getPubK());
+                UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, reciverHash, messageEncryp);
                 startClient(reciverNode.getIp(), reciverNode.getPort(), userMessage, false);
-            } else { // Get the public key of the reciver and then send to the closest node
-                
+            } else { // Reciver is not on the finger table so we have to find its pubK
+                eventHandler.addMessage(reciverHash, message);
+                RecivePubKeyEvent event = new RecivePubKeyEvent(new ChordInternalMessage(MessageType.RecivePubKey, null, reciverHash, currentNodeDTO));
+                eventHandler.recivePubKey(event);
             }
         } finally {
             nodeSendMessageLock.unlock();

@@ -121,7 +121,7 @@ public class KeyHandler {
         //create keystore
         String[] args = new String[]{//"/bin/bash", "-c",
             "keytool", "-genkeypair", "-alias", keyStoreString, "-keyalg", "RSA", "-keysize", "2048",
-            "-validity", "365", "-keystore","../files/" +  keyStoreString + ".jks", "-storepass", keyStorePassword,
+            "-validity", "365", "-keystore", "/files/" + keyStoreString + ".jks", "-storepass", keyStorePassword,
             "-dname", "CN=a OU=a O=a L=a ST=a C=a", "-storetype", "JKS" //ainda sussy
         };
         Process proc = new ProcessBuilder(args).start(); 
@@ -151,7 +151,7 @@ public class KeyHandler {
 
         //create truststore File
         String[] argsTrust = new String[]{
-            "keytool", "-import", "-alias", keyStoreString, "-file", "../files/" + keyStoreString + ".cer", 
+            "keytool", "-import", "-alias", keyStoreString, "-file", "/files/" + keyStoreString + ".cer", 
             "-storetype", "JKS","-keystore", keyStoreString + "_TrustStore" + ".jks" //ainda sussy
         };
         Process procTrust = new ProcessBuilder(argsTrust).start(); 
@@ -170,7 +170,7 @@ public class KeyHandler {
     public void createCertificate() throws Exception{
         String[] argsCert = new String[]{
             "keytool", "-exportcert", "-alias", keyStoreString, "-storetype", "JKS", "-keystore", 
-            keyStoreString + ".jks", "-file", "../files/" + keyStoreString + ".cer" // caminho completo
+            keyStoreString + ".jks", "-file", "/files/" + keyStoreString + ".cer" // caminho completo
         };
 
         Process procCert = new ProcessBuilder(argsCert).start(); 

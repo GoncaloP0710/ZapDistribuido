@@ -1,6 +1,5 @@
 package Message;
 
-import Events.RecivePubKeyEvent;
 
 public enum MessageType {
     EnterNode,
@@ -9,5 +8,5 @@ public enum MessageType {
     SendMsg,
     UpdateNeighbors,
     broadcastUpdateFingerTable,
-    RecivePubKeyEvent;
+    RecivePubKey;
 }

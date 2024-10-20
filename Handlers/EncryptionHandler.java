@@ -34,7 +34,7 @@ public class EncryptionHandler{ //Assume que as chaves já existem
         return c.doFinal(data);
     }
 
-    public byte[] encryptWithPubK(byte[] data, PublicKey chave) //encripta com a chave publica do recetor
+    public static byte[] encryptWithPubK(byte[] data, PublicKey chave) //encripta com a chave publica do recetor
     throws  IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
   
         Cipher c = Cipher.getInstance("RSA");

@@ -7,7 +7,6 @@ import dtos.*;
 
 public class User {
 
-    private static UserDTO currentUser;
     private static String user_name;
     private static Node node;
 

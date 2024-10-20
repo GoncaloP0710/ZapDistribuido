@@ -3,9 +3,16 @@ package Handlers;
 import java.math.BigInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,8 +31,6 @@ public class EventHandler {
     boolean isDefaultNode;
     NodeDTO currentNodeDTO;
     Node currentNode;
-
-    PublicKey pubKeyReciver;
 
     // private final Lock updateNeighborsLock = new ReentrantLock();
     private final Lock enterNodeLock = new ReentrantLock();
@@ -140,17 +145,16 @@ public class EventHandler {
     }
 
     public synchronized void sendUserMessage(NodeSendMessageEvent event) {
-        // ChordInternalMessage message = new ChordInternalMessage();
-        // NodeDTO targetNodeDTO = userService.getNodeWithHash(event.getTarget());
-
+        
     }
 
-    public void recivePubKey(RecivePubKeyEvent event) throws IOException, ClassNotFoundException {
+    public void recivePubKey(RecivePubKeyEvent event) throws IOException, ClassNotFoundException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
         if (event.getReceiverPubKey() != null && event.getInitializer() == currentNodeDTO) { // Final destination
             if (hasMessageWithTarget(event.getTarget())) {
                 byte[] message = messages.get(event.getTarget());
                 messages.remove(event.getTarget());
-                sendUserMessage(new NodeSendMessageEvent(new UserMessage(MessageType.SendMsg, , event.getTarget(), message)));
+                EncryptionHandler.encryptWithPubK(message, event.getReceiverPubKey());
+                sendUserMessage(new NodeSendMessageEvent(new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getTarget(), message)));
             }
             
         } else if (event.getTarget() == currentNodeDTO.getHash()) { // Send back to the initializer | Arrived at the target
@@ -158,10 +162,14 @@ public class EventHandler {
             message.setReceiverPubKey(currentNodeDTO.getPubK());
             userService.startClient(event.getInitializer().getIp(), event.getInitializer().getPort(), message, false);
         
-        } else { // Send to the target (foward to closest node in the finger table)
+        } else { // Send to the target (foward to closest node to the target, in the finger table)
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getTarget());
             userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false);
         }
+    }
+
+    public void addMessage(BigInteger target, byte[] message) {
+        messages.put(target, message);
     }
 
     // Method to check if a message with the same target exists

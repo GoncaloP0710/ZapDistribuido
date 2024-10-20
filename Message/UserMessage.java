@@ -4,18 +4,18 @@ import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.security.PublicKey;
 
-import dtos.UserDTO;
+import dtos.NodeDTO;
 
 public class UserMessage extends Message {
 
     private byte[] messageEncryp;
     PublicKey receiverPubKey;
     private LocalDateTime time;
-    private UserDTO senderDTO;
+    private NodeDTO senderDTO;
     private BigInteger receiverHash;
-    private UserDTO receiverDTO; // Only known once the message is received
+    private NodeDTO receiverDTO; // Only known once the message is received
 
-    public UserMessage(MessageType messageType, UserDTO senderDTO, BigInteger receiverHash, byte[] messageEncryp) {
+    public UserMessage(MessageType messageType, NodeDTO senderDTO, BigInteger receiverHash, byte[] messageEncryp) {
         super(messageType);
         this.receiverHash = receiverHash;
         this.senderDTO = senderDTO;
@@ -24,11 +24,19 @@ public class UserMessage extends Message {
 
     }
 
-    public UserDTO getReceiverDTO(){
+    public LocalDateTime getTime(){
+        return this.time;
+    }
+
+    public NodeDTO getSenderDTO(){
+        return this.senderDTO;
+    }
+
+    public NodeDTO getReceiverDTO(){
         return this.receiverDTO;
     }
 
-    public void setReceiverDTO(UserDTO receiverDTO){
+    public void setReceiverDTO(NodeDTO receiverDTO){
         this.receiverDTO = receiverDTO;
     }
 
