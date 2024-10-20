@@ -8,12 +8,8 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
 import java.util.concurrent.ConcurrentHashMap;
 
 import Events.*;
@@ -145,15 +141,33 @@ public class EventHandler {
     }
 
     public synchronized void sendUserMessage(NodeSendMessageEvent event) {
-        
+        if (event.getReciver() == currentNodeDTO.getHash()) { // Arrived at the target
+            String message;
+            try {
+                message = ((EncryptionHandler.decryptWithPrivK(event.getMessageEncryp(), userService.getKeyHandler().getPrivateKey())).toString());
+                System.out.println("Message from " + event.getSenderDTO().getUsername() + ": " + message);
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } 
+        } else { // Send to the target (foward to closest node to the target, in the finger table)
+            NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getReciver());
+            userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false);
+        }
     }
 
-    public void recivePubKey(RecivePubKeyEvent event) throws IOException, ClassNotFoundException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
+    public void recivePubKey(RecivePubKeyEvent event) {
         if (event.getReceiverPubKey() != null && event.getInitializer() == currentNodeDTO) { // Final destination
             if (hasMessageWithTarget(event.getTarget())) {
                 byte[] message = messages.get(event.getTarget());
                 messages.remove(event.getTarget());
-                EncryptionHandler.encryptWithPubK(message, event.getReceiverPubKey());
+                try {
+                    EncryptionHandler.encryptWithPubK(message, event.getReceiverPubKey());
+                } catch (InvalidKeyException | IllegalBlockSizeException | BadPaddingException
+                        | NoSuchAlgorithmException | NoSuchPaddingException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
                 sendUserMessage(new NodeSendMessageEvent(new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getTarget(), message)));
             }
             

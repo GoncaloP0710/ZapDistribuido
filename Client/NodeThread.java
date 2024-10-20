@@ -1,6 +1,5 @@
 package Client;
 
-import java.awt.TrayIcon.MessageType;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -123,8 +122,8 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             case SendMsg:
                 emitEvent(new NodeSendMessageEvent((UserMessage) messageToProcess));
                 break;
-            case RecivePubKeyEvent:
-                emitEvent(new RecivePubKeyEvent((ChordInternalMessage) messageToProcess, in, out));
+            case RecivePubKey:
+                emitEvent(new RecivePubKeyEvent((ChordInternalMessage) messageToProcess));
                 break;
             default:
                 break;

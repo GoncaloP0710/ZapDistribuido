@@ -44,7 +44,7 @@ public class EncryptionHandler{ //Assume que as chaves já existem
 
     }
 
-    public byte[] decryptWithPrivK(byte[] data, PrivateKey chave) //desencripta com chave privada do recetor
+    public static byte[] decryptWithPrivK(byte[] data, PrivateKey chave) //desencripta com chave privada do recetor
     throws  IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
         
         Cipher c = Cipher.getInstance("RSA");

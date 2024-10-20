@@ -7,8 +7,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.cert.Certificate;
-import java.security.InvalidKeyException;
-import java.security.PublicKey;
+import java.security.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -52,11 +51,10 @@ public class UserService implements UserServiceInterface {
     private NodeDTO currentNodeDTO;
 
     private final Lock nodeSendMessageLock = new ReentrantLock();
-    private PublicKey publicKeyReciver;
 
     private ServerSocket serverSocket;
     private EventHandler eventHandler;
-    private EncryptionHandler encryptionHandler;
+    private EncryptionHandler encryptionHandler; // TODO: Remove if not needed
 
     private int hashLength = 160; // Length of the hash in bits (SHA-1)
     private int ringSize = (int) Math.pow(2, hashLength); // Size of the ring (2^160)
@@ -93,10 +91,6 @@ public class UserService implements UserServiceInterface {
         currentNode.setNextNode(nextNode);
     }
 
-    public void setPubKeyReciver(PublicKey pubK) {
-        this.publicKeyReciver = pubK;
-    }
-
     public String getIpDefault() {
         return ipDefault;
     }
@@ -119,6 +113,10 @@ public class UserService implements UserServiceInterface {
 
     public int getHashLength() {
         return hashLength;
+    }
+
+    public KeyHandler getKeyHandler() {
+        return keyHandler;
     }
 
     public void startServerInThread(Node node) {
