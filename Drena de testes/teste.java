@@ -23,18 +23,32 @@ public class teste{
 
 
         String keyStorePassword = "password";
-        String keystoreString = "pipi";
+        String keystoreString = "rara";
         File keystoreFile = new File(keystoreString + ".jks"); 
         KeyStore keyStore = initializeKeyStore(keystoreString, keystoreFile, keyStorePassword);
 
         Certificate cer = (Certificate) keyStore.getCertificate(keystoreString);
         
         
-        System.out.println(cer.toString());
+        System.out.println(cer);
+        System.out.println("-------------------------------------------------------------------------------------------------");
         PrivateKey privK = (PrivateKey) keyStore.getKey(keystoreString, keyStorePassword.toCharArray());
-        System.out.println(privK.toString());
+        System.out.println(privK);
+        System.out.println("-------------------------------------------------------------------------------------------------");
         PublicKey pubK = cer.getPublicKey();
-        System.out.println(pubK.toString());
+        System.out.println(pubK);
+        System.out.println("-------------------------------------------------------------------------------------------------");
+        System.out.println(keyStore);
+        System.out.println(".................................................................................................");
+
+        System.out.println("-------------------------------------------------------------------------------------------------");
+        System.out.println("bbbbbbbbbbbbbbb: "+ keyStore.getCertificate(keystoreString));
+        System.out.println("-------------------------------------------------------------------------------------------------");
+        System.out.println("ccccccccccccccc: "+ keyStore.aliases());
+        System.out.println("-------------------------------------------------------------------------------------------------");
+        System.out.println("ddddddddddddddd: "+ keyStore.toString());
+        System.out.println("-------------------------------------------------------------------------------------------------");
+        System.out.println("eeeeeeeeeeeeeee: "+ keyStore.getKey(keystoreString, keyStorePassword.toCharArray()));
     }
 
     private static KeyStore initializeKeyStore(String keystoreString, File keystoreFile, String keyStorePassword) throws Exception {

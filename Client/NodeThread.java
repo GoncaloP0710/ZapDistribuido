@@ -24,10 +24,16 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         this.msg = msg;
         setListener(listener);
         try {
+            System.out.println("Attempting to create output stream...");
             this.out = new ObjectOutputStream(socket.getOutputStream());
+            System.out.println("Output stream created successfully.");
+        
+            System.out.println("Attempting to create input stream...");
             this.in = new ObjectInputStream(socket.getInputStream());
+            System.out.println("Input stream created successfully.");
         } catch (Exception e) {
-            System.err.println("Error creating input/output streams");
+            System.err.println("Error creating input/output streams: " + e.getMessage());
+            e.printStackTrace();
             System.exit(-1);
         }
     }

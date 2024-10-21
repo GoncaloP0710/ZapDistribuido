@@ -43,6 +43,7 @@ public class User {
         boolean correctPassword = false;
         while (!correctPassword) {
             try {
+                System.out.println("Trying to get instance");
                 keyHandler = KeyHandler.getInstance(password, name);
                 correctPassword = true;
             } catch (Exception e) {

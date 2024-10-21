@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.security.cert.Certificate;
 import java.security.*;
 import java.util.concurrent.locks.Lock;
@@ -38,7 +39,7 @@ public class UserService implements UserServiceInterface {
 
     // ---------------------- Default Node ----------------------
     private String ipDefault = "localhost";
-    private int portDefault = 8080;
+    private int portDefault = 8090;
     // ----------------------------------------------------------
 
     KeyHandler keyHandler;
@@ -55,6 +56,7 @@ public class UserService implements UserServiceInterface {
     private ServerSocket serverSocket;
     private EventHandler eventHandler;
     private EncryptionHandler encryptionHandler; // TODO: Remove if not needed
+    public String username;
 
     private int hashLength = 160; // Length of the hash in bits (SHA-1)
     private int ringSize = (int) Math.pow(2, hashLength); // Size of the ring (2^160)
@@ -65,6 +67,7 @@ public class UserService implements UserServiceInterface {
 
     public UserService(String username, Node currentNode, KeyHandler keyHandler) throws Exception {
         System.out.println("Starting user service...");
+        this.username = username;
         this.currentNode = currentNode;
         this.keyHandler = keyHandler;
         this.keystoreFile = keyHandler.getKeystoreFile();
@@ -126,6 +129,9 @@ public class UserService implements UserServiceInterface {
             } catch (IOException e) {
                 System.err.println("Error starting server: " + e.getMessage());
                 e.printStackTrace();
+            } catch (KeyStoreException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
         };
 
@@ -133,11 +139,20 @@ public class UserService implements UserServiceInterface {
         serverThread.start();
     }
 
-    public void startServer(Node node) throws IOException {
+    public void startServer(Node node) throws IOException, KeyStoreException {
+
+        System.out.println(keystoreFile.toString());
 
         System.setProperty("javax.net.ssl.keyStore", keystoreFile.toString());
         System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
         System.setProperty("javax.net.ssl.keyStoreType", "JCEKS");
+
+        System.setProperty("javax.net.ssl.trustStore", truststoreFile.toString());
+        System.setProperty("javax.net.ssl.trustStorePassword", keystorePassword);
+        System.setProperty("javax.net.ssl.trustStoreType", "JCEKS");
+
+        KeyStore cer = keyHandler.getTruStore();
+        System.out.println("Certificate: " + cer.getCertificate(this.username));
 
         this.currentNode = node;
         String ip = node.getIp();
@@ -151,15 +166,20 @@ public class UserService implements UserServiceInterface {
 
         // TODO: Check if this works
         // Bind the server socket to the specified IP address and port
-        this.serverSocket.bind(new InetSocketAddress(ip, port));
+        // this.serverSocket.bind(new InetSocketAddress(ip, port));
 
         while (true) {
             Socket clientSocket = null; // other node sockets
             try {
+                System.out.println("Server socket waiting for connection...");
                 clientSocket = serverSocket.accept();
+                System.out.println("Server socket accepted connection");
                 NodeThread newServerThread = new NodeThread(clientSocket, null, this);
+                System.out.println("New connection from " + clientSocket.getInetAddress().getHostAddress());
                 newServerThread.setListener(this);
+                System.out.println("Starting new server thread...");
                 newServerThread.start();
+                System.out.println("Server thread started.");
 
             } catch (IOException e) {
                 System.err.println(e.getMessage());
