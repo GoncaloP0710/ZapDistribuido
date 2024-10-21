@@ -9,14 +9,16 @@ import java.util.concurrent.TimeUnit;
 
 public class teste{
 
+
     public static void main(String args[]) throws Exception{
 
 
         String keyStorePassword = "password";
-        String keystoreString = "rara";
+        String keystoreString = "db";
         File keystoreFile = new File(keystoreString + ".jks"); 
         KeyStore keyStore = initializeKeyStore(keystoreString, keystoreFile, keyStorePassword);
 
+        keystoreFile = new File(keystoreString + ".jks");
         Certificate cer = (Certificate) keyStore.getCertificate(keystoreString);
         
         
