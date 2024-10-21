@@ -46,12 +46,14 @@ public class KeyHandler {
         initialize(); 
         this.certificate = getCertificate(keystoreString);
 
+
         System.out.println("certificate trustsore: "+ trustStore.getCertificate(keystoreString));
         System.out.println("certificate keystore: "+ keyStore.getCertificate(keystoreString));
         System.out.println("keystore aliases: "+ keyStore.aliases());
         System.out.println("keyStore: "+ keyStore);
         System.out.println("keyStore key: "+ keyStore.getKey(keystoreString, keyStorePassword.toCharArray()));
         System.out.println("keystoreFile: "+ keystoreFile);
+        System.out.println("certificate File: "+certificateFile.toString());
     }
 
     public void initialize() throws Exception{
@@ -87,7 +89,7 @@ public class KeyHandler {
     }
 
     public void loadKeyStore() throws Exception {
-        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+        KeyStore ks = KeyStore.getInstance("JKS");
         try (FileInputStream fis = new FileInputStream(keystoreFile)) {
             ks.load(fis, keyStorePassword.toCharArray());
             // ------------------ DEBUG ------------------
@@ -119,7 +121,7 @@ public class KeyHandler {
     }
 
     public void loadTrustStore() throws Exception { // TODO: Is it suposed to be KeyStore.getDefaultType()?
-        KeyStore ts = KeyStore.getInstance(KeyStore.getDefaultType());
+        KeyStore ts = KeyStore.getInstance("JKS");
         try (FileInputStream fis = new FileInputStream(trustStoreFile)) {
             ts.load(fis, keyStorePassword.toCharArray());
         } catch (IOException | NoSuchAlgorithmException | CertificateException e) {
@@ -136,8 +138,8 @@ public class KeyHandler {
 
     public void firstTimeUser() throws Exception{
         createKeyStore(this.keyStoreString, this.keyStorePassword);
-        createTrustStore();
         createCertificate();
+        createTrustStore();
         addCertificateToTrustStore(keyStoreString, keyStore.getCertificate(keyStoreString));
     }
 
@@ -154,7 +156,7 @@ public class KeyHandler {
     }
 
     public void createKeyStore(String keyStoreString, String keyStorePassword) throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, InterruptedException {
-        keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        keyStore = KeyStore.getInstance("JKS");
         String keystoreFilePath = "files/" + keyStoreString + ".jks";
 
         //load keystore -
@@ -170,15 +172,12 @@ public class KeyHandler {
         String[] args = new String[]{
             "keytool", "-genkeypair", "-alias", keyStoreString, "-keyalg", "RSA", "-keysize", "2048",
             "-validity", "365", "-keystore", keystoreFilePath, "-storepass", keyStorePassword,
-            "-keypass", keyStorePassword, // Specify key password explicitly to avoid prompt
-            "-dname", "CN=a, OU=a, O=a, L=a, ST=a, C=a", "-storetype", "JKS"
+            "-keypass", keyStorePassword, 
+            "-dname", "CN="+keyStoreString+", OU=a, O=a, L=a, ST=a, C=a", "-storetype", "JKS"
         };
         
         // Execute the keytool command
         Process proc = new ProcessBuilder(args).start();
-        // if (!proc.waitFor(10, TimeUnit.SECONDS)) {
-        //     throw new InterruptedException("Keystore creation process timed out");
-        // }
         proc.waitFor(); // Wait without a timeout
     
         if (proc.exitValue() != 0) {
@@ -189,7 +188,6 @@ public class KeyHandler {
                     System.err.println("ERROR: " + errorLine);
                 }
             }
-
             // Capture and print the standard output stream
             try (BufferedReader inputReader = new BufferedReader(new InputStreamReader(proc.getInputStream()))) {
                 String inputLine;
@@ -197,7 +195,6 @@ public class KeyHandler {
                     System.out.println("OUTPUT: " + inputLine);
                 }
             }
-
         }
 
         // Load the keystore
@@ -209,70 +206,26 @@ public class KeyHandler {
         // ------------------ DEBUG ------------------
     
         // Print debug information
-        System.out.println("Keystore String - " + keyStoreString);
-        System.out.println("Keystore - " + keyStore);
-        System.out.println("KeystoreFile - " + keystoreFile);
+        // System.out.println("Keystore String - " + keyStoreString);
+        // System.out.println("Keystore - " + keyStore);
+        // System.out.println("KeystoreFile - " + keystoreFile);
     
-        // Print aliases
-        System.out.println("Alias: " + keyStore.aliases());
+        // // Print aliases
+        // System.out.println("Alias: " + keyStore.aliases());
     
-        // Print certificate
-        Certificate cert = keyStore.getCertificate(keyStoreString);
-        if (cert != null) {
-            System.out.println("Certificate: " + cert.toString());
-        } else {
-            System.out.println("No certificate found for alias: " + keyStoreString);
-        }
+        // // Print certificate
+        // Certificate cert = keyStore.getCertificate(keyStoreString);
+        // if (cert != null) {
+        //     System.out.println("Certificate: " + cert.toString());
+        // } else {
+        //     System.out.println("No certificate found for alias: " + keyStoreString);
+        // }
     }
-    
-
-
 
     
+    
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
@@ -298,7 +251,8 @@ public class KeyHandler {
         //create truststore File
         String[] argsTrust = new String[]{
             "keytool", "-import", "-alias", keyStoreString, "-file", certificateFilePath, 
-            "-storetype", "JKS","-keystore", trustStoreFilePath //ainda sussy
+            "-storetype", "JKS","-keystore", trustStoreFilePath, "-storepass", keyStorePassword,
+            "-noprompt" //ainda sussy
         };
         Process procTrust = new ProcessBuilder(argsTrust).start(); 
         procTrust.waitFor(1, TimeUnit.SECONDS); //precisamos?
@@ -314,6 +268,13 @@ public class KeyHandler {
             fis2.close();
         }
 
+        // try{
+        //     addCertificateToTrustStore(keyStoreString, keyStore.getCertificate(keyStoreString));
+        // } catch(Exception e){
+        //     System.out.println("deu merda");
+        // }
+        
+
         System.out.println("Keystore created " + trustStore.toString());
         System.out.println("Keystore created " + trustStore);
         System.out.println("KeystoreFile created " + keystoreFile);
@@ -322,8 +283,9 @@ public class KeyHandler {
     public void createCertificate() throws Exception{
         String certificateFilePath = "files/" + keyStoreString + ".cer";
         String[] argsCert = new String[]{
-            "keytool", "-exportcert", "-alias", keyStoreString, "-storetype", "JKS", "-keystore", 
-            "files/"+keyStoreString + ".jks", "-file", certificateFilePath // caminho completo
+            "keytool", "-exportcert", "-alias", keyStoreString, "-keystore", 
+            "files/"+keyStoreString + ".jks", "-file", certificateFilePath,
+            "-storepass", keyStorePassword // caminho completo
         };
 
 
@@ -348,6 +310,8 @@ public class KeyHandler {
         System.out.println("Truststore loaded 3");
         
     }
+
+    //------------------------------------ GETTERS -------------------------------------------
 
     public PublicKey getPublicKey(String alias) throws Exception {
         return keyStore.getCertificate(alias).getPublicKey();

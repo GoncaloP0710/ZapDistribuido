@@ -39,7 +39,7 @@ public class UserService implements UserServiceInterface {
 
     // ---------------------- Default Node ----------------------
     private String ipDefault = "localhost";
-    private int portDefault = 8090;
+    private int portDefault = 8080;
     // ----------------------------------------------------------
 
     KeyHandler keyHandler;
