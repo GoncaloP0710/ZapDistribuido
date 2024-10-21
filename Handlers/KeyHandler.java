@@ -28,13 +28,16 @@ public class KeyHandler {
         System.out.println("KeyHandler constructor");
         this.keyStorePassword = keyStorePassword;
         this.keyStoreString = keystoreString;
-        this.keystoreFile = new File("/files/"+keystoreString+".jks"); 
+        this.keystoreFile = new File("files/"+keystoreString+".jks"); 
+        this.certificateFile = new File("files/"+keystoreString +".cer");
+        this.trustStoreFile = new File("files/"+keystoreString+"_TrustStore.jks");
         initialize(); 
-        System.out.println("aaaaaaaaaaaaaaa: "+ trustStore.getCertificate(keystoreString));
-        System.out.println("bbbbbbbbbbbbbbb: "+ keyStore.getCertificate(keystoreString));
-        System.out.println("ccccccccccccccc: "+ keyStore.aliases());
-        System.out.println("ddddddddddddddd: "+ keyStore.toString());
-        System.out.println("eeeeeeeeeeeeeee: "+ keyStore.getKey(keystoreString, keyStorePassword.toCharArray()));
+        System.out.println("certificate trustsore: "+ trustStore.getCertificate(keystoreString));
+        System.out.println("certificate keystore: "+ keyStore.getCertificate(keystoreString));
+        System.out.println("keystore aliases: "+ keyStore.aliases());
+        System.out.println("keyStore: "+ keyStore);
+        System.out.println("keyStore key: "+ keyStore.getKey(keystoreString, keyStorePassword.toCharArray()));
+        System.out.println("keystoreFile: "+ keystoreFile);
         this.certificate = getCertificate(keystoreString);
 
     }
@@ -125,7 +128,7 @@ public class KeyHandler {
          // Create keystore file path
          String keystoreFilePath = "files/" + keyStoreString + ".jks";
 
-         try (FileOutputStream fos = new FileOutputStream(keyStoreString+".jks")) {
+         try (FileOutputStream fos = new FileOutputStream(keystoreFile)) {
             keyStore.store(fos, keyStorePassword.toCharArray());
             fos.close();
         }
@@ -135,14 +138,14 @@ public class KeyHandler {
         //create keystore
         String[] args = new String[]{//"/bin/bash", "-c",
             "keytool", "-genkeypair", "-alias", keyStoreString, "-keyalg", "RSA", "-keysize", "2048",
-            "-validity", "365", "-keystore", keyStoreString+".jks", "-storepass", keyStorePassword,
+            "-validity", "365", "-keystore", keystoreFilePath, "-storepass", keyStorePassword,
             "-dname", "CN=a OU=a O=a L=a ST=a C=a", "-storetype", "JKS" //ainda sussy
         };
         Process proc = new ProcessBuilder(args).start(); 
         proc.waitFor(1, TimeUnit.SECONDS); //precisamos?
           
         System.out.println("Keystore created");
-        try (FileInputStream fis = new FileInputStream(keyStoreString +".jks")) {
+        try (FileInputStream fis = new FileInputStream(keystoreFile)) {
             System.out.println("Loading keystore");
             keyStore.load(fis, keyStorePassword.toCharArray());
             System.out.println("Keystore loaded");
@@ -164,7 +167,7 @@ public class KeyHandler {
 
         String trustStoreFilePath = "files/" + keyStoreString + "_TrustStore" + ".jks";
 
-        try (FileOutputStream fos2 = new FileOutputStream(keyStoreString + "_TrustStore" + ".jks")) {
+        try (FileOutputStream fos2 = new FileOutputStream(trustStoreFile)) {
             trustStore.store(fos2, keyStorePassword.toCharArray());
             fos2.close();
         }
@@ -175,8 +178,8 @@ public class KeyHandler {
 
         //create truststore File
         String[] argsTrust = new String[]{
-            "keytool", "-import", "-alias", keyStoreString, "-file", keyStoreString+".cer", 
-            "-storetype", "JKS","-keystore", keyStoreString +"_TrustStore"+ ".jks" //ainda sussy
+            "keytool", "-import", "-alias", keyStoreString, "-file", certificateFilePath, 
+            "-storetype", "JKS","-keystore", trustStoreFilePath //ainda sussy
         };
         Process procTrust = new ProcessBuilder(argsTrust).start(); 
         procTrust.waitFor(1, TimeUnit.SECONDS); //precisamos?
@@ -185,7 +188,7 @@ public class KeyHandler {
 
         System.out.println("Truststore loaded");
 
-        try (FileInputStream fis2 = new FileInputStream(keyStoreString+"_TrustStore"+".jks")) {
+        try (FileInputStream fis2 = new FileInputStream(trustStoreFile)) {
             System.out.println("Loading truststore");
             trustStore.load(fis2, keyStorePassword.toCharArray());
             System.out.println("Truststore loaded 2");
@@ -202,7 +205,7 @@ public class KeyHandler {
         String certificateFilePath = "files/" + keyStoreString + ".cer";
         String[] argsCert = new String[]{
             "keytool", "-exportcert", "-alias", keyStoreString, "-storetype", "JKS", "-keystore", 
-            keyStoreString + ".jks", "-file", keyStoreString + ".cer" // caminho completo
+            "files/"+keyStoreString + ".jks", "-file", certificateFilePath // caminho completo
         };
 
 

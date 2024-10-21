@@ -1,20 +1,10 @@
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
 
 public class teste{
@@ -42,13 +32,13 @@ public class teste{
         System.out.println(".................................................................................................");
 
         System.out.println("-------------------------------------------------------------------------------------------------");
-        System.out.println("bbbbbbbbbbbbbbb: "+ keyStore.getCertificate(keystoreString));
+        System.out.println("certificate: "+ keyStore.getCertificate(keystoreString));
         System.out.println("-------------------------------------------------------------------------------------------------");
-        System.out.println("ccccccccccccccc: "+ keyStore.aliases());
+        System.out.println("keystore aliases: "+ keyStore.aliases());
         System.out.println("-------------------------------------------------------------------------------------------------");
-        System.out.println("ddddddddddddddd: "+ keyStore.toString());
+        System.out.println("keystore to string: "+ keyStore.toString());
         System.out.println("-------------------------------------------------------------------------------------------------");
-        System.out.println("eeeeeeeeeeeeeee: "+ keyStore.getKey(keystoreString, keyStorePassword.toCharArray()));
+        System.out.println("keystore key: "+ keyStore.getKey(keystoreString, keyStorePassword.toCharArray()));
     }
 
     private static KeyStore initializeKeyStore(String keystoreString, File keystoreFile, String keyStorePassword) throws Exception {
