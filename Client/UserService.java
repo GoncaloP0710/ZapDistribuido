@@ -50,6 +50,7 @@ public class UserService implements UserServiceInterface {
     // ---------------------- Default Node ----------------------
     private String ipDefault = "localhost";
     private int portDefault = 8080;
+    private String usernameDefault = "a";
     // ----------------------------------------------------------
 
     KeyHandler keyHandler;
@@ -87,9 +88,9 @@ public class UserService implements UserServiceInterface {
         this.eventHandler = new EventHandler(this);
         this.encryptionHandler = new EncryptionHandler();
 
-        serverInsecure(currentNode);
+        startServerInThread(currentNode, false);
         System.out.println("Insecure Server started in a separate thread. Continuing with main flow...");
-        startServerInThread(currentNode);
+        startServerInThread(currentNode, true);
         System.out.println("Server started in a separate thread. Continuing with main flow...");
 
         // Check for default node
@@ -98,7 +99,7 @@ public class UserService implements UserServiceInterface {
             currentNode.setPreviousNode(currentNodeDTO);
         } else {
             ChordInternalMessage message = new ChordInternalMessage(MessageType.EnterNode, currentNodeDTO);
-            startClient(ipDefault, portDefault, message, false, username); // TODO: Change to true if needed
+            startClient(ipDefault, portDefault, message, false, usernameDefault); // TODO: Change to true if needed
         }        
     }
 
@@ -138,10 +139,14 @@ public class UserService implements UserServiceInterface {
         return username;
     }
 
-    public void startServerInThread(Node node) {
+    public void startServerInThread(Node node, boolean secure) {
         Runnable serverTask = () -> {
             try {
-                startServer(node);
+                if (secure) {
+                    startServer(node);
+                } else {
+                    serverInsecure(node);
+                }
             } catch (IOException e) {
                 System.err.println("Error starting server: " + e.getMessage());
                 e.printStackTrace();
@@ -190,7 +195,7 @@ public class UserService implements UserServiceInterface {
                 System.out.println("Server socket waiting for connection...");
                 clientSocket = serverSocket.accept();
                 System.out.println("Server socket accepted connection");
-                NodeThread newServerThread = new NodeThread(clientSocket, null, this);
+                NodeThread newServerThread = new NodeThread(clientSocket, null, this, keyHandler);
                 System.out.println("New connection from " + clientSocket.getInetAddress().getHostAddress());
                 newServerThread.setListener(this);
                 System.out.println("Starting new server thread...");
@@ -223,7 +228,10 @@ public class UserService implements UserServiceInterface {
         
         try {
 
+            System.out.println("Alias to search: " + alias);
+
             if (!keyHandler.getTruStore().containsAlias(alias)) {
+                System.out.println("Certificate not found in trust store. Requesting certificate from the node...");
                 shareCertificateClient(ip, port, new ChordInternalMessage(MessageType.addCertificateToTrustStore, keyHandler.getCertificate(alias), alias, currentNodeDTO.getUsername()));
             }
 
@@ -238,7 +246,7 @@ public class UserService implements UserServiceInterface {
                 System.out.println(cert.toString());
             }
 
-            NodeThread newClientThread = new NodeThread(sslClientSocket, msg, this);
+            NodeThread newClientThread = new NodeThread(sslClientSocket, msg, this, keyHandler);
             newClientThread.start();
     
             if (waitForResponse) {
@@ -337,9 +345,9 @@ public class UserService implements UserServiceInterface {
     private void shareCertificateClient(String ip, int port, Message msg) throws NoSuchAlgorithmException {
         try {
             // Create normal socket
-            Socket clientSocket = new Socket(ip, port);
+            Socket clientSocket = new Socket(ip, port+1);
     
-            NodeThread newClientThread = new NodeThread(clientSocket, msg, this);
+            NodeThread newClientThread = new NodeThread(clientSocket, msg, this, keyHandler);
             newClientThread.start();
             newClientThread.join(); // Wait for the thread to finish
         } catch (Exception e) {
@@ -351,7 +359,7 @@ public class UserService implements UserServiceInterface {
     public void serverInsecure(Node node) throws IOException {
         this.currentNode = node;
         String ip = node.getIp();
-        int port = node.getPort();
+        int port = node.getPort()+1;
 
         System.out.println("Starting server on " + ip + ":" + port);
         // Use normal ServerSocket instead of SSLServerSocket
@@ -361,7 +369,7 @@ public class UserService implements UserServiceInterface {
             Socket clientSocket = null; // other node sockets
             try {
                 clientSocket = serverSocket.accept();
-                NodeThread newServerThread = new NodeThread(clientSocket, null, this);
+                NodeThread newServerThread = new NodeThread(clientSocket, null, this, keyHandler);
                 newServerThread.setListener(this);
                 newServerThread.start();
 

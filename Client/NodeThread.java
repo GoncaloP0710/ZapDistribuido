@@ -20,6 +20,7 @@ import javax.crypto.KeyAgreement;
 
 import Events.*;
 import Handlers.EncryptionHandler;
+import Handlers.KeyHandler;
 import Message.*;
 import Utils.observer.*;
 
@@ -31,11 +32,13 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
 
     private Message msg;
     private Listener<NodeEvent> listener;
+    private KeyHandler keyHandler;
 
     // If command is null, it means that the thread is a server and its objective is to process the command it receives
-    public NodeThread (Socket socket, Message msg, Listener<NodeEvent> listener) {
+    public NodeThread (Socket socket, Message msg, Listener<NodeEvent> listener, KeyHandler keyHandler) {
         this.socket = socket;
         this.msg = msg;
+        this.keyHandler = keyHandler;
         setListener(listener);
         try {
             System.out.println("Attempting to create output stream...");
@@ -79,6 +82,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                     System.out.println((String) in.readObject());
                     break;
                 case addCertificateToTrustStore:
+                    System.out.println("Sending message to add certificate to trust store!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                     ChordInternalMessage message = (ChordInternalMessage) msg;
                     message.setCertificate(sendCert());
                     emitEvent(new AddCertificateToTrustStoreEvent((ChordInternalMessage) message));
@@ -136,17 +140,26 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             userKeyAgreement.doPhase(pubK, true);
             byte[] userSharedSecret = userKeyAgreement.generateSecret();
 
+            // Step 5: Recive encrypted certificate
             //Recebe certificado em byte[]
             byte[] enCer = (byte[]) in.readObject();
-
             //desencrypta
             EncryptionHandler eh = new EncryptionHandler();
             byte[] deCer = eh.decryptWithKey(enCer, userSharedSecret);
-
             //transforma em Certificate
             Certificate toAdd =  byteArrToCertificate(deCer);
 
+            // Step 5: Send encrypted certificate - Check variable names
+            Certificate certificate = keyHandler.getCertificate();
+            byte[] cerBytes = certificate.getEncoded();
+            //encrypta
+            EncryptionHandler eh2 = new EncryptionHandler();
+            byte[] enCer2 = eh2.encryptWithKey(cerBytes, userSharedSecret);
+            //envia certificado
+            out.writeObject(enCer2);
+
             return toAdd;
+
         } catch(Exception e){
             e.printStackTrace();
         }
@@ -178,24 +191,25 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             userKeyAgreement.doPhase(pubK, true);
             byte[] userSharedSecret = userKeyAgreement.generateSecret();
 
-
-            //TODO: return e de onde vem o certifido embaixo
-            Certificate certificate = null; //De onde vem o certificado deste user????????
-
-            //-------------------------------------------------------
+            // Step 5: Send encrypted certificate
+            Certificate certificate = keyHandler.getCertificate();
             byte[] cerBytes = certificate.getEncoded();
- 
             //encrypta
             EncryptionHandler eh = new EncryptionHandler();
             byte[] enCer = eh.encryptWithKey(cerBytes, userSharedSecret);
-
             //envia certificado
             out.writeObject(enCer);
-            //--------------------------------------------------------
-            
-            
-            Certificate toAdd = null; //????????????????
-            return toAdd; // ????????????é suposto devolver o que?
+
+            // Step 6: Recive encrypted certificate - Check variable names
+            //Recebe certificado em byte[]
+            byte[] enCer2 = (byte[]) in.readObject();
+            //desencrypta
+            EncryptionHandler eh2 = new EncryptionHandler();
+            byte[] deCer2 = eh2.decryptWithKey(enCer2, userSharedSecret);
+            //transforma em Certificate
+            Certificate toAdd =  byteArrToCertificate(deCer2);
+            return toAdd;
+
         } catch(Exception e){
             e.printStackTrace();
         }
