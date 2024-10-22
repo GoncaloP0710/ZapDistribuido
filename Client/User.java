@@ -31,7 +31,7 @@ public class User {
 
     public static void main(String[] args) throws Exception { // TODO: Change this to call different methods
 
-        System.out.println("Starting User...");
+         System.out.println("Starting User...");
 
         interfaceHandler = new InterfaceHandler();
         String name = interfaceHandler.startUp();

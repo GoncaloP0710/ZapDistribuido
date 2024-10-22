@@ -6,8 +6,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.*;
-import java.util.Enumeration;
-import java.util.concurrent.TimeUnit;
 import java.security.cert.Certificate;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -137,7 +135,7 @@ public class KeyHandler {
     }
 
     public void firstTimeUser() throws Exception{
-        createKeyStore(this.keyStoreString, this.keyStorePassword);
+        createKeyStore();
         createCertificate();
         createTrustStore();
         addCertificateToTrustStore(keyStoreString, keyStore.getCertificate(keyStoreString));
@@ -155,7 +153,7 @@ public class KeyHandler {
         }
     }
 
-    public void createKeyStore(String keyStoreString, String keyStorePassword) throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, InterruptedException {
+    public void createKeyStore() throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, InterruptedException {
         keyStore = KeyStore.getInstance("JKS");
         String keystoreFilePath = "files/" + keyStoreString + ".jks";
 
@@ -206,9 +204,9 @@ public class KeyHandler {
         // ------------------ DEBUG ------------------
     
         // Print debug information
-        // System.out.println("Keystore String - " + keyStoreString);
-        // System.out.println("Keystore - " + keyStore);
-        // System.out.println("KeystoreFile - " + keystoreFile);
+        System.out.println("Keystore String - " + keyStoreString);
+        System.out.println("Keystore - " + keyStore);
+        System.out.println("KeystoreFile - " + keystoreFile);
     
         // // Print aliases
         // System.out.println("Alias: " + keyStore.aliases());
@@ -222,30 +220,18 @@ public class KeyHandler {
         // }
     }
 
-    
-    
-
-//---------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
     public void createTrustStore () throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, InterruptedException {
+        String trustStoreFilePath = "files/" + keyStoreString + "_TrustStore" + ".jks";
         String certificateFilePath = "files/" + keyStoreString + ".cer";
-
-
-        //load trustStore
+        
         trustStore = KeyStore.getInstance("JKS");
+        
+        //load trustStore
         trustStore.load(null, keyStorePassword.toCharArray());
 
-        String trustStoreFilePath = "files/" + keyStoreString + "_TrustStore" + ".jks";
-
-        try (FileOutputStream fos2 = new FileOutputStream(trustStoreFile)) {
-            trustStore.store(fos2, keyStorePassword.toCharArray());
-            fos2.close();
-        }
-        
-        System.out.println("Truststore created");
-        System.out.println("Truststore loading");
+        FileOutputStream fos = new FileOutputStream(trustStoreFile);
+        trustStore.store(fos, keyStorePassword.toCharArray());
+        fos.close();
         trustStore.load(null);
 
         //create truststore File
@@ -255,17 +241,29 @@ public class KeyHandler {
             "-noprompt" //ainda sussy
         };
         Process procTrust = new ProcessBuilder(argsTrust).start(); 
-        procTrust.waitFor(1, TimeUnit.SECONDS); //precisamos?
-        this.trustStoreFile = new File(trustStoreFilePath);
+        procTrust.waitFor();
 
+        if (procTrust.exitValue() != 0) {
+            // Capture and print the error stream
+            try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(procTrust.getErrorStream()))) {
+                String errorLine;
+                while ((errorLine = errorReader.readLine()) != null) {
+                    System.err.println("ERROR: " + errorLine);
+                }
+            }
+            // Capture and print the standard output stream
+            try (BufferedReader inputReader = new BufferedReader(new InputStreamReader(procTrust.getInputStream()))) {
+                String inputLine;
+                while ((inputLine = inputReader.readLine()) != null) {
+                    System.out.println("OUTPUT: " + inputLine);
+                }
+            }
+        }
 
-        System.out.println("Truststore loaded");
-
-        try (FileInputStream fis2 = new FileInputStream(trustStoreFile)) {
-            System.out.println("Loading truststore");
-            trustStore.load(fis2, keyStorePassword.toCharArray());
-            System.out.println("Truststore loaded 2");
-            fis2.close();
+        trustStore = KeyStore.getInstance("JKS");
+        try (FileInputStream fis = new FileInputStream(trustStoreFilePath)) {
+            trustStore.load(fis, keyStorePassword.toCharArray());
+            fis.close();
         }
 
         // try{
@@ -275,40 +273,44 @@ public class KeyHandler {
         // }
         
 
-        System.out.println("Keystore created " + trustStore.toString());
+        // System.out.println("Keystore created " + trustStore.toString());
         System.out.println("Keystore created " + trustStore);
-        System.out.println("KeystoreFile created " + keystoreFile);
     }
 
     public void createCertificate() throws Exception{
         String certificateFilePath = "files/" + keyStoreString + ".cer";
+
         String[] argsCert = new String[]{
             "keytool", "-exportcert", "-alias", keyStoreString, "-keystore", 
             "files/"+keyStoreString + ".jks", "-file", certificateFilePath,
-            "-storepass", keyStorePassword // caminho completo
+            "-storepass", keyStorePassword 
         };
 
-
         Process procCert = new ProcessBuilder(argsCert).start(); 
-        procCert.waitFor(1, TimeUnit.SECONDS); //precisamos?
-        this.certificateFile = new File(certificateFilePath);
-
+        procCert.waitFor(); 
 
         System.out.println("Certificate created" + certificateFile);
     }
 
 
     public void addCertificateToTrustStore(String username, Certificate cer) throws Exception{
+        String trustStoreFilePath = "files/" + keyStoreString + "_TrustStore" + ".jks";
+        // String certificateFilePath = "files/" + keyStoreString + ".cer";
+        System.out.println("Loading truststore");
+        try (FileInputStream fis = new FileInputStream(trustStoreFilePath)) {
+            trustStore.load(fis, keyStorePassword.toCharArray());
+        }
+        System.out.println("Truststore loaded");
+
         System.out.println("Adding certificate to truststore");
         trustStore.setCertificateEntry(username, cer);
         System.out.println("Certificate added to truststore");
 
-        try (FileInputStream fis2 = new FileInputStream("files/" + keyStoreString + "_TrustStore" + ".jks")) {
-            trustStore.load(fis2, keyStorePassword.toCharArray());
-            fis2.close();
+        // Save the updated truststore
+        try (FileOutputStream fos = new FileOutputStream(trustStoreFilePath)) {
+            trustStore.store(fos, keyStorePassword.toCharArray());
         }
-        System.out.println("Truststore loaded 3");
-        
+        System.out.println("Truststore saved");
     }
 
     //------------------------------------ GETTERS -------------------------------------------
