@@ -1,13 +1,19 @@
 package Client;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.security.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -17,11 +23,14 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.net.ServerSocketFactory;
 import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import Events.*;
 import Interface.UserServiceInterface;
@@ -146,11 +155,11 @@ public class UserService implements UserServiceInterface {
 
         System.setProperty("javax.net.ssl.keyStore", keystoreFile.toString());
         System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
-        System.setProperty("javax.net.ssl.keyStoreType", "JCEKS");
+        System.setProperty("javax.net.ssl.keyStoreType", "JKS");
 
         System.setProperty("javax.net.ssl.trustStore", truststoreFile.toString());
         System.setProperty("javax.net.ssl.trustStorePassword", keystorePassword);
-        System.setProperty("javax.net.ssl.trustStoreType", "JCEKS");
+        System.setProperty("javax.net.ssl.trustStoreType", "JKS");
 
         KeyStore cer = keyHandler.getTruStore();
         System.out.println("Certificate: " + cer.getCertificate(this.username));
@@ -200,13 +209,47 @@ public class UserService implements UserServiceInterface {
         
         System.setProperty("javax.net.ssl.keyStore", keystoreFile.toString()); // ????????????? deixa assim dps logo se ve
         System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
-        System.setProperty("javax.net.ssl.keyStoreType", "JCEKS");
+        System.setProperty("javax.net.ssl.keyStoreType", "JKS");
 
         System.setProperty("javax.net.ssl.trustStore", truststoreFile.toString());
         System.setProperty("javax.net.ssl.trustStorePassword", keystorePassword);
-        System.setProperty("javax.net.ssl.trustStoreType", "JCEKS");
+        System.setProperty("javax.net.ssl.trustStoreType", "JKS");
         
         try {
+            //puto pt--------------------------------------------------------------------------------------------
+
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+
+            // Initialize SSL context with no truststore (insecure, for bootstrapping)
+            sslContext.init(null, new TrustManager[] { new InsecureTrustManager() }, null);
+
+            // Use the SSL context to create a socket
+            SSLSocketFactory socketFactory = sslContext.getSocketFactory();
+            SSLSocket socket = (SSLSocket) socketFactory.createSocket(ip, port);
+
+            // Start handshake (one-sided authentication)
+            socket.startHandshake();
+
+            Certificate cer = keyHandler.getCertificate();
+            //enviar certificado
+            try (ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
+                oos.writeObject(cer);
+                oos.writeObject(username);
+                oos.flush();
+            }
+            //receber certificado
+            Certificate recebido = null;
+            String alias_recebido = "";
+            try (ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
+                recebido = (Certificate) ois.readObject();
+                alias_recebido = (String) ois.readObject();
+            }
+
+            keyHandler.addCertificateToTrustStore(alias_recebido, recebido);
+
+            socket.close();
+
+            //------------------------------------------------------------------------------------------------------
             // Create SSL socket
             SocketFactory factory = SSLSocketFactory.getDefault();
             SSLSocket sslClientSocket = (SSLSocket) factory.createSocket(ip, port);
@@ -312,4 +355,14 @@ public class UserService implements UserServiceInterface {
         }
     }
 
+}
+//CHATGPT
+class InsecureTrustManager implements X509TrustManager {
+    public void checkClientTrusted(X509Certificate[] chain, String authType) {
+    }
+    public void checkServerTrusted(X509Certificate[] chain, String authType) {
+    }
+    public X509Certificate[] getAcceptedIssuers() {
+        return new X509Certificate[0];
+    }
 }

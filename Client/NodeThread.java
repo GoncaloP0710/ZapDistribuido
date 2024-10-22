@@ -131,6 +131,8 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             case RecivePubKey:
                 emitEvent(new RecivePubKeyEvent((ChordInternalMessage) messageToProcess));
                 break;
+            case addCertificateToTrustStore:
+               emitEvent(new AddCertificateToTrustStoreEvent((ChordInternalMessage) messageToProcess));
             default:
                 break;
         }

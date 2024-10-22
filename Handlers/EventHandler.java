@@ -9,8 +9,11 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 import java.security.InvalidKeyException;
+
 import java.security.NoSuchAlgorithmException;
+
 import java.util.concurrent.ConcurrentHashMap;
+import java.security.cert.Certificate;
 
 import Events.*;
 import Message.*;
@@ -181,6 +184,23 @@ public class EventHandler {
             userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false);
         }
     }
+
+    public void addCertificateToTrustStore(AddCertificateToTrustStoreEvent event) {
+        try {
+            // Extract the certificate and alias from the event
+            Certificate certificate = event.getCertificate();
+            String alias = event.getAlias();
+            userService.getKeyHandler().addCertificateToTrustStore(alias, certificate);
+            
+
+            System.out.println("Certificate added to trust store successfully.");
+
+        } catch (Exception e) {
+            System.err.println("Error adding certificate to trust store: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
 
     public void addMessage(BigInteger target, byte[] message) {
         messages.put(target, message);

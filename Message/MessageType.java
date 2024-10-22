@@ -8,5 +8,6 @@ public enum MessageType {
     SendMsg,
     UpdateNeighbors,
     broadcastUpdateFingerTable,
-    RecivePubKey;
+    RecivePubKey,
+    addCertificateToTrustStore;
 }
