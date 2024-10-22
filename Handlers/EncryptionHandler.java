@@ -10,6 +10,8 @@ import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.BadPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 //import Message.Message;
 import Message.UserMessage;
@@ -63,15 +65,26 @@ public class EncryptionHandler{ //Assume que as chaves já existem
         return c.doFinal(data);
     }
 
-    // public byte[] encryptWithKey(byte[] data, byte[] key) //encryptar com chave custom
-    // throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException{
+    public byte[] encryptWithKey(byte[] data, byte[] key) //encryptar com chave custom
+    throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException{
 
-    //     SecretKey chave = new SecretKeySpec(key, 0, key.length, "AES");
+        SecretKey chave = new SecretKeySpec(key, 0, key.length, "AES");
 
-    //     Cipher c = Cipher.getInstance("RSA");
-	// 	c.init(Cipher.DECRYPT_MODE, chave);
+        Cipher c = Cipher.getInstance("AES");
+		c.init(Cipher.ENCRYPT_MODE, chave);
 
-    //     return c.doFinal(data);
-    // }
+        return c.doFinal(data);
+    }
+
+    public byte[] decryptWithKey(byte[] data, byte[] key) //desencryptar com chave custom
+    throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException{
+
+        SecretKey chave = new SecretKeySpec(key, 0, key.length, "AES");
+
+        Cipher c = Cipher.getInstance("AES");
+		c.init(Cipher.DECRYPT_MODE, chave);
+
+        return c.doFinal(data);
+    }
 
 }

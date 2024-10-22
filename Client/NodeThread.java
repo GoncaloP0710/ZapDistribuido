@@ -3,6 +3,8 @@ package Client;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.net.Socket;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
@@ -11,10 +13,13 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+
 
 import javax.crypto.KeyAgreement;
 
 import Events.*;
+import Handlers.EncryptionHandler;
 import Message.*;
 import Utils.observer.*;
 
@@ -131,9 +136,15 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             userKeyAgreement.doPhase(pubK, true);
             byte[] userSharedSecret = userKeyAgreement.generateSecret();
 
-            Certificate toAdd =  null;
-            
+            //Recebe certificado em byte[]
+            byte[] enCer = (byte[]) in.readObject();
 
+            //desencrypta
+            EncryptionHandler eh = new EncryptionHandler();
+            byte[] deCer = eh.decryptWithKey(enCer, userSharedSecret);
+
+            //transforma em Certificate
+            Certificate toAdd =  byteArrToCertificate(deCer);
 
             return toAdd;
         } catch(Exception e){
@@ -166,11 +177,41 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             userKeyAgreement.init(userPrivateKey);
             userKeyAgreement.doPhase(pubK, true);
             byte[] userSharedSecret = userKeyAgreement.generateSecret();
-            
-            Certificate toAdd = null;
 
-            return toAdd;
+
+            //TODO: return e de onde vem o certifido embaixo
+            Certificate certificate = null; //De onde vem o certificado deste user????????
+
+            //-------------------------------------------------------
+            byte[] cerBytes = certificate.getEncoded();
+ 
+            //encrypta
+            EncryptionHandler eh = new EncryptionHandler();
+            byte[] enCer = eh.encryptWithKey(cerBytes, userSharedSecret);
+
+            //envia certificado
+            out.writeObject(enCer);
+            //--------------------------------------------------------
+            
+            
+            Certificate toAdd = null; //????????????????
+            return toAdd; // ????????????é suposto devolver o que?
         } catch(Exception e){
+            e.printStackTrace();
+        }
+
+        return null;
+        
+    }
+
+    public Certificate byteArrToCertificate(byte[] bytes){
+        try{
+            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+            InputStream inStream = new ByteArrayInputStream(bytes);
+            Certificate cert = certFactory.generateCertificate(inStream);
+            inStream.close();
+            return cert;
+        } catch (Exception e){
             e.printStackTrace();
         }
 
