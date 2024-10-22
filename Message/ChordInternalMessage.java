@@ -20,8 +20,10 @@ public class ChordInternalMessage extends Message {
     private boolean finishedBroadcasting; // BroadcastUpdateFingerTableEvent
     private PublicKey receiverPubKey; // RecivePubKeyEvent
     private BigInteger target; // RecivePubKeyEvent
-    private String username; // Send Certificate
-    private Certificate certificate; // Send Certificate
+    private String aliasReciver; // AddCertificateToTrustStoreEvent
+    private String aliasSender; // AddCertificateToTrustStoreEvent
+    private Certificate certificate; // AddCertificateToTrustStoreEvent
+    
 
     // UpdateNeighboringNodesEvent
     public ChordInternalMessage(MessageType messageType, NodeDTO nextNode, NodeDTO previousNode) {
@@ -71,12 +73,13 @@ public class ChordInternalMessage extends Message {
     }
 
     /**
-     * Send Certificate
+     * AddCertificateToTrustStoreEvent
      */
-    public ChordInternalMessage(MessageType messageType, Certificate certificate, String username) {    
+    public ChordInternalMessage(MessageType messageType, Certificate certificate, String aliasReciver, String aliasSender) {    
         super(messageType);
         this.certificate = certificate;
-        this.username = username;
+        this.aliasReciver = aliasReciver;
+        this.aliasSender = aliasSender;
     }
 
     public NodeDTO getNextNode(){
@@ -143,12 +146,20 @@ public class ChordInternalMessage extends Message {
         this.receiverPubKey = receiverPubKey;
     }
 
-    public String getUsername(){
-        return this.username;
+    public String getAliasReciver(){
+        return this.aliasReciver;
+    }
+
+    public String getAliasSender(){
+        return this.aliasSender;
     }
 
     public Certificate getCertificate(){
         return this.certificate;
+    }
+
+    public void setCertificate(Certificate certificate){
+        this.certificate = certificate;
     }
 
 

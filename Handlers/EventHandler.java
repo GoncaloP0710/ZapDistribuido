@@ -9,9 +9,11 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 import java.security.InvalidKeyException;
-
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.concurrent.ConcurrentHashMap;
 import java.security.cert.Certificate;
 
@@ -30,6 +32,7 @@ public class EventHandler {
     boolean isDefaultNode;
     NodeDTO currentNodeDTO;
     Node currentNode;
+    private String username;
 
     // private final Lock updateNeighborsLock = new ReentrantLock();
     private final Lock enterNodeLock = new ReentrantLock();
@@ -44,6 +47,7 @@ public class EventHandler {
         isDefaultNode = userService.getCurrentNode().checkDefaultNode(ipDefault, portDefault);
         currentNodeDTO = userService.getCurrentNodeDTO();
         currentNode = userService.getCurrentNode();
+        username = userService.getUsername();
     }
 
     public synchronized void updateNeighbors(UpdateNeighboringNodesEvent event) {
@@ -64,16 +68,16 @@ public class EventHandler {
 
             if (nodeWithHashDTO == null) { // target node (Prev to the new Node) is the current node
                 // Update the neighbors
-                userService.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, event.getToEnter()), true); // mudar prev do next para o novo node
-                userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, currentNode.getNextNode(), (NodeDTO) null), true); // mudar next do novo node para o next do current
+                userService.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, event.getToEnter()), true, username); // mudar prev do next para o novo node
+                userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, currentNode.getNextNode(), (NodeDTO) null), true, username); // mudar next do novo node para o next do current
                 currentNode.setNextNode(nodeToEnterDTO);// mudar next do current para o novo node
-                userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, currentNodeDTO), true); // mudar prev do novo node para o current
+                userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, currentNodeDTO), true, username); // mudar prev do novo node para o current
                 
                 // Update all the finger tables
-                userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, currentNodeDTO, currentNodeDTO), true);
+                userService.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, currentNodeDTO, currentNodeDTO), true, username);
 
             } else { // foward to the closest node in the finger table of the current node to the new node
-                userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false);
+                userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false, username);
             }
         } finally {
             enterNodeLock.unlock();
@@ -86,14 +90,14 @@ public class EventHandler {
         
         // mudar next do prev para o next do current
         ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateNeighbors, nextNodeDTO, (NodeDTO) null);
-        userService.startClient(prevNodeDTO.getIp(), prevNodeDTO.getPort(), message, true);
+        userService.startClient(prevNodeDTO.getIp(), prevNodeDTO.getPort(), message, true, username);
         
         // mudar prev do next para o prev do current
         ChordInternalMessage message2 = new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, prevNodeDTO);
-        userService.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), message2, true);
+        userService.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), message2, true, username);
 
         // Update all the finger tables | Next e mandas o current
-        userService.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, prevNodeDTO, prevNodeDTO), true);
+        userService.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, prevNodeDTO, prevNodeDTO), true, userService.getUsername());
 
     }
 
@@ -107,7 +111,7 @@ public class EventHandler {
             userService.getCurrentNode().setFingerTable(message.getFingerTable());
             return;
         } else if (counter == userService.getHashLength()) { // No more nodes to add
-            userService.startClient(nodeToUpdateDTO.getIp(), nodeToUpdateDTO.getPort(), message, true); // Send the message back to the node that started the event
+            userService.startClient(nodeToUpdateDTO.getIp(), nodeToUpdateDTO.getPort(), message, true, username); // Send the message back to the node that started the event
             return;
         }
     
@@ -129,7 +133,7 @@ public class EventHandler {
         }
         
         NodeDTO nextNode = currentNode.getNextNode();
-        userService.startClient(nextNode.getIp(), nextNode.getPort(), message, false);
+        userService.startClient(nextNode.getIp(), nextNode.getPort(), message, false, username);
     }
     
     public synchronized void broadcastMessage(BroadcastUpdateFingerTableEvent event) {
@@ -139,7 +143,7 @@ public class EventHandler {
         if (!event.getInitializer().equals(currentNodeDTO)) { // foward to the next node
             NodeDTO nextNodeDTO = currentNode.getNextNode();
             ((ChordInternalMessage) event.getMessage()).setSenderDto(currentNodeDTO);
-            userService.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), event.getMessage(), false);
+            userService.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), event.getMessage(), false, username);
         }
     }
 
@@ -155,7 +159,7 @@ public class EventHandler {
             } 
         } else { // Send to the target (foward to closest node to the target, in the finger table)
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getReciver());
-            userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false);
+            userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false, username);
         }
     }
 
@@ -177,21 +181,20 @@ public class EventHandler {
         } else if (event.getTarget() == currentNodeDTO.getHash()) { // Send back to the initializer | Arrived at the target
             ChordInternalMessage message = (ChordInternalMessage) event.getMessage();
             message.setReceiverPubKey(currentNodeDTO.getPubK());
-            userService.startClient(event.getInitializer().getIp(), event.getInitializer().getPort(), message, false);
+            userService.startClient(event.getInitializer().getIp(), event.getInitializer().getPort(), message, false, username);
         
         } else { // Send to the target (foward to closest node to the target, in the finger table)
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getTarget());
-            userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false);
+            userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false, username);
         }
     }
 
-    public void addCertificateToTrustStore(AddCertificateToTrustStoreEvent event) {
+    public void addCertificateToTrustStore(AddCertificateToTrustStoreEvent event) {    
         try {
             // Extract the certificate and alias from the event
             Certificate certificate = event.getCertificate();
-            String alias = event.getAlias();
+            String alias = currentNodeDTO.getUsername().equals(event.getAliasSender()) ? event.getAliasReciver() : event.getAliasSender();
             userService.getKeyHandler().addCertificateToTrustStore(alias, certificate);
-            
 
             System.out.println("Certificate added to trust store successfully.");
 
@@ -201,7 +204,6 @@ public class EventHandler {
         }
     }
     
-
     public void addMessage(BigInteger target, byte[] message) {
         messages.put(target, message);
     }

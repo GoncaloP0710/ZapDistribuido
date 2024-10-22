@@ -4,6 +4,15 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.Certificate;
+
+import javax.crypto.KeyAgreement;
 
 import Events.*;
 import Message.*;
@@ -64,6 +73,11 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                 case UpdateFingerTable:
                     System.out.println((String) in.readObject());
                     break;
+                case addCertificateToTrustStore:
+                    ChordInternalMessage message = (ChordInternalMessage) msg;
+                    message.setCertificate(sendCert());
+                    emitEvent(new AddCertificateToTrustStoreEvent((ChordInternalMessage) message));
+                    break;
                 default:
                     break;
             }
@@ -90,9 +104,78 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             }
 
             endThread();
-        } catch (ClassNotFoundException | IOException e) {
+        } catch (ClassNotFoundException | NoSuchAlgorithmException | IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private Certificate reciveCert() { // Diffie-Hellman Key Exchange
+        try{
+            // Step 1: Generate parameters
+            int primeLength = 2048;
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH");
+            keyPairGenerator.initialize(primeLength);
+            
+            // Step 2: generates  key pair
+            KeyPair userKeyPair = keyPairGenerator.generateKeyPair();
+            PrivateKey userPrivateKey = userKeyPair.getPrivate();
+            PublicKey userPublicKey = userKeyPair.getPublic();
+            
+            // Step 3: Exchange public keys
+            PublicKey pubK = (PublicKey) in.readObject();
+            out.writeObject(userPublicKey);
+            
+            // Step 4: Compute the shared secret
+            KeyAgreement userKeyAgreement = KeyAgreement.getInstance("DH");
+            userKeyAgreement.init(userPrivateKey);
+            userKeyAgreement.doPhase(pubK, true);
+            byte[] userSharedSecret = userKeyAgreement.generateSecret();
+
+            Certificate toAdd =  null;
+            
+
+
+            return toAdd;
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+
+        return null;
+        
+    }
+
+    private Certificate sendCert() { // Diffie-Hellman Key Exchange
+
+        try{
+            // Step 1: Generate parameters
+            int primeLength = 2048;
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH");
+            keyPairGenerator.initialize(primeLength);
+            
+            // Step 2: generates  key pair
+            KeyPair userKeyPair = keyPairGenerator.generateKeyPair();
+            PrivateKey userPrivateKey = userKeyPair.getPrivate();
+            PublicKey userPublicKey = userKeyPair.getPublic();
+            
+            // Step 3: Exchange public keys
+            out.writeObject(userPublicKey);
+            PublicKey pubK = (PublicKey) in.readObject();
+
+            // Step 4: Compute the shared secret
+            KeyAgreement userKeyAgreement = KeyAgreement.getInstance("DH");
+            userKeyAgreement.init(userPrivateKey);
+            userKeyAgreement.doPhase(pubK, true);
+            byte[] userSharedSecret = userKeyAgreement.generateSecret();
+            
+            Certificate toAdd = null;
+
+            return toAdd;
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+
+        return null;
+        
     }
 
     public void endThread() {
@@ -110,8 +193,9 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
      * @return
      * @throws IOException 
      * @throws ClassNotFoundException 
+     * @throws NoSuchAlgorithmException 
      */
-    public void processCommand(Message messageToProcess) throws ClassNotFoundException, IOException {
+    public void processCommand(Message messageToProcess) throws ClassNotFoundException, IOException, NoSuchAlgorithmException {
         switch (messageToProcess.getMsgType()) {
             case EnterNode:
                 emitEvent(new EnterNodeEvent((ChordInternalMessage) messageToProcess));
@@ -132,7 +216,9 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                 emitEvent(new RecivePubKeyEvent((ChordInternalMessage) messageToProcess));
                 break;
             case addCertificateToTrustStore:
-               emitEvent(new AddCertificateToTrustStoreEvent((ChordInternalMessage) messageToProcess));
+                ((ChordInternalMessage) messageToProcess).setCertificate(reciveCert());
+                emitEvent(new AddCertificateToTrustStoreEvent((ChordInternalMessage) messageToProcess));
+                break;
             default:
                 break;
         }

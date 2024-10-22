@@ -1,20 +1,27 @@
 package Events;
 
 import Message.ChordInternalMessage;
+
 import java.security.cert.Certificate;
 
 public class AddCertificateToTrustStoreEvent extends NodeEvent {
-    private final String alias;
+    private final String aliasReciver;
+    private final String aliasSender;
     private Certificate certificate;
 
     public AddCertificateToTrustStoreEvent(ChordInternalMessage msg) {
         super(msg);
-        this.alias = msg.getUsername();
+        this.aliasReciver = msg.getAliasReciver();
+        this.aliasSender = msg.getAliasSender();
         this.certificate = msg.getCertificate();
     }
 
-    public String getAlias() {
-        return alias;
+    public String getAliasReciver() {
+        return aliasReciver;
+    }
+
+    public String getAliasSender() {
+        return aliasSender;
     }
 
     public Certificate getCertificate() {

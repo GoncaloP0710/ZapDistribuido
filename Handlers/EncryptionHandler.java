@@ -1,6 +1,7 @@
 package Handlers;
 
 import java.security.InvalidKeyException;
+import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -61,5 +62,16 @@ public class EncryptionHandler{ //Assume que as chaves já existem
 
         return c.doFinal(data);
     }
+
+    // public byte[] encryptWithKey(byte[] data, byte[] key) //encryptar com chave custom
+    // throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException{
+
+    //     SecretKey chave = new SecretKeySpec(key, 0, key.length, "AES");
+
+    //     Cipher c = Cipher.getInstance("RSA");
+	// 	c.init(Cipher.DECRYPT_MODE, chave);
+
+    //     return c.doFinal(data);
+    // }
 
 }

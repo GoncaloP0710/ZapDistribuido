@@ -87,6 +87,8 @@ public class UserService implements UserServiceInterface {
         this.eventHandler = new EventHandler(this);
         this.encryptionHandler = new EncryptionHandler();
 
+        serverInsecure(currentNode);
+        System.out.println("Insecure Server started in a separate thread. Continuing with main flow...");
         startServerInThread(currentNode);
         System.out.println("Server started in a separate thread. Continuing with main flow...");
 
@@ -96,7 +98,7 @@ public class UserService implements UserServiceInterface {
             currentNode.setPreviousNode(currentNodeDTO);
         } else {
             ChordInternalMessage message = new ChordInternalMessage(MessageType.EnterNode, currentNodeDTO);
-            startClient(ipDefault, portDefault, message, false); // TODO: Change to true if needed
+            startClient(ipDefault, portDefault, message, false, username); // TODO: Change to true if needed
         }        
     }
 
@@ -130,6 +132,10 @@ public class UserService implements UserServiceInterface {
 
     public KeyHandler getKeyHandler() {
         return keyHandler;
+    }
+
+    public String getUsername() {
+        return username;
     }
 
     public void startServerInThread(Node node) {
@@ -205,9 +211,9 @@ public class UserService implements UserServiceInterface {
      * @param port
      * @param command
      */
-    public void startClient(String ip, int port, Message msg, boolean waitForResponse) {
+    public void startClient(String ip, int port, Message msg, boolean waitForResponse, String alias) {
         
-        System.setProperty("javax.net.ssl.keyStore", keystoreFile.toString()); // ????????????? deixa assim dps logo se ve
+        System.setProperty("javax.net.ssl.keyStore", keystoreFile.toString());
         System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
         System.setProperty("javax.net.ssl.keyStoreType", "JKS");
 
@@ -216,40 +222,11 @@ public class UserService implements UserServiceInterface {
         System.setProperty("javax.net.ssl.trustStoreType", "JKS");
         
         try {
-            //puto pt--------------------------------------------------------------------------------------------
 
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-
-            // Initialize SSL context with no truststore (insecure, for bootstrapping)
-            sslContext.init(null, new TrustManager[] { new InsecureTrustManager() }, null);
-
-            // Use the SSL context to create a socket
-            SSLSocketFactory socketFactory = sslContext.getSocketFactory();
-            SSLSocket socket = (SSLSocket) socketFactory.createSocket(ip, port);
-
-            // Start handshake (one-sided authentication)
-            socket.startHandshake();
-
-            Certificate cer = keyHandler.getCertificate();
-            //enviar certificado
-            try (ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream())) {
-                oos.writeObject(cer);
-                oos.writeObject(username);
-                oos.flush();
-            }
-            //receber certificado
-            Certificate recebido = null;
-            String alias_recebido = "";
-            try (ObjectInputStream ois = new ObjectInputStream(socket.getInputStream())) {
-                recebido = (Certificate) ois.readObject();
-                alias_recebido = (String) ois.readObject();
+            if (!keyHandler.getTruStore().containsAlias(alias)) {
+                shareCertificateClient(ip, port, new ChordInternalMessage(MessageType.addCertificateToTrustStore, keyHandler.getCertificate(alias), alias, currentNodeDTO.getUsername()));
             }
 
-            keyHandler.addCertificateToTrustStore(alias_recebido, recebido);
-
-            socket.close();
-
-            //------------------------------------------------------------------------------------------------------
             // Create SSL socket
             SocketFactory factory = SSLSocketFactory.getDefault();
             SSLSocket sslClientSocket = (SSLSocket) factory.createSocket(ip, port);
@@ -327,7 +304,7 @@ public class UserService implements UserServiceInterface {
             if (reciverNode != null) { // Reciver is on the finger table
                 byte[] messageEncryp = EncryptionHandler.encryptWithPubK(message, reciverNode.getPubK());
                 UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, reciverHash, messageEncryp);
-                startClient(reciverNode.getIp(), reciverNode.getPort(), userMessage, false);
+                startClient(reciverNode.getIp(), reciverNode.getPort(), userMessage, false, username);
             } else { // Reciver is not on the finger table so we have to find its pubK
                 eventHandler.addMessage(reciverHash, message);
                 RecivePubKeyEvent event = new RecivePubKeyEvent(new ChordInternalMessage(MessageType.RecivePubKey, null, reciverHash, currentNodeDTO));
@@ -350,19 +327,48 @@ public class UserService implements UserServiceInterface {
             eventHandler.broadcastMessage(((BroadcastUpdateFingerTableEvent) e));
         } else if (e instanceof NodeSendMessageEvent) {
             eventHandler.sendUserMessage(((NodeSendMessageEvent) e));
+        } else if (e instanceof AddCertificateToTrustStoreEvent) {
+            eventHandler.addCertificateToTrustStore((AddCertificateToTrustStoreEvent) e);
         } else {
             throw new UnsupportedOperationException("Unhandled event type");
         }
     }
 
-}
-//CHATGPT
-class InsecureTrustManager implements X509TrustManager {
-    public void checkClientTrusted(X509Certificate[] chain, String authType) {
+    private void shareCertificateClient(String ip, int port, Message msg) throws NoSuchAlgorithmException {
+        try {
+            // Create normal socket
+            Socket clientSocket = new Socket(ip, port);
+    
+            NodeThread newClientThread = new NodeThread(clientSocket, msg, this);
+            newClientThread.start();
+            newClientThread.join(); // Wait for the thread to finish
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+            System.exit(-1);
+        }
     }
-    public void checkServerTrusted(X509Certificate[] chain, String authType) {
-    }
-    public X509Certificate[] getAcceptedIssuers() {
-        return new X509Certificate[0];
+
+    public void serverInsecure(Node node) throws IOException {
+        this.currentNode = node;
+        String ip = node.getIp();
+        int port = node.getPort();
+
+        System.out.println("Starting server on " + ip + ":" + port);
+        // Use normal ServerSocket instead of SSLServerSocket
+        this.serverSocket = new ServerSocket(port);
+
+        while (true) {
+            Socket clientSocket = null; // other node sockets
+            try {
+                clientSocket = serverSocket.accept();
+                NodeThread newServerThread = new NodeThread(clientSocket, null, this);
+                newServerThread.setListener(this);
+                newServerThread.start();
+
+            } catch (IOException e) {
+                System.err.println(e.getMessage());
+                System.exit(-1);
+            }
+        }
     }
 }
