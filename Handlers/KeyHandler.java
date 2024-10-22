@@ -170,8 +170,8 @@ public class KeyHandler {
         String[] args = new String[]{
             "keytool", "-genkeypair", "-alias", keyStoreString, "-keyalg", "RSA", "-keysize", "2048",
             "-validity", "365", "-keystore", keystoreFilePath, "-storepass", keyStorePassword,
-            "-keypass", keyStorePassword, 
-            "-dname", "CN="+keyStoreString+", OU=a, O=a, L=a, ST=a, C=a", "-storetype", "JKS"
+            "-keypass", keyStorePassword, "-dname", "CN="+keyStoreString+", OU=a, O=a, L=a, ST=a, C=a", 
+            "-storetype", "JKS", "-noprompt"
         };
         
         // Execute the keytool command

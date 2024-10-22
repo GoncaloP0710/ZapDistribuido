@@ -1,6 +1,10 @@
 package Client;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+import java.util.Enumeration;
 
 import Handlers.*;
 import dtos.*;
@@ -58,6 +62,39 @@ public class User {
 
         String serverIp = "localhost";
         int serverPort = Integer.parseInt(interfaceHandler.getPort());
+
+        //--------------------------------------------------
+        //HardCoded
+        // if(name.equals("a")){
+        //     Certificate cerb = null;
+        //     try(InputStream inStream = new FileInputStream("files/b.cer")) {
+        //         CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+        //         cerb = certFactory.generateCertificate(inStream);
+        //     }
+        //     keyHandler.addCertificateToTrustStore("b", cerb);
+        // } else if(name.equals("b")){
+        //     Certificate cera = null;
+        //     try(InputStream inStream = new FileInputStream("files/a.cer")) {
+        //         CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+        //         cera = certFactory.generateCertificate(inStream);
+        //     }
+        //     keyHandler.addCertificateToTrustStore("a", cera);
+        // }
+
+
+        // //Imprimir aliases (Copilot)
+        // Enumeration<String> aliases = keyHandler.getTruStore().aliases();
+        // StringBuilder aliasesString = new StringBuilder();
+        // while (aliases.hasMoreElements()) {
+        //     aliasesString.append(aliases.nextElement()).append(", ");
+        // }
+        // if (aliasesString.length() > 0) {
+        //     aliasesString.setLength(aliasesString.length() - 2);
+        // }
+        // System.out.println("Aliases: " + aliasesString.toString());
+
+
+        //--------------------------------------------------
 
         node = new Node(name, serverIp, serverPort, cer);
         // TODO: Change this to the correct truststore and keystore files - Maybe insted just pass the keyHandler and have tow funcs that reutn those names

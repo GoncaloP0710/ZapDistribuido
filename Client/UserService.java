@@ -19,6 +19,7 @@ import javax.net.ServerSocketFactory;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -209,6 +210,13 @@ public class UserService implements UserServiceInterface {
             // Create SSL socket
             SocketFactory factory = SSLSocketFactory.getDefault();
             SSLSocket sslClientSocket = (SSLSocket) factory.createSocket(ip, port);
+
+            // Print the client CA
+            SSLSession session = sslClientSocket.getSession();
+            Certificate[] certs = session.getPeerCertificates();
+            for (Certificate cert : certs) {
+                System.out.println(cert.toString());
+            }
 
             NodeThread newClientThread = new NodeThread(sslClientSocket, msg, this);
             newClientThread.start();
