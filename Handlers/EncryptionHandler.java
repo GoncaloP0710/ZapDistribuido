@@ -68,9 +68,9 @@ public class EncryptionHandler{ //Assume que as chaves já existem
     public byte[] encryptWithKey(byte[] data, byte[] key) //encryptar com chave custom
     throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException{
 
-        SecretKey chave = new SecretKeySpec(key, 0, key.length, "AES");
+        SecretKey chave = new SecretKeySpec(key, 0, key.length, "RSA");
 
-        Cipher c = Cipher.getInstance("AES");
+        Cipher c = Cipher.getInstance("RSA");
 		c.init(Cipher.ENCRYPT_MODE, chave);
 
         return c.doFinal(data);
@@ -79,9 +79,9 @@ public class EncryptionHandler{ //Assume que as chaves já existem
     public byte[] decryptWithKey(byte[] data, byte[] key) //desencryptar com chave custom
     throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException{
 
-        SecretKey chave = new SecretKeySpec(key, 0, key.length, "AES");
+        SecretKey chave = new SecretKeySpec(key, 0, key.length, "RSA");
 
-        Cipher c = Cipher.getInstance("AES");
+        Cipher c = Cipher.getInstance("RSA");
 		c.init(Cipher.DECRYPT_MODE, chave);
 
         return c.doFinal(data);
