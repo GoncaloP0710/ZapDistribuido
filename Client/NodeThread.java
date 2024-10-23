@@ -142,6 +142,10 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             byte[] userSharedSecret = userKeyAgreement.generateSecret();
             System.out.println("Shared secret: " + Arrays.toString(userSharedSecret));
 
+            // Ensure the shared secret is 256 bits (32 bytes)
+            byte[] aesKey = new byte[32];
+            System.arraycopy(userSharedSecret, 0, aesKey, 0, Math.min(userSharedSecret.length, 32));
+
 
             // TODO: Change methods of encryption handler to static for no need to create the handler
             // Step 5: Recive encrypted certificate
@@ -149,7 +153,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             byte[] enCer = (byte[]) in.readObject();
             //desencrypta
             EncryptionHandler eh = new EncryptionHandler();
-            byte[] deCer = eh.decryptWithKey(enCer, userSharedSecret);
+            byte[] deCer = eh.decryptWithKey(enCer, aesKey);
             //transforma em Certificate
             Certificate toAdd =  byteArrToCertificate(deCer);
 
@@ -158,7 +162,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             byte[] cerBytes = certificate.getEncoded();
             //encrypta
             EncryptionHandler eh2 = new EncryptionHandler();
-            byte[] enCer2 = eh2.encryptWithKey(cerBytes, userSharedSecret);
+            byte[] enCer2 = eh2.encryptWithKey(cerBytes, aesKey);
             //envia certificado
             out.writeObject(enCer2);
 
@@ -196,25 +200,21 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             byte[] userSharedSecret = userKeyAgreement.generateSecret();
             System.out.println("Shared secret: " + Arrays.toString(userSharedSecret));
 
+            // Ensure the shared secret is 256 bits (32 bytes)
+            byte[] aesKey = new byte[32];
+            System.arraycopy(userSharedSecret, 0, aesKey, 0, Math.min(userSharedSecret.length, 32));
 
-            // TODO: Change methods of encryption handler to static for no need to create the handler
             // Step 5: Send encrypted certificate
             Certificate certificate = keyHandler.getCertificate();
             byte[] cerBytes = certificate.getEncoded();
-            //encrypta
             EncryptionHandler eh = new EncryptionHandler();
-            byte[] enCer = eh.encryptWithKey(cerBytes, userSharedSecret);
-            //envia certificado
+            byte[] enCer = eh.encryptWithKey(cerBytes, aesKey);
             out.writeObject(enCer);
 
-            // Step 6: Recive encrypted certificate - Check variable names
-            //Recebe certificado em byte[]
+            // Step 6: Receive encrypted certificate
             byte[] enCer2 = (byte[]) in.readObject();
-            //desencrypta
-            EncryptionHandler eh2 = new EncryptionHandler();
-            byte[] deCer2 = eh2.decryptWithKey(enCer2, userSharedSecret);
-            //transforma em Certificate
-            Certificate toAdd =  byteArrToCertificate(deCer2);
+            byte[] deCer2 = eh.decryptWithKey(enCer2, aesKey);
+            Certificate toAdd = byteArrToCertificate(deCer2);
             return toAdd;
 
         } catch(Exception e){

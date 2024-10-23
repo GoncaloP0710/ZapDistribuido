@@ -13,6 +13,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+
 //import Message.Message;
 import Message.UserMessage;
 //import client.UserService;
@@ -65,26 +66,24 @@ public class EncryptionHandler{ //Assume que as chaves já existem
         return c.doFinal(data);
     }
 
-    public byte[] encryptWithKey(byte[] data, byte[] key) //encryptar com chave custom
-    throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException{
-
-        SecretKey chave = new SecretKeySpec(key, 0, key.length, "RSA");
-
-        Cipher c = Cipher.getInstance("RSA");
-		c.init(Cipher.ENCRYPT_MODE, chave);
-
-        return c.doFinal(data);
+    public byte[] encryptWithKey(byte[] data, byte[] key) throws Exception {
+        if (key.length != 32) {
+            throw new IllegalArgumentException("Invalid AES key length: " + key.length + " bytes. Key must be 256 bits (32 bytes).");
+        }
+        Key secretKey = new SecretKeySpec(key, "AES");
+        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+        return cipher.doFinal(data);
     }
 
-    public byte[] decryptWithKey(byte[] data, byte[] key) //desencryptar com chave custom
-    throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException{
-
-        SecretKey chave = new SecretKeySpec(key, 0, key.length, "RSA");
-
-        Cipher c = Cipher.getInstance("RSA");
-		c.init(Cipher.DECRYPT_MODE, chave);
-
-        return c.doFinal(data);
+    public byte[] decryptWithKey(byte[] data, byte[] key) throws Exception {
+        if (key.length != 32) {
+            throw new IllegalArgumentException("Invalid AES key length: " + key.length + " bytes. Key must be 256 bits (32 bytes).");
+        }
+        Key secretKey = new SecretKeySpec(key, "AES");
+        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+        cipher.init(Cipher.DECRYPT_MODE, secretKey);
+        return cipher.doFinal(data);
     }
 
 }
