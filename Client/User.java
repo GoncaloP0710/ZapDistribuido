@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.Enumeration;
+import java.security.PrivateKey;
+
 
 import Handlers.*;
 import dtos.*;
@@ -41,14 +43,14 @@ public class User {
         String name = interfaceHandler.startUp();
         String password = interfaceHandler.getPassword();
 
-
         // Load keystore and truststore as well as verify password
-        KeyHandler keyHandler = null;
+        KeyHandler keyHandler = KeyHandler.getInstance(password, name);
         boolean correctPassword = false;
         while (!correctPassword) {
             try {
                 System.out.println("Trying to get instance");
-                keyHandler = KeyHandler.getInstance(password, name);
+                keyHandler.loadKeyStore();
+                PrivateKey pk = (PrivateKey) keyHandler.getPrivateKey(name, password);
                 correctPassword = true;
             } catch (Exception e) {
                 interfaceHandler.erro("Username ou Password inválido");

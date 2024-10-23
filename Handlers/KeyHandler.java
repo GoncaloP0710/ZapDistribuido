@@ -44,7 +44,6 @@ public class KeyHandler {
         initialize(); 
         this.certificate = getCertificate(keystoreString);
 
-
         System.out.println("certificate trustsore: "+ trustStore.getCertificate(keystoreString));
         System.out.println("certificate keystore: "+ keyStore.getCertificate(keystoreString));
         System.out.println("keystore aliases: "+ keyStore.aliases());
@@ -66,14 +65,16 @@ public class KeyHandler {
     }
 
     public Boolean isFirstTimeUser(String userName) {
-        File userFile = new File("/files/" + userName + ".jks");
-        return !userFile.exists();
-    }
+        File userFile = new File("files/" + userName + ".jks");
+        System.out.println("Checking file: " + userFile.getAbsolutePath());
+        System.out.println("File exists: " + userFile.exists());
+    return !userFile.exists();
+}
 
     public Boolean existsStore(String userName) throws Exception {
-        File keyStoreFile = new File("/files/" + userName + ".jks");
-        File trustStoreFile = new File("/files/" + userName + "_TrustStore.jks");
-        File certificateFile = new File("/files/" + userName + ".cer");
+        File keyStoreFile = new File("files/" + userName + ".jks");
+        File trustStoreFile = new File("files/" + userName + "_TrustStore.jks");
+        File certificateFile = new File("files/" + userName + ".cer");
 
         if (keyStoreFile.exists() && trustStoreFile.exists()) {
             if (!certificateFile.exists()) {
@@ -87,9 +88,13 @@ public class KeyHandler {
     }
 
     public void loadKeyStore() throws Exception {
-        KeyStore ks = KeyStore.getInstance("JKS");
-        try (FileInputStream fis = new FileInputStream(keystoreFile)) {
-            ks.load(fis, keyStorePassword.toCharArray());
+        keyStore = KeyStore.getInstance("JKS");
+        try (FileInputStream fis = new FileInputStream("files/"+keyStoreString+".jks")) {
+            keyStore.load(fis, keyStorePassword.toCharArray());
+
+            // FileOutputStream fos = new FileOutputStream("files/"+keyStoreString+".jks");
+            // keyStore.store(fos, keyStorePassword.toCharArray());
+            // fos.close();
             // ------------------ DEBUG ------------------
     
             // Print debug information
@@ -115,13 +120,17 @@ public class KeyHandler {
             }
             throw new Exception("Failed to initialize KeyStore", e);
         }
-        this.keyStore = ks;
+        //this.keyStore = ks;
     }
 
     public void loadTrustStore() throws Exception { // TODO: Is it suposed to be KeyStore.getDefaultType()?
-        KeyStore ts = KeyStore.getInstance("JKS");
-        try (FileInputStream fis = new FileInputStream(trustStoreFile)) {
-            ts.load(fis, keyStorePassword.toCharArray());
+        trustStore = KeyStore.getInstance("JKS");
+        try (FileInputStream fis = new FileInputStream("files/"+keyStoreString+"_TrustStore.jks")) {
+            trustStore.load(fis, keyStorePassword.toCharArray());
+
+            // FileOutputStream fos = new FileOutputStream(keystoreFile);
+            // trustStore.store(fos, keyStorePassword.toCharArray());
+            // fos.close();
         } catch (IOException | NoSuchAlgorithmException | CertificateException e) {
             if (e.getCause() instanceof UnrecoverableKeyException) {
                 System.err.println("Error initializing TrustStore: Incorrect password");
@@ -131,7 +140,7 @@ public class KeyHandler {
             throw new Exception("Failed to initialize TrustStore", e);
         }
 
-        this.trustStore = ts;
+        //this.trustStore = ts;
     }
 
     public void firstTimeUser() throws Exception{
