@@ -15,6 +15,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.*;
+import java.util.Enumeration;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -153,6 +154,9 @@ public class UserService implements UserServiceInterface {
             } catch (KeyStoreException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
         };
 
@@ -217,15 +221,6 @@ public class UserService implements UserServiceInterface {
      * @param command
      */
     public void startClient(String ip, int port, Message msg, boolean waitForResponse, String alias) {
-        
-        System.setProperty("javax.net.ssl.keyStore", keystoreFile.toString());
-        System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
-        System.setProperty("javax.net.ssl.keyStoreType", "JKS");
-
-        System.setProperty("javax.net.ssl.trustStore", truststoreFile.toString());
-        System.setProperty("javax.net.ssl.trustStorePassword", keystorePassword);
-        System.setProperty("javax.net.ssl.trustStoreType", "JKS");
-        
         try {
 
             System.out.println("Alias to search: " + alias);
@@ -235,16 +230,62 @@ public class UserService implements UserServiceInterface {
                 shareCertificateClient(ip, port, new ChordInternalMessage(MessageType.addCertificateToTrustStore, keyHandler.getCertificate(alias), alias, currentNodeDTO.getUsername()));
             }
 
+            System.setProperty("javax.net.ssl.keyStore", keystoreFile.toString());
+            System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
+            System.setProperty("javax.net.ssl.keyStoreType", "JKS");
+
+            System.setProperty("javax.net.ssl.trustStore", truststoreFile.toString());
+            System.setProperty("javax.net.ssl.trustStorePassword", keystorePassword);
+            System.setProperty("javax.net.ssl.trustStoreType", "JKS");
+
+            // Log the current SSL properties
+            System.out.println("=================================================================");
+            System.out.println("----------------------- Logs Conection --------------------------");
+            System.out.println("=================================================================");
+            System.out.println("Current SSL Properties startClient:");
+            System.out.println("javax.net.ssl.keyStore: " + System.getProperty("javax.net.ssl.keyStore"));
+            System.out.println("javax.net.ssl.keyStorePassword: " + System.getProperty("javax.net.ssl.keyStorePassword"));
+            System.out.println("javax.net.ssl.keyStoreType: " + System.getProperty("javax.net.ssl.keyStoreType"));
+            System.out.println("javax.net.ssl.trustStore: " + System.getProperty("javax.net.ssl.trustStore"));
+            System.out.println("javax.net.ssl.trustStorePassword: " + System.getProperty("javax.net.ssl.trustStorePassword"));
+            System.out.println("javax.net.ssl.trustStoreType: " + System.getProperty("javax.net.ssl.trustStoreType"));
+            System.out.println("=================================================================");
+
+            // Print the contents of the keystore
+            try {
+                KeyStore keyStore = KeyStore.getInstance("JKS");
+                keyStore.load(new FileInputStream(keystoreFile.toString()), keystorePassword.toCharArray());
+                Enumeration<String> aliases = keyStore.aliases();
+                System.out.println("Keystore contents:");
+                while (aliases.hasMoreElements()) {
+                    String alias2 = aliases.nextElement();
+                    Certificate cert = keyStore.getCertificate(alias2);
+                    System.out.println("Alias: " + alias2);
+                    System.out.println("Certificate: " + cert);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            // Print the contents of the truststore
+            try {
+                KeyStore trustStore = KeyStore.getInstance("JKS");
+                trustStore.load(new FileInputStream(truststoreFile.toString()), keystorePassword.toCharArray());
+                Enumeration<String> aliases = trustStore.aliases();
+                System.out.println("Truststore contents:");
+                while (aliases.hasMoreElements()) {
+                    String alias3 = aliases.nextElement();
+                    Certificate cert = trustStore.getCertificate(alias3);
+                    System.out.println("Alias: " + alias3);
+                    System.out.println("Certificate: " + cert);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
             // Create SSL socket
             SocketFactory factory = SSLSocketFactory.getDefault();
             SSLSocket sslClientSocket = (SSLSocket) factory.createSocket(ip, port);
-
-            // Print the client CA
-            SSLSession session = sslClientSocket.getSession();
-            Certificate[] certs = session.getPeerCertificates();
-            for (Certificate cert : certs) {
-                System.out.println(cert.toString());
-            }
 
             NodeThread newClientThread = new NodeThread(sslClientSocket, msg, this, keyHandler);
             newClientThread.start();
@@ -356,7 +397,7 @@ public class UserService implements UserServiceInterface {
         }
     }
 
-    public void serverInsecure(Node node) throws IOException {
+    public void serverInsecure(Node node) throws IOException, InterruptedException {
         this.currentNode = node;
         String ip = node.getIp();
         int port = node.getPort()+1;
@@ -372,6 +413,7 @@ public class UserService implements UserServiceInterface {
                 NodeThread newServerThread = new NodeThread(clientSocket, null, this, keyHandler);
                 newServerThread.setListener(this);
                 newServerThread.start();
+                newServerThread.join(); // Wait for the thread to finish
 
             } catch (IOException e) {
                 System.err.println(e.getMessage());

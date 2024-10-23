@@ -87,6 +87,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                     ChordInternalMessage message = (ChordInternalMessage) msg;
                     message.setCertificate(sendCert());
                     emitEvent(new AddCertificateToTrustStoreEvent((ChordInternalMessage) message));
+                    System.out.println((String) in.readObject());
                     break;
                 default:
                     break;
@@ -108,6 +109,9 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                     break;
                 case UpdateFingerTable:
                     out.writeObject("Finger table update msg recived");
+                    break;
+                case addCertificateToTrustStore:
+                    out.writeObject("Certificate added to trust store");
                     break;
                 default:
                     break;
