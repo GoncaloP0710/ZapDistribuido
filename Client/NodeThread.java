@@ -14,6 +14,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.util.Arrays;
 
 
 import javax.crypto.KeyAgreement;
@@ -139,7 +140,10 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             userKeyAgreement.init(userPrivateKey);
             userKeyAgreement.doPhase(pubK, true);
             byte[] userSharedSecret = userKeyAgreement.generateSecret();
+            System.out.println("Shared secret: " + Arrays.toString(userSharedSecret));
 
+
+            // TODO: Change methods of encryption handler to static for no need to create the handler
             // Step 5: Recive encrypted certificate
             //Recebe certificado em byte[]
             byte[] enCer = (byte[]) in.readObject();
@@ -190,7 +194,10 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             userKeyAgreement.init(userPrivateKey);
             userKeyAgreement.doPhase(pubK, true);
             byte[] userSharedSecret = userKeyAgreement.generateSecret();
+            System.out.println("Shared secret: " + Arrays.toString(userSharedSecret));
 
+
+            // TODO: Change methods of encryption handler to static for no need to create the handler
             // Step 5: Send encrypted certificate
             Certificate certificate = keyHandler.getCertificate();
             byte[] cerBytes = certificate.getEncoded();
