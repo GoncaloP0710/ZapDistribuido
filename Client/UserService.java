@@ -181,7 +181,11 @@ public class UserService implements UserServiceInterface {
         while (true) {
             Socket clientSocket = null; // other node sockets
             try {
-                System.out.println("Secure Server socket waiting for connection...");
+                System.out.println("Secure Server socket waiting for connection..." + serverSocket.getLocalPort());
+                if(serverSocket != null){
+                    System.out.println(serverSocket.toString());
+                }
+                
                 clientSocket = serverSocket.accept();
                 System.out.println("Secure Server socket accepted connection");
                 NodeThread newServerThread = new NodeThread(clientSocket, null, this, keyHandler);
@@ -327,8 +331,8 @@ public class UserService implements UserServiceInterface {
 
             System.out.println("Start of shareCertificateClient");
             // Create normal socket
-            System.err.println("Creating socket...");
-            System.err.println("IP: " + ip + " Port: " + (port+1));
+            System.out.println("Creating socket...");
+            System.out.println("IP: " + ip + " Port: " + (port+1));
             Socket clientSocket = new Socket(ip, (port+1));
             NodeThread newClientThread = new NodeThread(clientSocket, msg, this, keyHandler);
             newClientThread.start();
@@ -348,13 +352,13 @@ public class UserService implements UserServiceInterface {
 
         System.out.println("Starting server on " + ip + ":" + port);
         // Use normal ServerSocket instead of SSLServerSocket
-        this.serverSocket = new ServerSocket(port);
+        ServerSocket sSocket = new ServerSocket(port); //socket novo
 
         while (true) {
             Socket clientSocket = null; // other node sockets
             try {
-                System.err.println("Server socket waiting for connection...");
-                clientSocket = serverSocket.accept();
+                System.err.println("Server socket waiting for connection..." + sSocket.getLocalPort()); //PRINT MVP
+                clientSocket = sSocket.accept();
                 NodeThread newServerThread = new NodeThread(clientSocket, null, this, keyHandler);
                 newServerThread.setListener(this);
                 newServerThread.start();
