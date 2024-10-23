@@ -1,0 +1,68 @@
+
+- Market Brawl
+
+- Componentes
+ - Peças para os clientes
+ - Cartas de ação
+ - Tabuleiro do supermercado
+ - Peças de melhorias
+ - Cartas de mercadorias
+ - Moeda
+
+- Preparação 
+ - Colocar todos os peoes no respetivo saco e baralhar
+ - Baralhar todas as cartas de acao e de mercadorias
+ - Colocar todas as pecas de melhoria ao alcance de ambos os jogadores
+    
+- Gameplay Overview
+
+Os jogadores dao draft das suas cartas de mercadoria por turnos, comecando pelo que ganhar a "moeda ao ar" e de seguida, ambos decidem a sua estrategia para obter o maior numero de clientes atraves do uso de cartas de acao e melhorias da loja.
+O jogo acaba ao fim de X turnos. Para decidir o vencedor cada jogador conta os seus pontos e o que tiver mais ganha.
+
+- Turn Summary
+
+1.- É colocado entre os dois supermercados X/2 clientes 
+2.- Turno de stock - 
+2.1- São posicionadas X(22) cartas de stock viradas para cima na mesa
+2.2- Cada jogador vai buscar cartas de stock usando um método draft: 
+o primeiro jogador escolhe 1 carta e depois o segundo escolhe 2, continuando a escolher 2 cartas à vez até que o último escolhe apenas 1,
+no caso de um dos jogadores poder escolher mais cartas que outro, realiza-se o draft até que o jogador com menos cartas acabar de escolher
+as suas cartas, após isso, o que ainda pode escolher cartas é livre de escolher as cartas que quiser.
+3.- Caso algum jogador queira realizar algum upgrade à loja, esse é realizado agora, após o pagamento necessário.
+4.- É revelado
+
+
+- End Game & Scoring
+
+Quando o ultimo turno acabar, cada jogador procede a contar o seu numero final de pontos.
+ - numero de clientes na sua posse (cada cliente equivale a 1 ponto).
+ - calcular o numero de pontos equivalente as suas pecas de mercadoria, (informacao para cada peca na sua descricao).
+
+
+
+- Action cards
+
+No inico do turno cada jogador devera ter 5 cartas de ação em sua mão, 
+após o turno de stock é preciso colocar 3 das cartas da sua mão em uma fileira atrás do seu tabuleiro viradas para baixo
+quando essas tiverem postas, vira todas elas e ativam, é preciso tomar cuidado com a posição e momento que são jogadas 
+porque algumas das cartas so funcionam dependente do cenário.
+
+- Peças de melhorias
+
+
+
+- Cartas de mercadorias
+
+Usadas para
+neilc riugesnoc
+
+
+
+Turno de stock - fazer um draft de X mercadorias, se tiver uma em abundancia fazes re-roll
+Upgrades - Usar clientes e, se necessário, mercadorias para ganhar os upgrades
+	Efeitos: Efeitos gerais de benefícios
+Clientes - Metade dos clientes antes do inicio do draft e a outra metade depois
+Cartas - Estilo yu gi oh, tiramos X cartas e trocamos X, colocamos elas na mesa e fazemos efeitos automáticos…
+	Efeitos: Cliente indeciso, Cancelar efeito, dobrar quantidade
+Disputa de clientes - quem tiver mais leva os clientes, perde os materiais igual ao numero de clientes.
+

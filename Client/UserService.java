@@ -15,7 +15,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.*;
-import java.util.Enumeration;
+
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -148,14 +148,8 @@ public class UserService implements UserServiceInterface {
                 } else {
                     serverInsecure(node);
                 }
-            } catch (IOException e) {
+            } catch (IOException | KeyStoreException | InterruptedException e) {
                 System.err.println("Error starting server: " + e.getMessage());
-                e.printStackTrace();
-            } catch (KeyStoreException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         };
@@ -166,8 +160,6 @@ public class UserService implements UserServiceInterface {
 
     public void startServer(Node node) throws IOException, KeyStoreException {
 
-        System.out.println(keystoreFile.toString());
-
         System.setProperty("javax.net.ssl.keyStore", keystoreFile.toString());
         System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
         System.setProperty("javax.net.ssl.keyStoreType", "JKS");
@@ -176,35 +168,28 @@ public class UserService implements UserServiceInterface {
         System.setProperty("javax.net.ssl.trustStorePassword", keystorePassword);
         System.setProperty("javax.net.ssl.trustStoreType", "JKS");
 
-        KeyStore cer = keyHandler.getTruStore();
-        System.out.println("Certificate: " + cer.getCertificate(this.username));
-
         this.currentNode = node;
         String ip = node.getIp();
         int port = node.getPort();
 
-        System.out.println("Starting server on " + ip + ":" + port);
+        System.out.println("Starting secure server on " + ip + ":" + port);
 
         // Get an SSLSocketFactory from the SSLContext
-        ServerSocketFactory factory = SSLServerSocketFactory.getDefault();
+        SSLServerSocketFactory factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
         this.serverSocket = (SSLServerSocket) factory.createServerSocket(port);
-
-        // TODO: Check if this works
-        // Bind the server socket to the specified IP address and port
-        // this.serverSocket.bind(new InetSocketAddress(ip, port));
 
         while (true) {
             Socket clientSocket = null; // other node sockets
             try {
-                System.out.println("Server socket waiting for connection...");
+                System.out.println("Secure Server socket waiting for connection...");
                 clientSocket = serverSocket.accept();
-                System.out.println("Server socket accepted connection");
+                System.out.println("Secure Server socket accepted connection");
                 NodeThread newServerThread = new NodeThread(clientSocket, null, this, keyHandler);
                 System.out.println("New connection from " + clientSocket.getInetAddress().getHostAddress());
                 newServerThread.setListener(this);
-                System.out.println("Starting new server thread...");
+                System.out.println("Starting new Secure Server thread...");
                 newServerThread.start();
-                System.out.println("Server thread started.");
+                System.out.println("Secure Server thread started.");
 
             } catch (IOException e) {
                 System.err.println(e.getMessage());
@@ -224,7 +209,6 @@ public class UserService implements UserServiceInterface {
         try {
 
             System.out.println("Alias to search: " + alias);
-
             if (!keyHandler.getTruStore().containsAlias(alias)) {
                 System.out.println("Certificate not found in trust store. Requesting certificate from the node...");
                 shareCertificateClient(ip, port, new ChordInternalMessage(MessageType.addCertificateToTrustStore, keyHandler.getCertificate(alias), alias, currentNodeDTO.getUsername()));
@@ -238,53 +222,8 @@ public class UserService implements UserServiceInterface {
             System.setProperty("javax.net.ssl.trustStorePassword", keystorePassword);
             System.setProperty("javax.net.ssl.trustStoreType", "JKS");
 
-            // Log the current SSL properties
-            System.out.println("=================================================================");
-            System.out.println("----------------------- Logs Conection --------------------------");
-            System.out.println("=================================================================");
-            System.out.println("Current SSL Properties startClient:");
-            System.out.println("javax.net.ssl.keyStore: " + System.getProperty("javax.net.ssl.keyStore"));
-            System.out.println("javax.net.ssl.keyStorePassword: " + System.getProperty("javax.net.ssl.keyStorePassword"));
-            System.out.println("javax.net.ssl.keyStoreType: " + System.getProperty("javax.net.ssl.keyStoreType"));
-            System.out.println("javax.net.ssl.trustStore: " + System.getProperty("javax.net.ssl.trustStore"));
-            System.out.println("javax.net.ssl.trustStorePassword: " + System.getProperty("javax.net.ssl.trustStorePassword"));
-            System.out.println("javax.net.ssl.trustStoreType: " + System.getProperty("javax.net.ssl.trustStoreType"));
-            System.out.println("=================================================================");
-
-            // Print the contents of the keystore
-            try {
-                KeyStore keyStore = KeyStore.getInstance("JKS");
-                keyStore.load(new FileInputStream(keystoreFile.toString()), keystorePassword.toCharArray());
-                Enumeration<String> aliases = keyStore.aliases();
-                System.out.println("Keystore contents:");
-                while (aliases.hasMoreElements()) {
-                    String alias2 = aliases.nextElement();
-                    Certificate cert = keyStore.getCertificate(alias2);
-                    System.out.println("Alias: " + alias2);
-                    System.out.println("Certificate: " + cert);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            // Print the contents of the truststore
-            try {
-                KeyStore trustStore = KeyStore.getInstance("JKS");
-                trustStore.load(new FileInputStream(truststoreFile.toString()), keystorePassword.toCharArray());
-                Enumeration<String> aliases = trustStore.aliases();
-                System.out.println("Truststore contents:");
-                while (aliases.hasMoreElements()) {
-                    String alias3 = aliases.nextElement();
-                    Certificate cert = trustStore.getCertificate(alias3);
-                    System.out.println("Alias: " + alias3);
-                    System.out.println("Certificate: " + cert);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
             // Create SSL socket
-            SocketFactory factory = SSLSocketFactory.getDefault();
+            SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
             SSLSocket sslClientSocket = (SSLSocket) factory.createSocket(ip, port);
 
             NodeThread newClientThread = new NodeThread(sslClientSocket, msg, this, keyHandler);
@@ -385,12 +324,17 @@ public class UserService implements UserServiceInterface {
 
     private void shareCertificateClient(String ip, int port, Message msg) throws NoSuchAlgorithmException {
         try {
+
+            System.out.println("Start of shareCertificateClient");
             // Create normal socket
-            Socket clientSocket = new Socket(ip, port+1);
-    
+            System.err.println("Creating socket...");
+            System.err.println("IP: " + ip + " Port: " + (port+1));
+            Socket clientSocket = new Socket(ip, (port+1));
             NodeThread newClientThread = new NodeThread(clientSocket, msg, this, keyHandler);
             newClientThread.start();
             newClientThread.join(); // Wait for the thread to finish
+            System.out.println(keyHandler.getTruststorePath());
+            Utils.loadTrustStore(keyHandler.getTruststorePath(), keyHandler.getKeyStorePassword());
         } catch (Exception e) {
             System.err.println(e.getMessage());
             System.exit(-1);
@@ -409,12 +353,14 @@ public class UserService implements UserServiceInterface {
         while (true) {
             Socket clientSocket = null; // other node sockets
             try {
+                System.err.println("Server socket waiting for connection...");
                 clientSocket = serverSocket.accept();
                 NodeThread newServerThread = new NodeThread(clientSocket, null, this, keyHandler);
                 newServerThread.setListener(this);
                 newServerThread.start();
                 newServerThread.join(); // Wait for the thread to finish
-
+                System.out.println(keyHandler.getTruststorePath());
+                Utils.loadTrustStore(keyHandler.getTruststorePath(), keyHandler.getKeyStorePassword());
             } catch (IOException e) {
                 System.err.println(e.getMessage());
                 System.exit(-1);

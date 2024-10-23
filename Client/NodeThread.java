@@ -44,11 +44,8 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         try {
             System.out.println("Attempting to create output stream...");
             this.out = new ObjectOutputStream(socket.getOutputStream());
-            System.out.println("Output stream created successfully.");
-        
             System.out.println("Attempting to create input stream...");
             this.in = new ObjectInputStream(socket.getInputStream());
-            System.out.println("Input stream created successfully.");
         } catch (Exception e) {
             System.err.println("Error creating input/output streams: " + e.getMessage());
             e.printStackTrace();
@@ -64,6 +61,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
      * Function that is called when the thread is started
      */
     public void run() {
+        System.err.println("Function that is called when the thread is started");
         if (msg != null) {
             sendMsg();
         } else {
@@ -72,6 +70,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     }
 
     private void sendMsg() {
+        System.err.println("Sending message...");
         try {
             out.writeObject(msg);
 

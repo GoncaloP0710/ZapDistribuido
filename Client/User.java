@@ -48,7 +48,6 @@ public class User {
         boolean correctPassword = false;
         while (!correctPassword) {
             try {
-                System.out.println("Trying to get instance");
                 keyHandler.loadKeyStore();
                 PrivateKey pk = (PrivateKey) keyHandler.getPrivateKey(name, password);
                 correctPassword = true;
