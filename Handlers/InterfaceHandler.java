@@ -41,12 +41,12 @@ public class InterfaceHandler {
         System.out.println(s);
     }
 
-    //TODO: REFAZER
+    //TODO: REFAZER - Change to not print all the time and be like a help command
     public void printMenu() {
         System.out.println("1 - Print neighbors");
         System.out.println("2 - Print node");
         System.out.println("3 - Send message");
-        System.out.println("5 - Exit");
+        System.out.println("4 - Exit");
     }
 
     //Funções de input

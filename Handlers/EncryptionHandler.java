@@ -12,7 +12,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
-public class EncryptionHandler{ //Assume que as chaves já existem
+public class EncryptionHandler{
 
     public EncryptionHandler(){}
 
