@@ -58,13 +58,11 @@ public class User {
                 keyHandler = KeyHandler.getInstance(password, name);
             }
         }
-        
-        Certificate cer = keyHandler.getCertificate(name);
-
+    
         String serverIp = "localhost";
         int serverPort = Integer.parseInt(interfaceHandler.getPort());
 
-        node = new Node(name, serverIp, serverPort, cer);
+        node = new Node(name, serverIp, serverPort);
         // TODO: Change this to the correct truststore and keystore files - Maybe insted just pass the keyHandler and have tow funcs that reutn those names
         userService = new UserService(name, node, keyHandler);
 

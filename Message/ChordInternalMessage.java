@@ -161,20 +161,4 @@ public class ChordInternalMessage extends Message {
     public void setCertificate(Certificate certificate){
         this.certificate = certificate;
     }
-
-
-    @Override
-    public String toString() {
-        return "ChordInternalMessage{" +
-                "nextNode=" + nextNode +
-                ", previousNode=" + previousNode +
-                ", nodeToEnter=" + nodeToEnter +
-                ", nodeToUpdate=" + nodeToUpdate +
-                ", counter=" + counter +
-                ", fingerTable=" + fingerTable +
-                ", initializer=" + initializer +
-                ", finishedBroadcasting=" + finishedBroadcasting +
-                '}';
-    }
-
 }

@@ -10,24 +10,11 @@ import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.BadPaddingException;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-
-
-//import Message.Message;
-import Message.UserMessage;
-//import client.UserService;
 
 public class EncryptionHandler{ //Assume que as chaves já existem
 
-    // private UserService userService;
-
-    // public EncryptionHandler(UserService userService) {
-    //     this.userService = userService;
-    // }
-
     public EncryptionHandler(){}
-
 
     public byte[] encryptWithPrivK(byte[] data, PrivateKey chave) //encripta com chave privada do emissor
     throws  IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {

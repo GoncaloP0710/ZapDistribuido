@@ -1,7 +1,6 @@
 package Client;
 
 import java.util.ArrayList;
-import java.security.cert.Certificate;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.math.BigInteger;
@@ -16,16 +15,12 @@ public class Node {
     
     private String ip;
     private int port;
-    private Certificate cer;
     private BigInteger hash; // Hash of the ip and port to identify the node order
 
-    public Node(String name, String ip, int port, Certificate cer) throws NoSuchAlgorithmException {
-        System.out.println("Creating node...");
+    public Node(String name, String ip, int port) throws NoSuchAlgorithmException {
         this.fingerTable = new ArrayList<>();
         this.ip = ip;
         this.port = port;
-        this.cer = cer;
-        
         setHashNumber(calculateHash(name));
     }
 
@@ -77,6 +72,11 @@ public class Node {
         this.hash = hash;
     }
 
+
+    public String neighborsStatus() {
+        return previousNode.getUsername() + " - " + " current node " + " - " + nextNode.getUsername();
+    }
+
     /**
      * 
      * 
@@ -110,16 +110,6 @@ public class Node {
 
         return hashNumber;
     }
-    
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) 
-            return true;
-        if (obj == null || obj.getClass() != this.getClass())
-            return false;
-        Node that = (Node) obj;
-        return this.ip.equals(that.ip) && this.port == that.port;
-    }
 
     /**
      * Creates a String representation of the finger table of the node
@@ -141,19 +131,6 @@ public class Node {
         return sb.toString();
     }
 
-    @Override
-    public String toString() {
-        return "Node[" +
-                "fingerTable = " + getFingerTableString() + ", " +
-                "ip = " + ip + ", " +
-                "port = " + port + ", " +
-                "hash = " + hash + ']';
-    }
-
-    public String neighborsStatus() {
-        return previousNode.getUsername() + " - " + " current node " + " - " + nextNode.getUsername();
-    }
-
     public NodeDTO belongsToFingerTable(String name) {
         for (NodeDTO node : fingerTable) {
             if (node.getUsername().equals(name)) {
@@ -161,5 +138,24 @@ public class Node {
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) 
+            return true;
+        if (obj == null || obj.getClass() != this.getClass())
+            return false;
+        Node that = (Node) obj;
+        return this.ip.equals(that.ip) && this.port == that.port;
+    }
+
+    @Override
+    public String toString() {
+        return "Node[" +
+                "fingerTable = " + getFingerTableString() + ", " +
+                "ip = " + ip + ", " +
+                "port = " + port + ", " +
+                "hash = " + hash + ']';
     }
 }

@@ -3,17 +3,11 @@ package Handlers;
 import java.math.BigInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-
 import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.util.concurrent.ConcurrentHashMap;
 import java.security.cert.Certificate;
 
@@ -32,7 +26,6 @@ public class EventHandler {
     boolean isDefaultNode;
     NodeDTO currentNodeDTO;
     Node currentNode;
-    private String username;
 
     // private final Lock updateNeighborsLock = new ReentrantLock();
     private final Lock enterNodeLock = new ReentrantLock();
@@ -47,7 +40,6 @@ public class EventHandler {
         isDefaultNode = userService.getCurrentNode().checkDefaultNode(ipDefault, portDefault);
         currentNodeDTO = userService.getCurrentNodeDTO();
         currentNode = userService.getCurrentNode();
-        username = userService.getUsername();
     }
 
     public synchronized void updateNeighbors(UpdateNeighboringNodesEvent event) {
@@ -105,9 +97,8 @@ public class EventHandler {
         ChordInternalMessage message = (ChordInternalMessage) event.getMessage();
         int counter = event.getCounter();
         NodeDTO nodeToUpdateDTO = event.getNodeToUpdate(); // Node that started the event
-        int ringSize = userService.getRingSize();
     
-        if (currentNodeDTO.equals(nodeToUpdateDTO)) {
+        if (currentNodeDTO.equals(nodeToUpdateDTO)) { // Update the finger table of the current node
             userService.getCurrentNode().setFingerTable(message.getFingerTable());
             return;
         } else if (counter == userService.getHashLength()) { // No more nodes to add
@@ -115,10 +106,8 @@ public class EventHandler {
             return;
         }
     
-        BigInteger nodeToUpdateDTOIndex = nodeToUpdateDTO.getHash();
-        BigInteger currentNodeDTOIndex = currentNodeDTO.getHash();
-        BigInteger ringSizeBig = BigInteger.valueOf(ringSize);
-        BigInteger distance = nodeToUpdateDTOIndex.subtract(currentNodeDTOIndex).add(ringSizeBig).mod(ringSizeBig);
+        BigInteger ringSizeBig = BigInteger.valueOf(userService.getRingSize());
+        BigInteger distance = nodeToUpdateDTO.getHash().subtract(currentNodeDTO.getHash()).add(ringSizeBig).mod(ringSizeBig);
         BigInteger twoPowerCounter = BigInteger.valueOf(2).pow(counter);
     
         if (distance.compareTo(twoPowerCounter) >= 0) {
@@ -148,25 +137,15 @@ public class EventHandler {
     }
 
     public synchronized void sendUserMessage(NodeSendMessageEvent event) {
-        System.out.println(event.getReciver());
-        System.out.println(currentNodeDTO.getHash());
         if (event.getReciver().equals(currentNodeDTO.getHash())) { // Arrived at the target
-            System.out.println("Arrived at the target");
-            // String message;
             try {
-                //message = ((EncryptionHandler.decryptWithPrivK(event.getMessageEncryp(), userService.getKeyHandler().getPrivateKey())).toString());
-                //System.out.println("Message from " + event.getSenderDTO().getUsername() + ": " + message.toString());
-                System.out.println("Pub key - " + userService.getKeyHandler().getPublicKey());
-                
                 byte[] decryptedBytes = EncryptionHandler.decryptWithPrivK(event.getMessageEncryp(), userService.getKeyHandler().getPrivateKey());
                 String messageDecrypted = new String(decryptedBytes);
                 System.out.println("Message from " + event.getSenderDTO().getUsername() + ": " + messageDecrypted);
             } catch (Exception e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             } 
         } else { // Send to the target (foward to closest node to the target, in the finger table)
-            System.out.println("Foward to the target");
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getReciver());
             userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false, nodeWithHashDTO.getUsername());
         }
@@ -179,7 +158,6 @@ public class EventHandler {
                 messages.remove(event.getTarget());
                 try {
                     byte[] encryptedBytes = EncryptionHandler.encryptWithPubK(message, event.getReceiverPubKey());
-                    System.out.println("recivePubKey Final destination, sending message" );
                     sendUserMessage(new NodeSendMessageEvent(new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getTarget(), encryptedBytes)));
                 } catch (InvalidKeyException | IllegalBlockSizeException | BadPaddingException
                         | NoSuchAlgorithmException | NoSuchPaddingException e) {
@@ -204,9 +182,6 @@ public class EventHandler {
             Certificate certificate = event.getCertificate();
             String alias = currentNodeDTO.getUsername().equals(event.getAliasSender()) ? event.getAliasReciver() : event.getAliasSender();
             userService.getKeyHandler().addCertificateToTrustStore(alias, certificate);
-
-            System.out.println("Certificate added to trust store successfully.");
-
         } catch (Exception e) {
             System.err.println("Error adding certificate to trust store: " + e.getMessage());
             e.printStackTrace();

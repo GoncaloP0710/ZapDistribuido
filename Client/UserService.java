@@ -181,20 +181,12 @@ public class UserService implements UserServiceInterface {
         while (true) {
             Socket clientSocket = null; // other node sockets
             try {
-                System.out.println("Secure Server socket waiting for connection..." + serverSocket.getLocalPort());
                 if(serverSocket != null){
                     System.out.println(serverSocket.toString());
                 }
-                
                 clientSocket = serverSocket.accept();
-                System.out.println("Secure Server socket accepted connection");
                 NodeThread newServerThread = new NodeThread(clientSocket, null, this, keyHandler);
-                System.out.println("New connection from " + clientSocket.getInetAddress().getHostAddress());
-                newServerThread.setListener(this);
-                System.out.println("Starting new Secure Server thread...");
                 newServerThread.start();
-                System.out.println("Secure Server thread started.");
-
             } catch (IOException e) {
                 System.err.println(e.getMessage());
                 System.exit(-1);
@@ -366,7 +358,6 @@ public class UserService implements UserServiceInterface {
                 System.err.println("Server socket waiting for connection..." + sSocket.getLocalPort()); //PRINT MVP
                 clientSocket = sSocket.accept();
                 NodeThread newServerThread = new NodeThread(clientSocket, null, this, keyHandler);
-                newServerThread.setListener(this);
                 newServerThread.start();
                 newServerThread.join(); // Wait for the thread to finish
                 System.out.println(keyHandler.getTruststorePath());

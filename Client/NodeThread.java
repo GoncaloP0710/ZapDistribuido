@@ -6,7 +6,6 @@ import java.io.ObjectOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.Socket;
-import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -15,8 +14,6 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.Arrays;
-
-
 import javax.crypto.KeyAgreement;
 
 import Events.*;
@@ -35,18 +32,15 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     private Listener<NodeEvent> listener;
     private KeyHandler keyHandler;
 
-    // If command is null, it means that the thread is a server and its objective is to process the command it receives
+    // If msg is null, it means that the thread is a server and its objective is to process the command it receives
     public NodeThread (Socket socket, Message msg, Listener<NodeEvent> listener, KeyHandler keyHandler) {
         this.socket = socket;
         this.msg = msg;
         this.keyHandler = keyHandler;
-        setListener(listener);
+        this.listener = listener;
         try {
-            System.out.println("Attempting to create output stream...");
             this.out = new ObjectOutputStream(socket.getOutputStream());
-            System.out.println("Attempting to create input stream...");
             this.in = new ObjectInputStream(socket.getInputStream());
-            
         } catch (Exception e) {
             System.err.println("Error creating input/output streams: " + e.getMessage());
             e.printStackTrace();
@@ -54,36 +48,24 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         }
     }
 
-    public void setListener (Listener<NodeEvent> listener) {
-        this.listener = listener;
-    }
-
     /**
      * Function that is called when the thread is started
      */
     public void run() {
-        System.err.println("Function that is called when the thread is started");
-        if (msg != null) {
-            sendMsg();
-        } else {
-            reciveMsg();
-        }
+        if (msg != null) sendMsg(); else reciveMsg();
     }
 
     private void sendMsg() {
-        System.err.println("Sending message...");
         try {
-            out.writeObject(msg);
-
+            out.writeObject(msg); // Send the message to the node reciver
             switch (msg.getMsgType()) {
                 case UpdateNeighbors:
                     System.out.println((String) in.readObject());
                     break;
                 case UpdateFingerTable:
-                    System.out.println((String) in.readObject());
+                    in.readObject(); // Force processCommand to finish before continuing
                     break;
-                case addCertificateToTrustStore:
-                    System.out.println("Sending message to add certificate to trust store!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                case addCertificateToTrustStore: // The Sender also needs to add the reciver certificate to its trust store
                     ChordInternalMessage message = (ChordInternalMessage) msg;
                     message.setCertificate(sendCert());
                     emitEvent(new AddCertificateToTrustStoreEvent((ChordInternalMessage) message));
@@ -102,21 +84,19 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         try {
             Message messageToProcess = (Message) in.readObject();
             processCommand(messageToProcess);
-
             switch (messageToProcess.getMsgType()) {
                 case UpdateNeighbors:
-                    out.writeObject("Neighbors updated");
+                    out.writeObject("Info: Neighbors updated");
                     break;
                 case UpdateFingerTable:
-                    out.writeObject("Finger table update msg recived");
+                    out.writeObject("Force processCommand to finish before continuing");
                     break;
                 case addCertificateToTrustStore:
-                    out.writeObject("Certificate added to trust store");
+                    out.writeObject("Info: A certificate was added to trust store");
                     break;
                 default:
                     break;
             }
-
             endThread();
         } catch (ClassNotFoundException | NoSuchAlgorithmException | IOException e) {
             e.printStackTrace();
@@ -229,6 +209,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         
     }
 
+    // TODO: Change this to Utils or the EncryptionHandler
     public Certificate byteArrToCertificate(byte[] bytes){
         try{
             CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
@@ -239,9 +220,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         } catch (Exception e){
             e.printStackTrace();
         }
-
         return null;
-        
     }
 
     public void endThread() {
