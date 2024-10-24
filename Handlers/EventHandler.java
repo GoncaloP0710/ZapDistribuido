@@ -148,37 +148,46 @@ public class EventHandler {
     }
 
     public synchronized void sendUserMessage(NodeSendMessageEvent event) {
-        if (event.getReciver() == currentNodeDTO.getHash()) { // Arrived at the target
-            String message;
+        System.out.println(event.getReciver());
+        System.out.println(currentNodeDTO.getHash());
+        if (event.getReciver().equals(currentNodeDTO.getHash())) { // Arrived at the target
+            System.out.println("Arrived at the target");
+            // String message;
             try {
-                message = ((EncryptionHandler.decryptWithPrivK(event.getMessageEncryp(), userService.getKeyHandler().getPrivateKey())).toString());
-                System.out.println("Message from " + event.getSenderDTO().getUsername() + ": " + message);
+                //message = ((EncryptionHandler.decryptWithPrivK(event.getMessageEncryp(), userService.getKeyHandler().getPrivateKey())).toString());
+                //System.out.println("Message from " + event.getSenderDTO().getUsername() + ": " + message.toString());
+                System.out.println("Pub key - " + userService.getKeyHandler().getPublicKey());
+                
+                byte[] decryptedBytes = EncryptionHandler.decryptWithPrivK(event.getMessageEncryp(), userService.getKeyHandler().getPrivateKey());
+                String messageDecrypted = new String(decryptedBytes);
+                System.out.println("Message from " + event.getSenderDTO().getUsername() + ": " + messageDecrypted);
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             } 
         } else { // Send to the target (foward to closest node to the target, in the finger table)
+            System.out.println("Foward to the target");
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getReciver());
             userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false, nodeWithHashDTO.getUsername());
         }
     }
 
     public void recivePubKey(RecivePubKeyEvent event) {
-        if (event.getReceiverPubKey() != null && event.getInitializer() == currentNodeDTO) { // Final destination
+        if (event.getReceiverPubKey() != null && event.getInitializer().equals(currentNodeDTO)) { // Final destination
             if (hasMessageWithTarget(event.getTarget())) {
                 byte[] message = messages.get(event.getTarget());
                 messages.remove(event.getTarget());
                 try {
-                    EncryptionHandler.encryptWithPubK(message, event.getReceiverPubKey());
+                    byte[] encryptedBytes = EncryptionHandler.encryptWithPubK(message, event.getReceiverPubKey());
+                    System.out.println("recivePubKey Final destination, sending message" );
+                    sendUserMessage(new NodeSendMessageEvent(new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getTarget(), encryptedBytes)));
                 } catch (InvalidKeyException | IllegalBlockSizeException | BadPaddingException
                         | NoSuchAlgorithmException | NoSuchPaddingException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
-                sendUserMessage(new NodeSendMessageEvent(new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getTarget(), message)));
             }
             
-        } else if (event.getTarget() == currentNodeDTO.getHash()) { // Send back to the initializer | Arrived at the target
+        } else if (event.getTarget().equals(currentNodeDTO.getHash())) { // Send back to the initializer | Arrived at the target
             ChordInternalMessage message = (ChordInternalMessage) event.getMessage();
             message.setReceiverPubKey(currentNodeDTO.getPubK());
             userService.startClient(event.getInitializer().getIp(), event.getInitializer().getPort(), message, false, event.getInitializer().getUsername());

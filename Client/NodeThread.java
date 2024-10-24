@@ -276,6 +276,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                 emitEvent(new BroadcastUpdateFingerTableEvent((ChordInternalMessage) messageToProcess));
                 break;
             case SendMsg:
+                System.out.println("Recived a send message event...");
                 emitEvent(new NodeSendMessageEvent((UserMessage) messageToProcess));
                 break;
             case RecivePubKey:

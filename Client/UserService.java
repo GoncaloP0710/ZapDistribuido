@@ -294,10 +294,12 @@ public class UserService implements UserServiceInterface {
             BigInteger reciverHash = currentNode.calculateHash(reciver);
             
             if (reciverNode != null) { // Reciver is on the finger table
+                System.out.println("Reciver is on the finger table");
                 byte[] messageEncryp = EncryptionHandler.encryptWithPubK(message, reciverNode.getPubK());
                 UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, reciverHash, messageEncryp);
-                startClient(reciverNode.getIp(), reciverNode.getPort(), userMessage, false, username);
+                startClient(reciverNode.getIp(), reciverNode.getPort(), userMessage, false, reciverNode.getUsername());
             } else { // Reciver is not on the finger table so we have to find its pubK
+                System.out.println("Reciver is not on the finger table");
                 eventHandler.addMessage(reciverHash, message);
                 RecivePubKeyEvent event = new RecivePubKeyEvent(new ChordInternalMessage(MessageType.RecivePubKey, null, reciverHash, currentNodeDTO));
                 eventHandler.recivePubKey(event);
@@ -321,7 +323,11 @@ public class UserService implements UserServiceInterface {
             eventHandler.sendUserMessage(((NodeSendMessageEvent) e));
         } else if (e instanceof AddCertificateToTrustStoreEvent) {
             eventHandler.addCertificateToTrustStore((AddCertificateToTrustStoreEvent) e);
+        } else if (e instanceof RecivePubKeyEvent) {
+            eventHandler.recivePubKey((RecivePubKeyEvent) e);
         } else {
+            System.out.println("Exception class: " + e.getClass().getName());
+            System.out.println("Exception instance: " + e.toString());
             throw new UnsupportedOperationException("Unhandled event type");
         }
     }
