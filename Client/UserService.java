@@ -1,37 +1,21 @@
 package Client;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.math.BigInteger;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.security.*;
-
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.net.ServerSocketFactory;
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 
 import Events.*;
 import Interface.UserServiceInterface;
@@ -58,7 +42,6 @@ public class UserService implements UserServiceInterface {
     File keystoreFile;
     String keystorePassword;
     File truststoreFile;
-    // String truststorePassword;
 
     private Node currentNode;
     private NodeDTO currentNodeDTO;
@@ -67,18 +50,12 @@ public class UserService implements UserServiceInterface {
 
     private ServerSocket serverSocket;
     private EventHandler eventHandler;
-    private EncryptionHandler encryptionHandler; // TODO: Remove if not needed
     public String username;
 
     private int hashLength = 160; // Length of the hash in bits (SHA-1)
     private int ringSize = (int) Math.pow(2, hashLength); // Size of the ring (2^160)
 
-    public synchronized void initializeCurrentNodeDTO(String username, Node currentNode, Certificate cer) {
-        this.currentNodeDTO = new NodeDTO(username, currentNode.getIp(), currentNode.getPort(), currentNode.getHashNumber(), cer);
-    }
-
     public UserService(String username, Node currentNode, KeyHandler keyHandler) throws Exception {
-        System.out.println("Starting user service...");
         this.username = username;
         this.currentNode = currentNode;
         this.keyHandler = keyHandler;
@@ -87,21 +64,23 @@ public class UserService implements UserServiceInterface {
         this.truststoreFile = keyHandler.getTrustStoreFile();
         initializeCurrentNodeDTO(username, currentNode, keyHandler.getCertificate(username));
         this.eventHandler = new EventHandler(this);
-        this.encryptionHandler = new EncryptionHandler();
 
+        // ------------------ Start servers ------------------
         startServerInThread(currentNode, false);
-        System.out.println("Insecure Server started in a separate thread. Continuing with main flow...");
         startServerInThread(currentNode, true);
-        System.out.println("Server started in a separate thread. Continuing with main flow...");
+        // ---------------------------------------------------
 
-        // Check for default node
-        if (ipDefault.equals(currentNode.getIp()) && portDefault == currentNode.getPort()) {
+        if (ipDefault.equals(currentNode.getIp()) && portDefault == currentNode.getPort()) { // Check for default node
             currentNode.setNextNode(currentNodeDTO);
             currentNode.setPreviousNode(currentNodeDTO);
-        } else {
+        } else { // If it is not the default node, it has to enter the network
             ChordInternalMessage message = new ChordInternalMessage(MessageType.EnterNode, currentNodeDTO);
-            startClient(ipDefault, portDefault, message, false, usernameDefault); // TODO: Change to true if needed
+            startClient(ipDefault, portDefault, message, false, usernameDefault);
         }        
+    }
+
+    public void initializeCurrentNodeDTO(String username, Node currentNode, Certificate cer) {
+        this.currentNodeDTO = new NodeDTO(username, currentNode.getIp(), currentNode.getPort(), currentNode.getHashNumber(), cer);
     }
 
     public void setNextNode(NodeDTO nextNode) {
@@ -140,6 +119,8 @@ public class UserService implements UserServiceInterface {
         return username;
     }
 
+    // ============================== SERVER ==============================
+
     public void startServerInThread(Node node, boolean secure) {
         Runnable serverTask = () -> {
             try {
@@ -153,7 +134,6 @@ public class UserService implements UserServiceInterface {
                 e.printStackTrace();
             }
         };
-
         Thread serverThread = new Thread(serverTask);
         serverThread.start();
     }
@@ -168,11 +148,8 @@ public class UserService implements UserServiceInterface {
         System.setProperty("javax.net.ssl.trustStorePassword", keystorePassword);
         System.setProperty("javax.net.ssl.trustStoreType", "JKS");
 
-        this.currentNode = node;
         String ip = node.getIp();
         int port = node.getPort();
-
-        System.out.println("Starting secure server on " + ip + ":" + port);
 
         // Get an SSLSocketFactory from the SSLContext
         SSLServerSocketFactory factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
@@ -194,6 +171,34 @@ public class UserService implements UserServiceInterface {
         }
     }
 
+    public void serverInsecure(Node node) throws IOException, InterruptedException {
+        this.currentNode = node;
+        String ip = node.getIp();
+        int port = node.getPort()+1;
+
+        System.out.println("Starting server on " + ip + ":" + port);
+        // Use normal ServerSocket instead of SSLServerSocket
+        ServerSocket sSocket = new ServerSocket(port); //socket novo
+
+        while (true) {
+            Socket clientSocket = null; // other node sockets
+            try {
+                System.err.println("Server socket waiting for connection..." + sSocket.getLocalPort()); //PRINT MVP
+                clientSocket = sSocket.accept();
+                NodeThread newServerThread = new NodeThread(clientSocket, null, this, keyHandler);
+                newServerThread.start();
+                newServerThread.join(); // Wait for the thread to finish
+                System.out.println(keyHandler.getTruststorePath());
+                Utils.loadTrustStore(keyHandler.getTruststorePath(), keyHandler.getKeyStorePassword());
+            } catch (IOException e) {
+                System.err.println(e.getMessage());
+                System.exit(-1);
+            }
+        }
+    }
+
+    // ============================== CLIENT ==============================
+
     /**
      * Send command to the Node with the respective ip and port
      * 
@@ -203,12 +208,8 @@ public class UserService implements UserServiceInterface {
      */
     public void startClient(String ip, int port, Message msg, boolean waitForResponse, String alias) {
         try {
-
-            System.out.println("Alias to search: " + alias);
-            if (!keyHandler.getTruStore().containsAlias(alias)) {
-                System.out.println("Certificate not found in trust store. Requesting certificate from the node...");
+            if (!keyHandler.getTruStore().containsAlias(alias)) // If the certificate of the other node is not in the truststore
                 shareCertificateClient(ip, port, new ChordInternalMessage(MessageType.addCertificateToTrustStore, keyHandler.getCertificate(alias), alias, currentNodeDTO.getUsername()));
-            }
 
             System.setProperty("javax.net.ssl.keyStore", keystoreFile.toString());
             System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
@@ -225,15 +226,42 @@ public class UserService implements UserServiceInterface {
             NodeThread newClientThread = new NodeThread(sslClientSocket, msg, this, keyHandler);
             newClientThread.start();
     
-            if (waitForResponse) {
+            if (waitForResponse) 
                 newClientThread.join(); // Wait for the thread to finish
-            }
     
         } catch (Exception e) {
             System.err.println(e.getMessage());
             System.exit(-1);
         }
     }
+
+    /**
+     * Creates a new conection to the node with the given ip and port to share the certificate
+     * 
+     * @param ip
+     * @param port
+     * @param msg
+     * @throws NoSuchAlgorithmException
+     */
+    private void shareCertificateClient(String ip, int port, Message msg) throws NoSuchAlgorithmException {
+        try {
+            System.out.println("Start of shareCertificateClient");
+            // Create normal socket
+            System.out.println("Creating socket...");
+            System.out.println("IP: " + ip + " Port: " + (port+1));
+            Socket clientSocket = new Socket(ip, (port+1));
+            NodeThread newClientThread = new NodeThread(clientSocket, msg, this, keyHandler);
+            newClientThread.start();
+            newClientThread.join(); // Wait for the thread to finish
+            System.out.println(keyHandler.getTruststorePath());
+            Utils.loadTrustStore(keyHandler.getTruststorePath(), keyHandler.getKeyStorePassword());
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+            System.exit(-1);
+        }
+    }
+
+    // ==================================================================
 
     /**
      * Discovers the node that has the given hash or the closest one to it to continue the search. 
@@ -267,13 +295,6 @@ public class UserService implements UserServiceInterface {
         return closestFingerNode;
     }
 
-    /**
-     * Makes the changes needed to mantain the network correct when a node exits
-     */
-    public void exitNode() {
-        eventHandler.exitNode();
-    }
-
     public void sendMessage(InterfaceHandler interfaceHandler) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException, Exception {
         nodeSendMessageLock.lock();
         try {
@@ -301,6 +322,13 @@ public class UserService implements UserServiceInterface {
         }
     }
 
+    /**
+     * Makes the changes needed to mantain the network correct when a node exits
+     */
+    public void exitNode() {
+        eventHandler.exitNode();
+    }
+
     @Override
     public void processEvent(NodeEvent e) {
         if (e instanceof EnterNodeEvent) {
@@ -321,51 +349,6 @@ public class UserService implements UserServiceInterface {
             System.out.println("Exception class: " + e.getClass().getName());
             System.out.println("Exception instance: " + e.toString());
             throw new UnsupportedOperationException("Unhandled event type");
-        }
-    }
-
-    private void shareCertificateClient(String ip, int port, Message msg) throws NoSuchAlgorithmException {
-        try {
-
-            System.out.println("Start of shareCertificateClient");
-            // Create normal socket
-            System.out.println("Creating socket...");
-            System.out.println("IP: " + ip + " Port: " + (port+1));
-            Socket clientSocket = new Socket(ip, (port+1));
-            NodeThread newClientThread = new NodeThread(clientSocket, msg, this, keyHandler);
-            newClientThread.start();
-            newClientThread.join(); // Wait for the thread to finish
-            System.out.println(keyHandler.getTruststorePath());
-            Utils.loadTrustStore(keyHandler.getTruststorePath(), keyHandler.getKeyStorePassword());
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
-            System.exit(-1);
-        }
-    }
-
-    public void serverInsecure(Node node) throws IOException, InterruptedException {
-        this.currentNode = node;
-        String ip = node.getIp();
-        int port = node.getPort()+1;
-
-        System.out.println("Starting server on " + ip + ":" + port);
-        // Use normal ServerSocket instead of SSLServerSocket
-        ServerSocket sSocket = new ServerSocket(port); //socket novo
-
-        while (true) {
-            Socket clientSocket = null; // other node sockets
-            try {
-                System.err.println("Server socket waiting for connection..." + sSocket.getLocalPort()); //PRINT MVP
-                clientSocket = sSocket.accept();
-                NodeThread newServerThread = new NodeThread(clientSocket, null, this, keyHandler);
-                newServerThread.start();
-                newServerThread.join(); // Wait for the thread to finish
-                System.out.println(keyHandler.getTruststorePath());
-                Utils.loadTrustStore(keyHandler.getTruststorePath(), keyHandler.getKeyStorePassword());
-            } catch (IOException e) {
-                System.err.println(e.getMessage());
-                System.exit(-1);
-            }
         }
     }
 }

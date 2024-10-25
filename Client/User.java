@@ -38,9 +38,8 @@ public class User {
         int serverPort = Integer.parseInt(interfaceHandler.getPort());
         node = new Node(name, serverIp, serverPort);
         userService = new UserService(name, node, keyHandler);
-
-        // Main loop
-        mainLoop();
+        
+        mainLoop(); // Main loop - User interface
     }
 
     private static void mainLoop() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException, Exception {

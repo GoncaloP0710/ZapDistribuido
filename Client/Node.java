@@ -120,7 +120,8 @@ public class Node {
         StringBuilder sb = new StringBuilder();
         sb.append("FingerTable: [");
         for (NodeDTO node : fingerTable) {
-            sb.append("IP: ").append(node.getIp())
+            sb.append("Name: ").append(node.getUsername())
+                .append("IP: ").append(node.getIp())
                 .append(", Port: ").append(node.getPort())
                 .append(", Hash: ").append(node.getHash())
                 .append(", ");

@@ -55,6 +55,14 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         if (msg != null) sendMsg(); else reciveMsg();
     }
 
+    public void endThread() {
+        try {
+            this.socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void sendMsg() {
         try {
             out.writeObject(msg); // Send the message to the node reciver
@@ -103,102 +111,41 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         }
     }
 
-    private Certificate reciveCert() { // Diffie-Hellman Key Exchange
+    private Certificate reciveCert() { // Diffie-Hellman
         try{
-            // Step 1: Generate parameters
-            int primeLength = 2048;
-            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH");
-            keyPairGenerator.initialize(primeLength);
-            
-            // Step 2: generates  key pair
-            KeyPair userKeyPair = keyPairGenerator.generateKeyPair();
+            KeyPair userKeyPair = generateKeyPair();
             PrivateKey userPrivateKey = userKeyPair.getPrivate();
             PublicKey userPublicKey = userKeyPair.getPublic();
             
-            // Step 3: Exchange public keys
-            PublicKey pubK = (PublicKey) in.readObject();
+            PublicKey pubK = (PublicKey) in.readObject(); // Step 3: Exchange public keys
             out.writeObject(userPublicKey);
-            
-            // Step 4: Compute the shared secret
-            KeyAgreement userKeyAgreement = KeyAgreement.getInstance("DH");
-            userKeyAgreement.init(userPrivateKey);
-            userKeyAgreement.doPhase(pubK, true);
-            byte[] userSharedSecret = userKeyAgreement.generateSecret();
+            byte[] aesKey = computeSKey(userPrivateKey, pubK); // Compute the shared secret
 
-            // Ensure the shared secret is 256 bits (32 bytes)
-            byte[] aesKey = new byte[32];
-            System.arraycopy(userSharedSecret, 0, aesKey, 0, Math.min(userSharedSecret.length, 32));
-
-            // Step 5: Recive encrypted certificate
-            //Recebe certificado em byte[]
-            byte[] enCer = (byte[]) in.readObject();
-            EncryptionHandler eh = new EncryptionHandler();
-            byte[] deCer = eh.decryptWithKey(enCer, aesKey);
-            Certificate toAdd =  byteArrToCertificate(deCer);
-
-            // Step 5: Send encrypted certificate - Check variable names
-            Certificate certificate = keyHandler.getCertificate();
-            byte[] cerBytes = certificate.getEncoded();
-            EncryptionHandler eh2 = new EncryptionHandler();
-            byte[] enCer2 = eh2.encryptWithKey(cerBytes, aesKey);
-            out.writeObject(enCer2);
-
+            Certificate toAdd =  reciveEncrypCert(aesKey, in); // Recive encrypted certificate and decrypt it
+            sendEncrypCert(keyHandler, aesKey, out); // Send encrypted certificate
             return toAdd;
-
         } catch(Exception e){
             e.printStackTrace();
         }
-
         return null;
-        
     }
 
-    private Certificate sendCert() { // Diffie-Hellman Key Exchange
-
+    private Certificate sendCert() { // Diffie-Hellman
         try{
-            // Step 1: Generate parameters
-            int primeLength = 2048;
-            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH");
-            keyPairGenerator.initialize(primeLength);
-            
-            // Step 2: generates  key pair
-            KeyPair userKeyPair = keyPairGenerator.generateKeyPair();
+            KeyPair userKeyPair = generateKeyPair();
             PrivateKey userPrivateKey = userKeyPair.getPrivate();
             PublicKey userPublicKey = userKeyPair.getPublic();
             
-            // Step 3: Exchange public keys
-            out.writeObject(userPublicKey);
+            out.writeObject(userPublicKey); // Step 3: Exchange public keys
             PublicKey pubK = (PublicKey) in.readObject();
+            byte[] aesKey = computeSKey(userPrivateKey, pubK); // Compute the shared secret
 
-            // Step 4: Compute the shared secret
-            KeyAgreement userKeyAgreement = KeyAgreement.getInstance("DH");
-            userKeyAgreement.init(userPrivateKey);
-            userKeyAgreement.doPhase(pubK, true);
-            byte[] userSharedSecret = userKeyAgreement.generateSecret();
-
-            // Ensure the shared secret is 256 bits (32 bytes)
-            byte[] aesKey = new byte[32];
-            System.arraycopy(userSharedSecret, 0, aesKey, 0, Math.min(userSharedSecret.length, 32));
-
-            // Step 5: Send encrypted certificate
-            Certificate certificate = keyHandler.getCertificate();
-            byte[] cerBytes = certificate.getEncoded();
-            EncryptionHandler eh = new EncryptionHandler();
-            byte[] enCer = eh.encryptWithKey(cerBytes, aesKey);
-            out.writeObject(enCer);
-
-            // Step 6: Receive encrypted certificate
-            byte[] enCer2 = (byte[]) in.readObject();
-            byte[] deCer2 = eh.decryptWithKey(enCer2, aesKey);
-            Certificate toAdd = byteArrToCertificate(deCer2);
-            return toAdd;
-
+            sendEncrypCert(keyHandler, aesKey, out); // Send encrypted certificate
+            return reciveEncrypCert(aesKey, in); // Recive encrypted certificate and decrypt it
         } catch(Exception e){
             e.printStackTrace();
         }
-
-        return null;
-        
+        return null;  
     }
 
     // ===================================================================
@@ -266,14 +213,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     }
 
     // ===================================================================
-
-    public void endThread() {
-        try {
-            this.socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     /**
      * Transform the command on a NodeEvent
