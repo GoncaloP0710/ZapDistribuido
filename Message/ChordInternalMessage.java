@@ -23,7 +23,6 @@ public class ChordInternalMessage extends Message {
     private String aliasReciver; // AddCertificateToTrustStoreEvent
     private String aliasSender; // AddCertificateToTrustStoreEvent
     private Certificate certificate; // AddCertificateToTrustStoreEvent
-    
 
     // UpdateNeighboringNodesEvent
     public ChordInternalMessage(MessageType messageType, NodeDTO nextNode, NodeDTO previousNode) {
