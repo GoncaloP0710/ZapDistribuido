@@ -174,7 +174,11 @@ public class EventHandler {
         
         } else { // Send to the target (foward to closest node to the target, in the finger table)
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getTarget());
-            clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false, nodeWithHashDTO.getUsername());
+            if (nodeWithHashDTO == null) {
+                System.err.println("Node not found");
+                return;
+            }
+            userService.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false, nodeWithHashDTO.getUsername());
         }
     }
 
