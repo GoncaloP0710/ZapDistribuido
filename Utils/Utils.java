@@ -2,13 +2,21 @@ package Utils;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
-
 import java.io.FileInputStream;
+import javax.crypto.KeyAgreement;
 import javax.net.ssl.SSLContext;
-
 import javax.net.ssl.TrustManagerFactory;
+import java.security.InvalidKeyException;
 import java.security.KeyStore;
-
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 
 public final class Utils {
 
@@ -42,6 +50,12 @@ public final class Utils {
         return ((end.intValue() - start.intValue()+ ringSize) % ringSize);
     }
 
+    /**
+     * Update the context of the SSL connection - truststore changed
+     * 
+     * @param trustStorePath
+     * @param trustStorePassword
+     */
     public static void loadTrustStore(String trustStorePath, String trustStorePassword) {
         try {
             // Step 1: Set the new truststore system properties
@@ -64,10 +78,45 @@ public final class Utils {
 
             // Step 5: Set the new SSLContext as the default for future connections
             SSLContext.setDefault(sslContext);
-
-            System.out.println("Truststore has been reloaded and SSLContext has been updated.");
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static KeyPair generateKeyPair() throws NoSuchAlgorithmException {
+        // Step 1: Generate parameters
+        int primeLength = 2048;
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH");
+        keyPairGenerator.initialize(primeLength);
+        
+        // Step 2: generates  key pair
+        KeyPair userKeyPair = keyPairGenerator.generateKeyPair();
+        return userKeyPair;
+    }
+
+    public static byte[] computeSKey(PrivateKey userPrivateKey, PublicKey pubK) throws NoSuchAlgorithmException, InvalidKeyException {
+        // Step 4: Compute the shared secret
+        KeyAgreement userKeyAgreement = KeyAgreement.getInstance("DH");
+        userKeyAgreement.init(userPrivateKey);
+        userKeyAgreement.doPhase(pubK, true);
+        byte[] userSharedSecret = userKeyAgreement.generateSecret();
+
+        // Ensure the shared secret is 256 bits (32 bytes)
+        byte[] aesKey = new byte[32];
+        System.arraycopy(userSharedSecret, 0, aesKey, 0, Math.min(userSharedSecret.length, 32));
+        return aesKey;
+    }
+
+    public static Certificate byteArrToCertificate(byte[] bytes){
+        try{
+            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+            InputStream inStream = new ByteArrayInputStream(bytes);
+            Certificate cert = certFactory.generateCertificate(inStream);
+            inStream.close();
+            return cert;
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+        return null;
     }
 }

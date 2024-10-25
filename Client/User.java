@@ -27,10 +27,10 @@ public class User {
                 keyHandler.loadKeyStore(); // Check if password is correct by loading the keystore
                 correctPassword = true;
             } catch (Exception e) {
-                interfaceHandler.erro("Username ou Password inválido");
+                interfaceHandler.erro("Error: Username ou Password inválido");
                 name = interfaceHandler.startUp();
                 password = interfaceHandler.getPassword();
-                keyHandler = KeyHandler.getInstance(password, name);
+                keyHandler = KeyHandler.newInstance(password, name);
             }
         }
 

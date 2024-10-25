@@ -53,7 +53,8 @@ public class EncryptionHandler{
         return c.doFinal(data);
     }
 
-    public byte[] encryptWithKey(byte[] data, byte[] key) throws Exception {
+    public byte[] encryptWithKey(byte[] data, byte[] key) //encripta com chave custom (em byte[])
+    throws  IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
         if (key.length != 32) {
             throw new IllegalArgumentException("Invalid AES key length: " + key.length + " bytes. Key must be 256 bits (32 bytes).");
         }
@@ -63,7 +64,8 @@ public class EncryptionHandler{
         return cipher.doFinal(data);
     }
 
-    public byte[] decryptWithKey(byte[] data, byte[] key) throws Exception {
+    public byte[] decryptWithKey(byte[] data, byte[] key)  //desencripta com chave custom (em byte[])
+    throws  IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
         if (key.length != 32) {
             throw new IllegalArgumentException("Invalid AES key length: " + key.length + " bytes. Key must be 256 bits (32 bytes).");
         }

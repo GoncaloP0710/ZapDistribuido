@@ -106,8 +106,6 @@ public class Node {
 
         // Convert the hash bytes directly to a BigInteger
         BigInteger hashNumber = new BigInteger(1, hashBytes);
-        System.out.println("Hash as Decimal Number: " + hashNumber);
-
         return hashNumber;
     }
 
@@ -121,7 +119,7 @@ public class Node {
         sb.append("FingerTable: [");
         for (NodeDTO node : fingerTable) {
             sb.append("Name: ").append(node.getUsername())
-                .append("IP: ").append(node.getIp())
+                .append(", IP: ").append(node.getIp())
                 .append(", Port: ").append(node.getPort())
                 .append(", Hash: ").append(node.getHash())
                 .append(", ");

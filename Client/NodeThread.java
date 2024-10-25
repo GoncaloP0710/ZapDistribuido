@@ -3,24 +3,20 @@ package Client;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+
 import java.net.Socket;
-import java.security.InvalidKeyException;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import javax.crypto.KeyAgreement;
 
 import Events.*;
 import Handlers.EncryptionHandler;
 import Handlers.KeyHandler;
 import Message.*;
 import Utils.observer.*;
+import Utils.*;
 
 public class NodeThread extends Thread implements Subject<NodeEvent> {
 
@@ -113,13 +109,13 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
 
     private Certificate reciveCert() { // Diffie-Hellman
         try{
-            KeyPair userKeyPair = generateKeyPair();
+            KeyPair userKeyPair = Utils.generateKeyPair();
             PrivateKey userPrivateKey = userKeyPair.getPrivate();
             PublicKey userPublicKey = userKeyPair.getPublic();
             
             PublicKey pubK = (PublicKey) in.readObject(); // Step 3: Exchange public keys
             out.writeObject(userPublicKey);
-            byte[] aesKey = computeSKey(userPrivateKey, pubK); // Compute the shared secret
+            byte[] aesKey = Utils.computeSKey(userPrivateKey, pubK); // Compute the shared secret
 
             Certificate toAdd =  reciveEncrypCert(aesKey, in); // Recive encrypted certificate and decrypt it
             sendEncrypCert(keyHandler, aesKey, out); // Send encrypted certificate
@@ -132,13 +128,13 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
 
     private Certificate sendCert() { // Diffie-Hellman
         try{
-            KeyPair userKeyPair = generateKeyPair();
+            KeyPair userKeyPair = Utils.generateKeyPair();
             PrivateKey userPrivateKey = userKeyPair.getPrivate();
             PublicKey userPublicKey = userKeyPair.getPublic();
             
             out.writeObject(userPublicKey); // Step 3: Exchange public keys
             PublicKey pubK = (PublicKey) in.readObject();
-            byte[] aesKey = computeSKey(userPrivateKey, pubK); // Compute the shared secret
+            byte[] aesKey = Utils.computeSKey(userPrivateKey, pubK); // Compute the shared secret
 
             sendEncrypCert(keyHandler, aesKey, out); // Send encrypted certificate
             return reciveEncrypCert(aesKey, in); // Recive encrypted certificate and decrypt it
@@ -146,33 +142,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             e.printStackTrace();
         }
         return null;  
-    }
-
-    // ===================================================================
-
-    private KeyPair generateKeyPair() throws NoSuchAlgorithmException {
-        // Step 1: Generate parameters
-        int primeLength = 2048;
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH");
-        keyPairGenerator.initialize(primeLength);
-        
-        // Step 2: generates  key pair
-        KeyPair userKeyPair = keyPairGenerator.generateKeyPair();
-        return userKeyPair;
-    }
-
-    private byte[] computeSKey(PrivateKey userPrivateKey, PublicKey pubK) throws NoSuchAlgorithmException, InvalidKeyException {
-        // Step 4: Compute the shared secret
-        KeyAgreement userKeyAgreement = KeyAgreement.getInstance("DH");
-        userKeyAgreement.init(userPrivateKey);
-        userKeyAgreement.doPhase(pubK, true);
-        byte[] userSharedSecret = userKeyAgreement.generateSecret();
-
-        // Ensure the shared secret is 256 bits (32 bytes)
-        byte[] aesKey = new byte[32];
-        System.arraycopy(userSharedSecret, 0, aesKey, 0, Math.min(userSharedSecret.length, 32));
-        return aesKey;
-    }
+    }    
 
     private void sendEncrypCert(KeyHandler keyHandler, byte[] aesKey, ObjectOutputStream out) throws Exception {
         // Step 5: Send encrypted certificate
@@ -195,24 +165,9 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         byte[] enCer = (byte[]) in.readObject();
         EncryptionHandler eh = new EncryptionHandler();
         byte[] deCer = eh.decryptWithKey(enCer, aesKey);
-        Certificate toAdd =  byteArrToCertificate(deCer);
+        Certificate toAdd =  Utils.byteArrToCertificate(deCer);
         return toAdd;
     }
-
-    public Certificate byteArrToCertificate(byte[] bytes){
-        try{
-            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-            InputStream inStream = new ByteArrayInputStream(bytes);
-            Certificate cert = certFactory.generateCertificate(inStream);
-            inStream.close();
-            return cert;
-        } catch (Exception e){
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    // ===================================================================
 
     /**
      * Transform the command on a NodeEvent
@@ -238,7 +193,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                 emitEvent(new BroadcastUpdateFingerTableEvent((ChordInternalMessage) messageToProcess));
                 break;
             case SendMsg:
-                System.out.println("Recived a send message event...");
                 emitEvent(new NodeSendMessageEvent((UserMessage) messageToProcess));
                 break;
             case RecivePubKey:
