@@ -72,8 +72,9 @@ public class UserService implements UserServiceInterface {
             currentNode.setPreviousNode(currentNodeDTO);
         } else { // If it is not the default node, it has to enter the network
             ChordInternalMessage message = new ChordInternalMessage(MessageType.EnterNode, currentNodeDTO);
-            this.clientHandler.startClient(ipDefault, portDefault, message, false, usernameDefault);
-        }        
+            this.clientHandler.startClient(ipDefault, portDefault, message, true, usernameDefault);
+        }
+        InterfaceHandler.success("Node entered the network successfully."); 
     }
 
     public void initializeCurrentNodeDTO(String username, Node currentNode, Certificate cer) {

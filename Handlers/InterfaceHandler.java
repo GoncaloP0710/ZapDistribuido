@@ -1,21 +1,35 @@
 package Handlers;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 
 public class InterfaceHandler {
 
     private Scanner scanner;
 
+    // ANSI escape codes for colors
+    public static final String ANSI_RESET = "\u001B[0m";
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_GREEN = "\u001B[32m";
+    public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_BLUE = "\u001B[34m";
+    public static final String ANSI_PURPLE = "\u001B[35m";
+    public static final String ANSI_CYAN = "\u001B[36m";
+    public static final String ANSI_WHITE = "\u001B[37m";
+    public static final String ANSI_UNDERLINE = "\u001B[4m";
+
     public InterfaceHandler() {
         this.scanner = new Scanner(System.in);
     }
 
-    //Funções de output
-
-    public String startUp(){
+    public void startUp(){
         System.out.println("----------------------------------");
         System.out.println("-------WHATSAPP DISTRIBUIDO-------");
         System.out.println("----------------------------------");
+    }
+
+    public String getUserName(){
         System.out.print("Insira o seu Username: ");
         String ret = getInput();
         return ret;
@@ -33,23 +47,46 @@ public class InterfaceHandler {
         return ret;
     }
 
-    public void erro(){
-        System.out.println("Ocorreu um erro");
+    private static String getCurrentDateTime() {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
+        return dtf.format(LocalDateTime.now());
     }
 
-    public void erro(String s){
-        System.out.println(s);
+    public static void erro() {
+        System.out.println(ANSI_RED + "[e] Error: Ocorreu um erro" + ANSI_RESET);
     }
 
-    //TODO: REFAZER - Change to not print all the time and be like a help command
+    public static void erro(String s) {
+        String dateTime = getCurrentDateTime();
+        System.out.println(ANSI_RED + ANSI_UNDERLINE + dateTime + ANSI_RESET + " | " + ANSI_RED + "[e]Error:" + " " + s + ANSI_RESET);
+    }
+
+    public static void info(String s) {
+        String dateTime = getCurrentDateTime();
+        System.out.println(ANSI_YELLOW + ANSI_UNDERLINE + dateTime + ANSI_RESET + " | " + ANSI_YELLOW + "[i]Info:" + " " + s + ANSI_RESET);
+    }
+
+    public static void success(String s) {
+        String dateTime = getCurrentDateTime();
+        System.out.println(ANSI_GREEN + ANSI_UNDERLINE + dateTime + ANSI_RESET + " | " + ANSI_GREEN + "[s]Success:" + " " + s + ANSI_RESET);
+    }
+
+    public static void messageRecived(String s) {
+        String dateTime = getCurrentDateTime();
+        System.out.println(ANSI_PURPLE + ANSI_UNDERLINE + dateTime + ANSI_RESET + " | " + ANSI_PURPLE + "[m]Message:" + " " + s + ANSI_RESET);
+    }
+
+    public void help(){
+        
+    }
+
     public void printMenu() {
         System.out.println("1 - Print neighbors");
         System.out.println("2 - Print node");
         System.out.println("3 - Send message");
-        System.out.println("4 - Exit");
+        System.out.println("4 - Help");
+        System.out.println("5 - Exit");
     }
-
-    //Funções de input
 
     public String getInput() {
         if (scanner.hasNextLine()) {

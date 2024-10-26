@@ -60,7 +60,6 @@ public class NodeClientHandler {
     
             if (waitForResponse) 
                 newClientThread.join(); // Wait for the thread to finish
-    
         } catch (Exception e) {
             System.err.println(e.getMessage());
             System.exit(-1);

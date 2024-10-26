@@ -48,9 +48,11 @@ public class EventHandler {
     public synchronized void updateNeighbors(UpdateNeighboringNodesEvent event) {
         if (event.getNext() != null) {
             currentNode.setNextNode(event.getNext());
+            InterfaceHandler.info("Next node updated successfully to " + event.getNext().getUsername());
         }
         if (event.getPrevious() != null) {
             currentNode.setPreviousNode(event.getPrevious());
+            InterfaceHandler.info("Previous node updated successfully to " + event.getPrevious().getUsername());
         }
     }
 
@@ -66,13 +68,14 @@ public class EventHandler {
                 clientHandler.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, event.getToEnter()), true, currentNode.getNextNode().getUsername()); // mudar prev do next para o novo node
                 clientHandler.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, currentNode.getNextNode(), (NodeDTO) null), true, nodeToEnterDTO.getUsername()); // mudar next do novo node para o next do current
                 currentNode.setNextNode(nodeToEnterDTO);// mudar next do current para o novo node
+                InterfaceHandler.info("Next node updated successfully to " + nodeToEnterDTO.getUsername());
                 clientHandler.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, currentNodeDTO), true, nodeToEnterDTO.getUsername()); // mudar prev do novo node para o current
                 
                 // Update all the finger tables
                 clientHandler.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, currentNodeDTO, currentNodeDTO), true, nodeToEnterDTO.getUsername());
 
             } else { // foward to the closest node in the finger table of the current node to the new node
-                clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false, nodeWithHashDTO.getUsername());
+                clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), true, nodeWithHashDTO.getUsername());
             }
         } finally {
             enterNodeLock.unlock();
@@ -94,6 +97,7 @@ public class EventHandler {
         // Update all the finger tables | Next e mandas o current
         clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, prevNodeDTO, prevNodeDTO), true, nextNodeDTO.getUsername());
 
+        InterfaceHandler.success("Node exited the network successfully");
     }
 
     public synchronized void updateFingerTable(UpdateNodeFingerTableEvent event) {
@@ -103,6 +107,7 @@ public class EventHandler {
     
         if (currentNodeDTO.equals(nodeToUpdateDTO)) { // Update the finger table of the current node
             userService.getCurrentNode().setFingerTable(message.getFingerTable());
+            InterfaceHandler.info("Finger table updated successfully");
             return;
         } else if (counter == userService.getHashLength()) { // No more nodes to add
             clientHandler.startClient(nodeToUpdateDTO.getIp(), nodeToUpdateDTO.getPort(), message, true, nodeToUpdateDTO.getUsername()); // Send the message back to the node that started the event
@@ -189,6 +194,7 @@ public class EventHandler {
             Certificate certificate = event.getCertificate();
             String alias = currentNodeDTO.getUsername().equals(event.getAliasSender()) ? event.getAliasReciver() : event.getAliasSender();
             userService.getKeyHandler().addCertificateToTrustStore(alias, certificate);
+            InterfaceHandler.info("Certificate added to trust store successfully");
         } catch (Exception e) {
             System.err.println("Error adding certificate to trust store: " + e.getMessage());
             e.printStackTrace();

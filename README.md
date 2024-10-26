@@ -8,11 +8,15 @@
 
 ## Project overview
 
-### Network structure - Chord
+### Network structure - `Chord`
 
 <img src="READMEFiles/chord-p2p-removebg-preview.png" alt="plot" width="200"/>
 
-De modo a criar um sistema pear-to-pear o maximo de descentralizado possivel e ao mesmo tempo eficiente, foi decidido implementar um sistema Chord permitindo que a busca de dados tenha complexidade $O(\log N)$, onde $N$ é o número de nós. Esta eficacia deve-se ao uso de `Finger Tables` em cada no de modo a ser possivel cortar caminho durante a procura de um no.
+De modo a criar um sistema peer-to-peer o mais descentralizado possível e ao mesmo tempo eficiente, foi decidido implementar um sistema Chord permitindo que a busca de dados tenha complexidade $O(\log N)$, onde $N$ é o número de nós. Esta eficácia deve-se ao uso de `Finger Tables` em cada nó de modo a ser possível cortar caminho durante a procura de um nó.
+
+### Internal conection structure - `SSL/TLS`
+
+A ligacao entre nodes e feita atraves de 
 
 ## Project Requirements
 

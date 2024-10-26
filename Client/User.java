@@ -16,7 +16,8 @@ public class User {
 
     public static void main(String[] args) throws Exception {
         interfaceHandler = new InterfaceHandler();
-        String name = interfaceHandler.startUp();
+        interfaceHandler.startUp();
+        String name = interfaceHandler.getUserName();
         String password = interfaceHandler.getPassword();
 
         // Load keystore and truststore as well as verify password
@@ -27,8 +28,8 @@ public class User {
                 keyHandler.loadKeyStore(); // Check if password is correct by loading the keystore
                 correctPassword = true;
             } catch (Exception e) {
-                interfaceHandler.erro("Error: Username ou Password inválido");
-                name = interfaceHandler.startUp();
+                InterfaceHandler.erro("Username ou Password inválido!");
+                name = interfaceHandler.getUserName();
                 password = interfaceHandler.getPassword();
                 keyHandler = KeyHandler.newInstance(password, name);
             }
@@ -57,11 +58,14 @@ public class User {
                     userService.sendMessage(interfaceHandler);
                     break;
                 case 4:
+                    interfaceHandler.help();
+                    break;
+                case 5:
                     userService.exitNode();
                     System.exit(0);
                     break;
                 default:
-                    interfaceHandler.erro("Opção inválida");
+                    InterfaceHandler.erro("Opção inválida!");
                     break;
             }
         }

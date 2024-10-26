@@ -13,6 +13,7 @@ import java.security.cert.Certificate;
 
 import Events.*;
 import Handlers.EncryptionHandler;
+import Handlers.InterfaceHandler;
 import Handlers.KeyHandler;
 import Message.*;
 import Utils.observer.*;
@@ -64,7 +65,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             out.writeObject(msg); // Send the message to the node reciver
             switch (msg.getMsgType()) {
                 case UpdateNeighbors:
-                    System.out.println((String) in.readObject());
+                    in.readObject(); // Force processCommand to finish before continuing
                     break;
                 case UpdateFingerTable:
                     in.readObject(); // Force processCommand to finish before continuing
@@ -73,7 +74,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                     ChordInternalMessage message = (ChordInternalMessage) msg;
                     message.setCertificate(sendCert());
                     emitEvent(new AddCertificateToTrustStoreEvent((ChordInternalMessage) message));
-                    System.out.println((String) in.readObject());
+                    in.readObject(); // Force processCommand to finish before continuing
                     break;
                 default:
                     break;
@@ -90,13 +91,13 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             processCommand(messageToProcess);
             switch (messageToProcess.getMsgType()) {
                 case UpdateNeighbors:
-                    out.writeObject("Info: Neighbors updated");
+                    out.writeObject("Force processCommand to finish before continuing");
                     break;
                 case UpdateFingerTable:
                     out.writeObject("Force processCommand to finish before continuing");
                     break;
                 case addCertificateToTrustStore:
-                    out.writeObject("Info: A certificate was added to trust store");
+                    out.writeObject("Force processCommand to finish before continuing");
                     break;
                 default:
                     break;
