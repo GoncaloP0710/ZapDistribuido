@@ -34,7 +34,6 @@ public final class Utils {
         if (!serverFilesDir.exists()) {
             serverFilesDir.mkdirs();
         }
-        
     }
 
     public static Long nonceGenarator() {

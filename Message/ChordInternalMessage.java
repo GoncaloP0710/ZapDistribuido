@@ -15,15 +15,15 @@ public class ChordInternalMessage extends Message {
     private NodeDTO nodeToUpdate; // UpdateNodeFingerTableEvent
     private int counter; // UpdateNodeFingerTableEvent
     private ArrayList<NodeDTO> fingerTable; // UpdateNodeFingerTableEvent
-    private NodeDTO initializer; // BroadcastUpdateFingerTableEvent | RecivePubKeyEvent
-    private NodeDTO senderDto; // BroadcastUpdateFingerTableEvent
+    private NodeDTO initializer; // BroadcastUpdateFingerTableEvent | RecivePubKeyEvent | DiffHellmanEvent
+    private NodeDTO senderDto; // BroadcastUpdateFingerTableEvent 
     private boolean finishedBroadcasting; // BroadcastUpdateFingerTableEvent
     private PublicKey receiverPubKey; // RecivePubKeyEvent
-    private BigInteger target; // RecivePubKeyEvent
+    private BigInteger target; // RecivePubKeyEvent | DiffHellmanEvent
     private String aliasReciver; // AddCertificateToTrustStoreEvent
     private String aliasSender; // AddCertificateToTrustStoreEvent
     private Certificate certificate; // AddCertificateToTrustStoreEvent
-    
+    private byte[] sharedKey; // DiffHellmanEvent
 
     // UpdateNeighboringNodesEvent
     public ChordInternalMessage(MessageType messageType, NodeDTO nextNode, NodeDTO previousNode) {
@@ -80,6 +80,16 @@ public class ChordInternalMessage extends Message {
         this.certificate = certificate;
         this.aliasReciver = aliasReciver;
         this.aliasSender = aliasSender;
+    }
+
+    /**
+     * DiffHellmanEvent
+     */
+    public ChordInternalMessage(MessageType messageType, byte[] sharedKey, NodeDTO initializer, BigInteger recieverDTO) {
+        super(messageType);
+        this.sharedKey = sharedKey;
+        this.initializer = initializer;
+        this.target = recieverDTO;
     }
 
     public NodeDTO getNextNode(){
@@ -160,5 +170,13 @@ public class ChordInternalMessage extends Message {
 
     public void setCertificate(Certificate certificate){
         this.certificate = certificate;
+    }
+
+    public byte[] getSharedKey(){
+        return this.sharedKey;
+    }
+
+    public void setSharedKey(byte[] sharedKey){
+        this.sharedKey = sharedKey;
     }
 }

@@ -45,7 +45,6 @@ public class User {
 
     private static void mainLoop() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException, Exception {
         while (true) {
-            interfaceHandler.printMenu();
             int option = Integer.parseInt(interfaceHandler.getInput());
                switch (option) {
                 case 1:

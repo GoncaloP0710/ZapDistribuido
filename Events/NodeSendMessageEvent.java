@@ -11,6 +11,8 @@ public class NodeSendMessageEvent extends NodeEvent {
     private BigInteger receiver;
     private NodeDTO senderDTO;
     private boolean needConfirmation;
+    private byte[] messageHash;
+    private boolean directMessage;
 
     public NodeSendMessageEvent(UserMessage msg) {
         super(msg);
@@ -18,6 +20,8 @@ public class NodeSendMessageEvent extends NodeEvent {
         this.receiver = msg.getreceiverHash();
         this.senderDTO = msg.getSenderDTO();
         this.needConfirmation = msg.getNeedConfirmation();
+        this.messageHash = msg.getMessageHash();
+        this.directMessage = msg.getDirectMessage();
     }
 
     public BigInteger getReciver() {
@@ -34,6 +38,14 @@ public class NodeSendMessageEvent extends NodeEvent {
 
     public boolean getNeedConfirmation() {
         return this.needConfirmation;
+    }
+
+    public byte[] getMessageHash() {
+        return this.messageHash;
+    }
+
+    public boolean getDirectMessage() {
+        return this.directMessage;
     }
 
 }

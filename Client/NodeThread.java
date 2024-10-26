@@ -76,6 +76,12 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                     emitEvent(new AddCertificateToTrustStoreEvent((ChordInternalMessage) message));
                     in.readObject(); // Force processCommand to finish before continuing
                     break;
+                case diffHellman:
+                    ChordInternalMessage messageDH = (ChordInternalMessage) msg;
+                    messageDH.setSharedKey(reciverDiffieHellman());
+                    emitEvent(new DiffHellmanEvent((ChordInternalMessage) messageDH));
+                    in.readObject(); // Force processCommand to finish before continuing
+                    break;
                 default:
                     break;
             }
@@ -99,6 +105,9 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                 case addCertificateToTrustStore:
                     out.writeObject("Force processCommand to finish before continuing");
                     break;
+                case diffHellman:
+                    out.writeObject("Force processCommand to finish before continuing");
+                    break;
                 default:
                     break;
             }
@@ -108,16 +117,41 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         }
     }
 
-    private Certificate reciveCert() { // Diffie-Hellman
+    private byte[] reciverDiffieHellman() {
         try{
             KeyPair userKeyPair = Utils.generateKeyPair();
             PrivateKey userPrivateKey = userKeyPair.getPrivate();
             PublicKey userPublicKey = userKeyPair.getPublic();
             
-            PublicKey pubK = (PublicKey) in.readObject(); // Step 3: Exchange public keys
+            PublicKey pubK = (PublicKey) in.readObject(); //Exchange public keys
             out.writeObject(userPublicKey);
             byte[] aesKey = Utils.computeSKey(userPrivateKey, pubK); // Compute the shared secret
+            return aesKey;
+        } catch(Exception e){
+            e.printStackTrace();
+            return null;
+        }
+    }
 
+    private byte[] senderDiffieHellman() {
+        try{
+            KeyPair userKeyPair = Utils.generateKeyPair();
+            PrivateKey userPrivateKey = userKeyPair.getPrivate();
+            PublicKey userPublicKey = userKeyPair.getPublic();
+            
+            out.writeObject(userPublicKey); //Exchange public keys
+            PublicKey pubK = (PublicKey) in.readObject();
+            byte[] aesKey = Utils.computeSKey(userPrivateKey, pubK); // Compute the shared secret
+            return aesKey;
+        } catch(Exception e){
+            e.printStackTrace();
+            return null;
+        }   
+    }
+
+    private Certificate reciveCert() { // Diffie-Hellman
+        try{
+            byte[] aesKey = reciverDiffieHellman(); // Compute the shared secret
             Certificate toAdd =  reciveEncrypCert(aesKey, in); // Recive encrypted certificate and decrypt it
             sendEncrypCert(keyHandler, aesKey, out); // Send encrypted certificate
             return toAdd;
@@ -129,14 +163,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
 
     private Certificate sendCert() { // Diffie-Hellman
         try{
-            KeyPair userKeyPair = Utils.generateKeyPair();
-            PrivateKey userPrivateKey = userKeyPair.getPrivate();
-            PublicKey userPublicKey = userKeyPair.getPublic();
-            
-            out.writeObject(userPublicKey); // Step 3: Exchange public keys
-            PublicKey pubK = (PublicKey) in.readObject();
-            byte[] aesKey = Utils.computeSKey(userPrivateKey, pubK); // Compute the shared secret
-
+            byte[] aesKey = senderDiffieHellman(); // Compute the shared secret
             sendEncrypCert(keyHandler, aesKey, out); // Send encrypted certificate
             return reciveEncrypCert(aesKey, in); // Recive encrypted certificate and decrypt it
         } catch(Exception e){
@@ -149,8 +176,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         // Step 5: Send encrypted certificate
         Certificate certificate = keyHandler.getCertificate();
         byte[] cerBytes = certificate.getEncoded();
-        EncryptionHandler eh = new EncryptionHandler();
-        byte[] enCer = eh.encryptWithKey(cerBytes, aesKey);
+        byte[] enCer = EncryptionHandler.encryptWithKey(cerBytes, aesKey);
         out.writeObject(enCer);
     }
 
@@ -164,8 +190,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     private Certificate reciveEncrypCert(byte[] aesKey, ObjectInputStream in) throws Exception {
         // Step 5: Recive encrypted certificate
         byte[] enCer = (byte[]) in.readObject();
-        EncryptionHandler eh = new EncryptionHandler();
-        byte[] deCer = eh.decryptWithKey(enCer, aesKey);
+        byte[] deCer = EncryptionHandler.decryptWithKey(enCer, aesKey);
         Certificate toAdd =  Utils.byteArrToCertificate(deCer);
         return toAdd;
     }
@@ -202,6 +227,9 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             case addCertificateToTrustStore:
                 ((ChordInternalMessage) messageToProcess).setCertificate(reciveCert());
                 emitEvent(new AddCertificateToTrustStoreEvent((ChordInternalMessage) messageToProcess));
+                break;
+            case diffHellman:
+                ((ChordInternalMessage) messageToProcess).setSharedKey(reciverDiffieHellman());
                 break;
             default:
                 break;

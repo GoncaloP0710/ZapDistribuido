@@ -15,14 +15,18 @@ public class UserMessage extends Message {
     private BigInteger receiverHash;
     private NodeDTO receiverDTO; // Only known once the message is received
     private boolean needConfirmation;
+    private byte[] messageHash;
+    private boolean directMessage; // If the message is a direct message, it is double encrypted. Use only the ssl/tls encryption
 
-    public UserMessage(MessageType messageType, NodeDTO senderDTO, BigInteger receiverHash, byte[] messageEncryp, boolean needConfirmation) {
+    public UserMessage(MessageType messageType, NodeDTO senderDTO, BigInteger receiverHash, byte[] messageEncryp, boolean needConfirmation, byte[] messageHash, boolean directMessage) {
         super(messageType);
         this.receiverHash = receiverHash;
         this.senderDTO = senderDTO;
         this.time = LocalDateTime.now();
         this.messageEncryp = messageEncryp;
         this.needConfirmation = needConfirmation;
+        this.messageHash = messageHash;
+        this.directMessage = directMessage;
     }
 
     public LocalDateTime getTime(){
@@ -59,5 +63,13 @@ public class UserMessage extends Message {
 
     public boolean getNeedConfirmation(){
         return this.needConfirmation;
+    }
+
+    public byte[] getMessageHash(){
+        return this.messageHash;
+    }
+
+    public boolean getDirectMessage(){
+        return this.directMessage;
     }
 }

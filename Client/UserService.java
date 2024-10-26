@@ -169,8 +169,7 @@ public class UserService implements UserServiceInterface {
             BigInteger reciverHash = currentNode.calculateHash(reciver);
             
             if (reciverNode != null) { // Reciver is on the finger table
-                byte[] messageEncryp = EncryptionHandler.encryptWithPubK(message, reciverNode.getPubK());
-                UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, reciverHash, messageEncryp, true);
+                UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, reciverHash, message, true, EncryptionHandler.createMessageHash(message), true);
                 this.clientHandler.startClient(reciverNode.getIp(), reciverNode.getPort(), userMessage, false, reciverNode.getUsername());
             } else { // Reciver is not on the finger table so we have to find its pubK
                 eventHandler.addMessage(reciverHash, message);
@@ -205,6 +204,8 @@ public class UserService implements UserServiceInterface {
             eventHandler.addCertificateToTrustStore((AddCertificateToTrustStoreEvent) e);
         } else if (e instanceof RecivePubKeyEvent) {
             eventHandler.recivePubKey((RecivePubKeyEvent) e);
+        } else if (e instanceof DiffHellmanEvent) {
+            eventHandler.addSharedKey((DiffHellmanEvent) e);
         } else {
             System.out.println("Exception class: " + e.getClass().getName());
             System.out.println("Exception instance: " + e.toString());

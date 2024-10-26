@@ -185,7 +185,7 @@ public class KeyHandler {
         String[] argsTrust = new String[]{
             "keytool", "-import", "-alias", keyStoreString, "-file", certificatePath, 
             "-storetype", "JKS","-keystore", trustStorePath, "-storepass", keyStorePassword,
-            "-noprompt" //ainda sussy
+            "-noprompt" 
         };
         Process procTrust = new ProcessBuilder(argsTrust).start(); 
         procTrust.waitFor();
