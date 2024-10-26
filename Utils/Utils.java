@@ -12,6 +12,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -26,6 +27,14 @@ public final class Utils {
      * Empty constructor to prevent initialization
      */
     private Utils() {
+    }
+
+    public static void createDir(String path) {
+        File serverFilesDir = new File(path);
+        if (!serverFilesDir.exists()) {
+            serverFilesDir.mkdirs();
+        }
+        
     }
 
     public static Long nonceGenarator() {

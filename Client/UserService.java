@@ -170,7 +170,7 @@ public class UserService implements UserServiceInterface {
             
             if (reciverNode != null) { // Reciver is on the finger table
                 byte[] messageEncryp = EncryptionHandler.encryptWithPubK(message, reciverNode.getPubK());
-                UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, reciverHash, messageEncryp);
+                UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, reciverHash, messageEncryp, true);
                 this.clientHandler.startClient(reciverNode.getIp(), reciverNode.getPort(), userMessage, false, reciverNode.getUsername());
             } else { // Reciver is not on the finger table so we have to find its pubK
                 eventHandler.addMessage(reciverHash, message);

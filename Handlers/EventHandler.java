@@ -149,7 +149,14 @@ public class EventHandler {
             try {
                 byte[] decryptedBytes = EncryptionHandler.decryptWithPrivK(event.getMessageEncryp(), userService.getKeyHandler().getPrivateKey());
                 String messageDecrypted = new String(decryptedBytes);
-                System.out.println("Message from " + event.getSenderDTO().getUsername() + ": " + messageDecrypted);
+                InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + messageDecrypted);
+                
+                if (event.getNeedConfirmation()) { // Send a reciving message to the sender
+                    String recivedMessage = "recived by " + currentNodeDTO.getUsername();
+                    byte[] encryptedBytes = EncryptionHandler.encryptWithPubK(recivedMessage.getBytes(), event.getSenderDTO().getPubK());
+                    UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), encryptedBytes, false);
+                    clientHandler.startClient(event.getSenderDTO().getIp(), event.getSenderDTO().getPort(), userMessage, false, event.getSenderDTO().getUsername());
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             } 
@@ -166,7 +173,7 @@ public class EventHandler {
                 messages.remove(event.getTarget());
                 try {
                     byte[] encryptedBytes = EncryptionHandler.encryptWithPubK(message, event.getReceiverPubKey());
-                    sendUserMessage(new NodeSendMessageEvent(new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getTarget(), encryptedBytes)));
+                    sendUserMessage(new NodeSendMessageEvent(new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getTarget(), encryptedBytes, true)));
                 } catch (InvalidKeyException | IllegalBlockSizeException | BadPaddingException
                         | NoSuchAlgorithmException | NoSuchPaddingException e) {
                     e.printStackTrace();

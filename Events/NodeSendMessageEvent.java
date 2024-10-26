@@ -10,12 +10,14 @@ public class NodeSendMessageEvent extends NodeEvent {
     private byte[] messageEncryp;
     private BigInteger receiver;
     private NodeDTO senderDTO;
+    private boolean needConfirmation;
 
     public NodeSendMessageEvent(UserMessage msg) {
         super(msg);
         this.messageEncryp = msg.getMessageEncryp();
         this.receiver = msg.getreceiverHash();
         this.senderDTO = msg.getSenderDTO();
+        this.needConfirmation = msg.getNeedConfirmation();
     }
 
     public BigInteger getReciver() {
@@ -28,6 +30,10 @@ public class NodeSendMessageEvent extends NodeEvent {
 
     public NodeDTO getSenderDTO() {
         return this.senderDTO;
+    }
+
+    public boolean getNeedConfirmation() {
+        return this.needConfirmation;
     }
 
 }

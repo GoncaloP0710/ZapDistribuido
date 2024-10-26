@@ -14,14 +14,15 @@ public class UserMessage extends Message {
     private NodeDTO senderDTO;
     private BigInteger receiverHash;
     private NodeDTO receiverDTO; // Only known once the message is received
+    private boolean needConfirmation;
 
-    public UserMessage(MessageType messageType, NodeDTO senderDTO, BigInteger receiverHash, byte[] messageEncryp) {
+    public UserMessage(MessageType messageType, NodeDTO senderDTO, BigInteger receiverHash, byte[] messageEncryp, boolean needConfirmation) {
         super(messageType);
         this.receiverHash = receiverHash;
         this.senderDTO = senderDTO;
         this.time = LocalDateTime.now();
         this.messageEncryp = messageEncryp;
-
+        this.needConfirmation = needConfirmation;
     }
 
     public LocalDateTime getTime(){
@@ -54,5 +55,9 @@ public class UserMessage extends Message {
 
     public void setreceiverPubKey(PublicKey receiverPubKey){
         this.receiverPubKey = receiverPubKey;
+    }
+
+    public boolean getNeedConfirmation(){
+        return this.needConfirmation;
     }
 }
