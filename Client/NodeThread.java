@@ -78,7 +78,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                     break;
                 case diffHellman:
                     ChordInternalMessage messageDH = (ChordInternalMessage) msg;
-                    messageDH.setSharedKey(reciverDiffieHellman());
+                    messageDH.setSharedKey(senderDiffieHellman());
                     emitEvent(new DiffHellmanEvent((ChordInternalMessage) messageDH));
                     in.readObject(); // Force processCommand to finish before continuing
                     break;
@@ -122,7 +122,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             KeyPair userKeyPair = Utils.generateKeyPair();
             PrivateKey userPrivateKey = userKeyPair.getPrivate();
             PublicKey userPublicKey = userKeyPair.getPublic();
-            
             PublicKey pubK = (PublicKey) in.readObject(); //Exchange public keys
             out.writeObject(userPublicKey);
             byte[] aesKey = Utils.computeSKey(userPrivateKey, pubK); // Compute the shared secret
@@ -138,7 +137,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             KeyPair userKeyPair = Utils.generateKeyPair();
             PrivateKey userPrivateKey = userKeyPair.getPrivate();
             PublicKey userPublicKey = userKeyPair.getPublic();
-            
             out.writeObject(userPublicKey); //Exchange public keys
             PublicKey pubK = (PublicKey) in.readObject();
             byte[] aesKey = Utils.computeSKey(userPrivateKey, pubK); // Compute the shared secret
@@ -173,7 +171,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     }    
 
     private void sendEncrypCert(KeyHandler keyHandler, byte[] aesKey, ObjectOutputStream out) throws Exception {
-        // Step 5: Send encrypted certificate
+        
         Certificate certificate = keyHandler.getCertificate();
         byte[] cerBytes = certificate.getEncoded();
         byte[] enCer = EncryptionHandler.encryptWithKey(cerBytes, aesKey);
@@ -188,7 +186,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
      * @throws Exception
      */
     private Certificate reciveEncrypCert(byte[] aesKey, ObjectInputStream in) throws Exception {
-        // Step 5: Recive encrypted certificate
+        
         byte[] enCer = (byte[]) in.readObject();
         byte[] deCer = EncryptionHandler.decryptWithKey(enCer, aesKey);
         Certificate toAdd =  Utils.byteArrToCertificate(deCer);
@@ -230,6 +228,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                 break;
             case diffHellman:
                 ((ChordInternalMessage) messageToProcess).setSharedKey(reciverDiffieHellman());
+                emitEvent(new DiffHellmanEvent((ChordInternalMessage) messageToProcess));
                 break;
             default:
                 break;

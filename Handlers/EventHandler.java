@@ -1,6 +1,7 @@
 package Handlers;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.crypto.BadPaddingException;
@@ -8,8 +9,10 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.concurrent.ConcurrentHashMap;
 import java.security.cert.Certificate;
+import java.util.Arrays;
 
 import Events.*;
 import Message.*;
@@ -150,38 +153,36 @@ public class EventHandler {
     public synchronized void sendUserMessage(NodeSendMessageEvent event) {
         if (event.getReciver().equals(currentNodeDTO.getHash())) { // Arrived at the target
             try {
-
-                String messageDecrypted = event.getMessageEncryp().toString();
+                byte[] message = event.getMessageEncryp();
 
                 if (!event.getDirectMessage()) {
-                    byte[] decryptedAut = EncryptionHandler.decryptWithPubK(event.getMessageEncryp(), event.getSenderDTO().getPubK());
-                    byte[] decryptedBytes = EncryptionHandler.decryptWithKey(decryptedAut, sharedKeys.get(event.getSenderDTO().getHash()));
-                    messageDecrypted = new String(decryptedBytes);
-                
-                    if (!event.getMessageHash().equals(EncryptionHandler.createMessageHash(messageDecrypted.getBytes()))) {
+                    byte[] decryptedBytes = EncryptionHandler.decryptWithKey(message, sharedKeys.get(event.getSenderDTO().getHash()));
+                    byte[] decryptedAut = EncryptionHandler.decryptWithPrivK(decryptedBytes, userService.getKeyHandler().getPrivateKey());
+
+                    if (!Arrays.equals(event.getMessageHash(), EncryptionHandler.createMessageHash(decryptedAut))) {
                         InterfaceHandler.erro("Message hash does not match!");
                         return;
                     }
+                    message = decryptedAut;
                 }
 
-                InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + messageDecrypted);
+                String messageString = new String(message, StandardCharsets.UTF_8);
+                InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + messageString);
                 
-                if (event.getNeedConfirmation()) { // Send a reciving message to the sender
-                    String recivedMessage = "recived by " + currentNodeDTO.getUsername();
+                String recivedMessage = "recived by " + currentNodeDTO.getUsername();
+                if (event.getNeedConfirmation() && !event.getDirectMessage()) { // Send a reciving message to the sender
                     byte[] encryptedBytes = EncryptionHandler.encryptWithPubK(recivedMessage.getBytes(), event.getSenderDTO().getPubK());
-                    
-                    // ============================================================
-
                     if (!sharedKeys.containsKey(event.getSenderDTO().getHash())) {
                         ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.diffHellman, (byte[]) null, currentNodeDTO, event.getSenderDTO().getHash());        
                         clientHandler.startClient(event.getSenderDTO().getIp(), event.getSenderDTO().getPort(), messageToSend, true, event.getSenderDTO().getUsername());
                     }
+
                     byte[] encryptedBytesAut = EncryptionHandler.encryptWithKey(encryptedBytes, sharedKeys.get(event.getSenderDTO().getHash()));
-                    
-                    
-                    // ============================================================
-                    
                     UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), encryptedBytesAut, false, EncryptionHandler.createMessageHash(recivedMessage.getBytes()), false);
+                    clientHandler.startClient(event.getSenderDTO().getIp(), event.getSenderDTO().getPort(), userMessage, false, event.getSenderDTO().getUsername());
+                
+                } else if (event.getNeedConfirmation()) {
+                    UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), recivedMessage.getBytes(), false, EncryptionHandler.createMessageHash(recivedMessage.getBytes()), true);
                     clientHandler.startClient(event.getSenderDTO().getIp(), event.getSenderDTO().getPort(), userMessage, false, event.getSenderDTO().getUsername());
                 }
             } catch (Exception e) {
@@ -198,17 +199,16 @@ public class EventHandler {
             if (hasMessageWithTarget(event.getTarget())) {
                 byte[] message = messages.get(event.getTarget());
                 messages.remove(event.getTarget());
-                try {
+                try {    
                     byte[] encryptedBytes = EncryptionHandler.encryptWithPubK(message, event.getReceiverPubKey());
                     // ============================================================
 
                     if (!sharedKeys.containsKey(event.getInitializer().getHash())) {
-                        ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.diffHellman, (byte[]) null, currentNodeDTO, event.getInitializer().getHash());        
-                        clientHandler.startClient(event.getInitializer().getIp(), event.getInitializer().getPort(), messageToSend, true, event.getInitializer().getUsername());
+                        ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.diffHellman, (byte[]) null, currentNodeDTO, event.getTarget());       
+                        clientHandler.startClient(event.getTargetDTO().getIp(), event.getTargetDTO().getPort(), messageToSend, true, event.getInitializer().getUsername());
                     }
-                    byte[] encryptedBytesAut = EncryptionHandler.encryptWithKey(encryptedBytes, sharedKeys.get(event.getInitializer().getHash()));
-                    
-                    
+                    byte[] encryptedBytesAut = EncryptionHandler.encryptWithKey(encryptedBytes, sharedKeys.get(event.getTarget()));
+
                     // ============================================================
                     sendUserMessage(new NodeSendMessageEvent(new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getTarget(), encryptedBytesAut, true, EncryptionHandler.createMessageHash(message), false)));
                 } catch (Exception e) {
@@ -219,6 +219,7 @@ public class EventHandler {
         } else if (event.getTarget().equals(currentNodeDTO.getHash())) { // Send back to the initializer | Arrived at the target
             ChordInternalMessage message = (ChordInternalMessage) event.getMessage();
             message.setReceiverPubKey(currentNodeDTO.getPubK());
+            message.setTargetDTO(currentNodeDTO);
             clientHandler.startClient(event.getInitializer().getIp(), event.getInitializer().getPort(), message, false, event.getInitializer().getUsername());
         
         } else { // Send to the target (foward to closest node to the target, in the finger table)

@@ -173,7 +173,7 @@ public class UserService implements UserServiceInterface {
                 this.clientHandler.startClient(reciverNode.getIp(), reciverNode.getPort(), userMessage, false, reciverNode.getUsername());
             } else { // Reciver is not on the finger table so we have to find its pubK
                 eventHandler.addMessage(reciverHash, message);
-                RecivePubKeyEvent event = new RecivePubKeyEvent(new ChordInternalMessage(MessageType.RecivePubKey, null, reciverHash, currentNodeDTO));
+                RecivePubKeyEvent event = new RecivePubKeyEvent(new ChordInternalMessage(MessageType.RecivePubKey, null, reciverHash, currentNodeDTO, null));
                 eventHandler.recivePubKey(event);
             }
         } finally {

@@ -3,6 +3,7 @@ package Message;
 import java.util.ArrayList;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
+import java.lang.classfile.components.ClassPrinter.Node;
 import java.math.BigInteger;
 
 import dtos.NodeDTO;
@@ -24,6 +25,7 @@ public class ChordInternalMessage extends Message {
     private String aliasSender; // AddCertificateToTrustStoreEvent
     private Certificate certificate; // AddCertificateToTrustStoreEvent
     private byte[] sharedKey; // DiffHellmanEvent
+    private NodeDTO targetDTO; // RecivePubKeyEvent
 
     // UpdateNeighboringNodesEvent
     public ChordInternalMessage(MessageType messageType, NodeDTO nextNode, NodeDTO previousNode) {
@@ -65,11 +67,12 @@ public class ChordInternalMessage extends Message {
     /**
      * RecivePubKeyEvent
      */
-    public ChordInternalMessage(MessageType messageType, PublicKey receiverPubKey, BigInteger target, NodeDTO initializer) {    
+    public ChordInternalMessage(MessageType messageType, PublicKey receiverPubKey, BigInteger target, NodeDTO initializer, NodeDTO targetDTO) {    
         super(messageType);
         this.receiverPubKey = receiverPubKey;
         this.target = target;
         this.initializer = initializer;
+        this.targetDTO = targetDTO;
     }
 
     /**
@@ -166,6 +169,14 @@ public class ChordInternalMessage extends Message {
 
     public Certificate getCertificate(){
         return this.certificate;
+    }
+
+    public NodeDTO getTargetDTO(){
+        return this.targetDTO;
+    }
+
+    public void setTargetDTO(NodeDTO targetDTO){
+        this.targetDTO = targetDTO;
     }
 
     public void setCertificate(Certificate certificate){

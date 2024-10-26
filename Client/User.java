@@ -45,21 +45,21 @@ public class User {
 
     private static void mainLoop() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException, Exception {
         while (true) {
-            int option = Integer.parseInt(interfaceHandler.getInput());
+            String option = interfaceHandler.getInput();
                switch (option) {
-                case 1:
+                case "1":
                     System.out.println(node.neighborsStatus());
                     break;
-                case 2:
+                case "2":
                     System.out.println(node.toString());
                     break;
-                case 3:
+                case "3":
                     userService.sendMessage(interfaceHandler);
                     break;
-                case 4:
+                case "4":
                     interfaceHandler.help();
                     break;
-                case 5:
+                case "5":
                     userService.exitNode();
                     System.exit(0);
                     break;
