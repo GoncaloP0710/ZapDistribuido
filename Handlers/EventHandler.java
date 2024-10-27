@@ -9,10 +9,13 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.Base64;
 import java.util.concurrent.ConcurrentHashMap;
 import java.security.cert.Certificate;
 import java.util.Arrays;
+import java.security.Signature;
 
 import Events.*;
 import Message.*;
@@ -157,13 +160,19 @@ public class EventHandler {
 
                 if (!event.getDirectMessage()) {
                     byte[] decryptedBytes = EncryptionHandler.decryptWithKey(message, sharedKeys.get(event.getSenderDTO().getHash()));
-                    byte[] decryptedAut = EncryptionHandler.decryptWithPrivK(decryptedBytes, userService.getKeyHandler().getPrivateKey());
+                    byte[] hashSigned = event.getMessageHash();
 
-                    if (!Arrays.equals(event.getMessageHash(), EncryptionHandler.createMessageHash(decryptedAut))) {
-                        InterfaceHandler.erro("Message hash does not match!");
+                    // Verify the signature
+                    PublicKey senderPubKey = event.getSenderDTO().getPubK();
+                    Signature signature = Signature.getInstance("SHA256withRSA");
+                    signature.initVerify(senderPubKey);
+                    signature.update(EncryptionHandler.createMessageHash(message));
+
+                    if (!signature.verify(hashSigned)) {
+                        InterfaceHandler.erro("Message signature does not match!");
                         return;
                     }
-                    message = decryptedAut;
+                    message = decryptedBytes;
                 }
 
                 String messageString = new String(message, StandardCharsets.UTF_8);
@@ -171,14 +180,26 @@ public class EventHandler {
                 
                 String recivedMessage = "recived by " + currentNodeDTO.getUsername();
                 if (event.getNeedConfirmation() && !event.getDirectMessage()) { // Send a reciving message to the sender
-                    byte[] encryptedBytes = EncryptionHandler.encryptWithPubK(recivedMessage.getBytes(), event.getSenderDTO().getPubK());
                     if (!sharedKeys.containsKey(event.getSenderDTO().getHash())) {
                         ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.diffHellman, (byte[]) null, currentNodeDTO, event.getSenderDTO().getHash());        
                         clientHandler.startClient(event.getSenderDTO().getIp(), event.getSenderDTO().getPort(), messageToSend, true, event.getSenderDTO().getUsername());
                     }
+                    byte[] sharedKey = sharedKeys.get(event.getSenderDTO().getHash());
+                    byte[] encryptedBytesAut = EncryptionHandler.encryptWithKey(recivedMessage.getBytes(), sharedKey);
+                    byte[] hash = EncryptionHandler.createMessageHash(encryptedBytesAut);
+                    PrivateKey privK = userService.getKeyHandler().getPrivateKey();
 
-                    byte[] encryptedBytesAut = EncryptionHandler.encryptWithKey(encryptedBytes, sharedKeys.get(event.getSenderDTO().getHash()));
-                    UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), encryptedBytesAut, false, EncryptionHandler.createMessageHash(recivedMessage.getBytes()), false);
+                    // Initialize the Signature object with the private key
+                    Signature signature = Signature.getInstance("SHA256withRSA");
+                    signature.initSign(privK);
+
+                    // Update the Signature object with the hash
+                    signature.update(hash);
+
+                    // Generate the digital signature
+                    byte[] digitalSignature = signature.sign();
+                    
+                    UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), encryptedBytesAut, false, digitalSignature, false);
                     clientHandler.startClient(event.getSenderDTO().getIp(), event.getSenderDTO().getPort(), userMessage, false, event.getSenderDTO().getUsername());
                 
                 } else if (event.getNeedConfirmation()) {
@@ -200,17 +221,25 @@ public class EventHandler {
                 byte[] message = messages.get(event.getTarget());
                 messages.remove(event.getTarget());
                 try {    
-                    byte[] encryptedBytes = EncryptionHandler.encryptWithPubK(message, event.getReceiverPubKey());
-                    // ============================================================
-
                     if (!sharedKeys.containsKey(event.getInitializer().getHash())) {
                         ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.diffHellman, (byte[]) null, currentNodeDTO, event.getTarget());       
                         clientHandler.startClient(event.getTargetDTO().getIp(), event.getTargetDTO().getPort(), messageToSend, true, event.getInitializer().getUsername());
                     }
-                    byte[] encryptedBytesAut = EncryptionHandler.encryptWithKey(encryptedBytes, sharedKeys.get(event.getTarget()));
+                    byte[] sharedKey = sharedKeys.get(event.getTarget());
+                    byte[] encryptedBytesAut = EncryptionHandler.encryptWithKey(message, sharedKey);
+                    byte[] hash = EncryptionHandler.createMessageHash(encryptedBytesAut);
+                    PrivateKey privK = userService.getKeyHandler().getPrivateKey();
 
-                    // ============================================================
-                    sendUserMessage(new NodeSendMessageEvent(new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getTarget(), encryptedBytesAut, true, EncryptionHandler.createMessageHash(message), false)));
+                    // Initialize the Signature object with the private key
+                    Signature signature = Signature.getInstance("SHA256withRSA");
+                    signature.initSign(privK);
+
+                    // Update the Signature object with the hash
+                    signature.update(hash);
+
+                    // Generate the digital signature
+                    byte[] digitalSignature = signature.sign();
+                    sendUserMessage(new NodeSendMessageEvent(new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getTarget(), encryptedBytesAut, true, digitalSignature, false)));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
