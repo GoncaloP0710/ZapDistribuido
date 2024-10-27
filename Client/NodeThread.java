@@ -17,6 +17,7 @@ import java.util.List;
 
 import Events.*;
 import Handlers.EncryptionHandler;
+import Handlers.InterfaceHandler;
 import Handlers.KeyHandler;
 import Message.*;
 import Utils.observer.*;
@@ -54,9 +55,8 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
      * Function that is called when the thread is started
      */
     public void run() {
-        System.out.println("Thread started");
-        System.out.println(getMessages());
-        if (!getMessages().isEmpty()) sendMsg(); else reciveMsg();
+        new Thread(this::sendMsg).start();
+        new Thread(this::reciveMsg).start();
     }
 
     public void endThread() {
@@ -69,8 +69,11 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
 
     public void addMessage(Message msg) {
         synchronized (lock) {
-            if (msg == null) return;
+            if (msg == null) {
+                return;
+            }
             messages.add(msg);
+            InterfaceHandler.internalInfo("Added message to the queue: " + msg.getMsgType());
             lock.notifyAll();
         }
     }
@@ -88,7 +91,9 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     private void waitForMessages() throws InterruptedException {
         synchronized (lock) {
             while (messages.isEmpty()) {
+                InterfaceHandler.internalInfo("Waiting for messages...");
                 lock.wait();
+                InterfaceHandler.internalInfo("Thread woke up - Messages available");
             }
         }
     }
@@ -106,9 +111,10 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                     }
                 }
                 if (msg != null) {
-                    System.out.println(msg);
-                    System.out.println("Sending message: " + msg.getMsgType());
+                    InterfaceHandler.internalInfo("Sending message: " + msg.getMsgType());
                     out.writeObject(msg); // Send the message to the node receiver
+                    InterfaceHandler.internalInfo("Message sent.");
+
                     switch (msg.getMsgType()) {
                         case addCertificateToTrustStore: // The Sender also needs to add the receiver certificate to its trust store
                             ChordInternalMessage message = (ChordInternalMessage) msg;
@@ -129,10 +135,9 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     private void reciveMsg() {
         try {
             while (true) {
-                System.out.println("Waiting for message...");
+                InterfaceHandler.internalInfo("Waiting for message...");
                 Message messageToProcess = (Message) in.readObject();
-                System.out.println(messageToProcess);
-                System.out.println("Received message: " + messageToProcess.getMsgType());
+                InterfaceHandler.internalInfo("Recived message: " + messageToProcess.getMsgType());
                 processCommand(messageToProcess);
             }
         } catch (ClassNotFoundException | NoSuchAlgorithmException | IOException e) {
@@ -247,6 +252,9 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                 break;
             case diffHellman:
                 emitEvent(new DiffHellmanEvent((ChordInternalMessage) messageToProcess));
+                break;
+            case Notify:
+                emitEvent(new NotifyEvent((ChordInternalMessage) messageToProcess));
                 break;
             default:
                 break;

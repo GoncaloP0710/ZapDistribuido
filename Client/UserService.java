@@ -231,7 +231,7 @@ public class UserService implements UserServiceInterface {
                 e1.printStackTrace();
             }
         } else if (e instanceof NotifyEvent){
-            
+            eventHandler.handleNotify((NotifyEvent) e);
         }
          else {
             System.out.println("Exception class: " + e.getClass().getName());

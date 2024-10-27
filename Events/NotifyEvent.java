@@ -1,19 +1,18 @@
 package Events;
 
-import java.math.BigInteger;
-
 import Message.ChordInternalMessage;
+import dtos.NodeDTO;
 
 public class NotifyEvent extends NodeEvent {
 
-    private BigInteger target;
+    private NodeDTO target;
 
     public NotifyEvent(ChordInternalMessage msg) {
         super(msg);
-        this.target = msg.getTarget();
+        this.target = msg.getNodeToEnter();
     }
 
-    public BigInteger getTarget() {
+    public NodeDTO getTarget() {
         return target;
     }
 }

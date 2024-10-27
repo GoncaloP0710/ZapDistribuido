@@ -18,10 +18,10 @@ public class ChordInternalMessage extends Message {
     private NodeDTO nodeToUpdate; // UpdateNodeFingerTableEvent
     private int counter; // UpdateNodeFingerTableEvent
     private ArrayList<NodeDTO> fingerTable; // UpdateNodeFingerTableEvent
-    private NodeDTO initializer; // BroadcastUpdateFingerTableEvent | DiffHellmanEvent | UpdateNeighbors Event
+    private NodeDTO initializer; // BroadcastUpdateFingerTableEvent | DiffHellmanEvent | UpdateNeighbors Event | NotifyEvent
     private NodeDTO senderDto; // BroadcastUpdateFingerTableEvent 
     private boolean finishedBroadcasting; // BroadcastUpdateFingerTableEvent
-    private BigInteger target; // DiffHellmanEvent | NotifyEvent
+    private BigInteger target; // DiffHellmanEvent 
     private String aliasReciver; // AddCertificateToTrustStoreEvent
     private String aliasSender; // AddCertificateToTrustStoreEvent
     private Certificate certificate; // AddCertificateToTrustStoreEvent
@@ -39,7 +39,7 @@ public class ChordInternalMessage extends Message {
         this.initializer = initializer;
     }
 
-    // EnterNodeEvent
+    // EnterNodeEvent | NotifyEvent
     public ChordInternalMessage(MessageType messageType, NodeDTO nodeToEnter) {
         super(messageType);
         this.nodeToEnter = nodeToEnter;
@@ -88,14 +88,6 @@ public class ChordInternalMessage extends Message {
         this.target = recieverDTO;
         this.targetPublicKey = targetPublicKey;
         this.initializerPublicKey = initializerPublicKey;
-    }
-
-    /**
-     * NotifyEvent
-     */
-    public ChordInternalMessage(MessageType messageType, BigInteger target) {
-        super(messageType);
-        this.target = target;
     }
 
     public NodeDTO getNextNode(){

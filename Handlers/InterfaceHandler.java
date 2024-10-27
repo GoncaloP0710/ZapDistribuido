@@ -76,6 +76,11 @@ public class InterfaceHandler {
         System.out.println(ANSI_PURPLE + ANSI_UNDERLINE + dateTime + ANSI_RESET + " | " + ANSI_PURPLE + "[m]Message:" + " " + s + ANSI_RESET);
     }
 
+    public static void internalInfo(String s) {
+        String dateTime = getCurrentDateTime();
+        System.out.println(ANSI_CYAN + ANSI_UNDERLINE + dateTime + ANSI_RESET + " | " + ANSI_CYAN + "[i]Internal Info:" + " " + s + ANSI_RESET);
+    }
+
     public void help(){
         
     }

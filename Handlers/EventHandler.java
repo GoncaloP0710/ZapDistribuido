@@ -68,14 +68,12 @@ public class EventHandler {
             InterfaceHandler.info("Previous node updated successfully to " + event.getPrevious().getUsername());
         }
 
-        handleNotify(new NotifyEvent(new ChordInternalMessage(MessageType.Notify, event.getInitializer().getHash())));
+        handleNotify(new NotifyEvent(new ChordInternalMessage(MessageType.Notify, event.getInitializer())));
     }
 
     public void enterNode(EnterNodeEvent event) throws NoSuchAlgorithmException, InterruptedException {
-        System.out.println("Enter node event being processed");
         enterNodeLock.lock();
         try {
-            System.out.println("Enter node event being processed");
             BigInteger hash = event.getToEnterHash();
             NodeDTO nodeToEnterDTO = event.getToEnter();
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(hash);
@@ -83,30 +81,22 @@ public class EventHandler {
             if (nodeWithHashDTO == null) { // target node (Prev to the new Node) is the current node
                 // Update the neighbors
                 clientHandler.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, event.getToEnter(), currentNodeDTO), true, currentNode.getNextNode().getUsername()); // mudar prev do next para o novo node
-                System.out.println("wait 1");
-                locker.wait();//-----------------------------
-                System.out.println("pos wait 1");
+                synchronized (locker) {
+                    locker.wait(); // Wait for notification
+                }
                 clientHandler.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, currentNode.getNextNode(), (NodeDTO) null, currentNodeDTO), true, nodeToEnterDTO.getUsername()); // mudar next do novo node para o next do current
-                System.out.println("wait 2");
-                locker.wait();//-----------------------------
-                System.out.println("pos wait 2");
+                synchronized (locker) {
+                    locker.wait(); // Wait for notification
+                }
                 currentNode.setNextNode(nodeToEnterDTO);// mudar next do current para o novo node
-                System.out.println("wait 3");
-                locker.wait();//-----------------------------
-                System.out.println("pos wait 3");
-                InterfaceHandler.info("Next node updated successfully to " + nodeToEnterDTO.getUsername());
-                System.out.println("wait 4");
-                locker.wait();//-----------------------------
-                System.out.println("pos wait 4");
                 clientHandler.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, currentNodeDTO, currentNodeDTO), true, nodeToEnterDTO.getUsername()); // mudar prev do novo node para o current
-                System.out.println("wait 5");
-                locker.wait();//-----------------------------
-                System.out.println("pos wait 5");
+                synchronized (locker) {
+                    locker.wait(); // Wait for notification
+                }
+
                 // Update all the finger tables
                 clientHandler.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, currentNodeDTO, currentNodeDTO), true, nodeToEnterDTO.getUsername());
-                System.out.println("wait 6");
-                locker.wait();//-----------------------------
-                System.out.println("pos wait 6");
+ 
 
             } else { // foward to the closest node in the finger table of the current node to the new node
                 clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), true, nodeWithHashDTO.getUsername());
@@ -124,13 +114,16 @@ public class EventHandler {
         System.out.println("Before first wait");
         ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateNeighbors, nextNodeDTO, (NodeDTO) null, currentNodeDTO);
         clientHandler.startClient(prevNodeDTO.getIp(), prevNodeDTO.getPort(), message, true, prevNodeDTO.getUsername());
-        locker.wait();//-----------------------------
-        System.out.println("After first wait");
+        synchronized (locker) {
+            locker.wait(); // Wait for notification
+        }
+
         // mudar prev do next para o prev do current
         ChordInternalMessage message2 = new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, prevNodeDTO, currentNodeDTO);
         clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), message2, true, nextNodeDTO.getUsername());
-        locker.wait();//-----------------------------
-        System.out.println("After second wait");
+        synchronized (locker) {
+            locker.wait(); // Wait for notification
+        }
 
         // Update all the finger tables | Next e mandas o current
         clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, prevNodeDTO, prevNodeDTO), true, nextNodeDTO.getUsername());
@@ -327,16 +320,13 @@ public class EventHandler {
     }
 
     public void handleNotify(NotifyEvent e) {
-        if (currentNodeDTO.getHash().equals(e.getTarget())) {
-            System.out.println("notify !!!!!!!");
+        if (currentNodeDTO.getHash().equals(e.getTarget().getHash())) {
             synchronized (locker) {
                 locker.notify(); // Notify the waiting thread
             }
-            System.out.println("pos notify !!!!!!!");
         } else {
-            NodeDTO closestNodeToTarget = userService.getNodeWithHash(e.getTarget());
             try {
-                clientHandler.startClient(closestNodeToTarget.getIp(), closestNodeToTarget.getPort(), e.getMessage(), false, closestNodeToTarget.getUsername());
+                clientHandler.startClient(e.getTarget().getIp(), e.getTarget().getPort(), e.getMessage(), false, e.getTarget().getUsername());
             } catch (NoSuchAlgorithmException e1) {
                 e1.printStackTrace();
             }

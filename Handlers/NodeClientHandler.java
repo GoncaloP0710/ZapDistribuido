@@ -9,7 +9,7 @@ import javax.net.ssl.SSLSocketFactory;
 import java.util.concurrent.ConcurrentHashMap;
 import java.math.BigInteger;
 
-
+import Handlers.*;
 import Client.*;
 import Message.*;
 import dtos.NodeDTO;
@@ -49,9 +49,11 @@ public class NodeClientHandler {
         BigInteger hashAlias = Utils.calculateHash(alias);
         if (threads.containsKey(hashAlias)) {
             NodeThread thread = threads.get(hashAlias);
+            InterfaceHandler.internalInfo(alias + " already has a thread, added the message to the thread");
             thread.addMessage(msg);
             return;
         }
+        InterfaceHandler.info("Created a new conection with: " + alias);
 
         try {
             if (!keyHandler.getTruStore().containsAlias(alias)) // If the certificate of the other node is not in the truststore
@@ -71,9 +73,8 @@ public class NodeClientHandler {
 
             NodeThread newClientThread = new NodeThread(sslClientSocket, msg, userService, keyHandler);
             newClientThread.start();
-    
-            if (waitForResponse) 
-                newClientThread.join(); // Wait for the thread to finish
+            threads.put(hashAlias, newClientThread);
+
         } catch (Exception e) {
             System.err.println(e.getMessage());
             System.exit(-1);
@@ -94,7 +95,6 @@ public class NodeClientHandler {
             Socket clientSocket = new Socket(ip, (port+1));
             NodeThread newClientThread = new NodeThread(clientSocket, msg, userService, keyHandler);
             newClientThread.start();
-            newClientThread.join(); // Wait for the thread to finish
             Utils.loadTrustStore(keyHandler.getTruststorePath(), keyHandler.getKeyStorePassword());
         } catch (Exception e) {
             System.err.println(e.getMessage());
