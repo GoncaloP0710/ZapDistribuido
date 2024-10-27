@@ -10,6 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.security.cert.Certificate;
 import java.security.Signature;
 
@@ -22,6 +23,7 @@ import dtos.*;
 
 public class EventHandler { 
 
+    private static final long TIMEOUT = 3; // 3 seconds
     private UserService userService;
 
     String ipDefault;
@@ -155,8 +157,20 @@ public class EventHandler {
 
     public synchronized void sendUserMessage(NodeSendMessageEvent event) throws Exception {
         if (currentNodeDTO.getHash().equals(event.getReciver()) || currentNodeDTO.getHash().equals(event.getSenderDTO().getHash())) { // Arrived at a node that needs the shared key
+            long startTime = System.currentTimeMillis();
             while (sharedKeys.get(event.getReciver()) == null && sharedKeys.get(event.getSenderDTO().getHash()) == null) {
-                wait();
+               try {
+                    wait(1000); // Wait for 1 second intervals
+                    long elapsedTime = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime);
+                    if (elapsedTime >= TIMEOUT) {
+                        InterfaceHandler.erro("Connection timeout!");
+                        return;
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    InterfaceHandler.erro("Thread interrupted: " + e.getMessage());
+                    return;
+                }
             }
         } else { // Foward to the target
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getReciver());
@@ -230,6 +244,18 @@ public class EventHandler {
     }
 
     public synchronized void diffieHellman (DiffHellmanEvent e) throws NoSuchAlgorithmException, InvalidKeyException {
+        
+        NodeDTO closestNodeToTarget = null;
+        if (e.getTargetPublicKey() == null) { // Foward to Target
+            closestNodeToTarget = userService.getNodeWithHash(e.getTarget());
+        } else { // Foward to Initializer
+            closestNodeToTarget = userService.getNodeWithHash(e.getInitializer().getHash());
+        }
+
+        if (closestNodeToTarget == null && !(e.getInitializer().equals(currentNodeDTO) && e.getTargetPublicKey() != null)) // If the target does not exist
+            return;
+        
+        
         if (currentNodeDTO.getHash().equals(e.getInitializer().getHash()) && e.getTargetPublicKey() == null) { // First time on the initializer
             KeyPair keypair = Utils.generateKeyPair();
             PrivateKey privK = keypair.getPrivate();
@@ -238,15 +264,16 @@ public class EventHandler {
             msg.setInitializerPublicKey(keypair.getPublic());
 
             // foward to the target
-            NodeDTO closestNodeToTarget = userService.getNodeWithHash(e.getTarget());
             clientHandler.startClient(closestNodeToTarget.getIp(), closestNodeToTarget.getPort(), msg, false, closestNodeToTarget.getUsername());
-        
+            return;
+            
         } else if (currentNodeDTO.getHash().equals(e.getInitializer().getHash())) { // Second time on the initializer (last stop)
             PrivateKey privK = myPrivKeysDiffie.get(e.getTarget());
             myPrivKeysDiffie.remove(e.getTarget()); // Remove from the shared memory
             byte[] sharedKey = Utils.computeSKey(privK, e.getTargetPublicKey());
             sharedKeys.put(e.getTarget(), sharedKey); // Now both users have the shared key
             notifyAll();
+            return;
         
         } else if (currentNodeDTO.getHash().equals(e.getTarget())) { // Reached the target for the first time (only time)
             KeyPair keypair = Utils.generateKeyPair();
@@ -259,18 +286,10 @@ public class EventHandler {
             msg.setTargetPublicKey(keypair.getPublic());
 
             // foward to initializer
-            NodeDTO closestNodeToTarget = userService.getNodeWithHash(e.getInitializer().getHash());
             clientHandler.startClient(closestNodeToTarget.getIp(), closestNodeToTarget.getPort(), msg, false, closestNodeToTarget.getUsername());
-        
-        } else { // Foward to the target or initializer depending on the case
-            if (e.getTargetPublicKey() == null) { // Foward to Target
-                NodeDTO closestNodeToTarget = userService.getNodeWithHash(e.getTarget());
-                clientHandler.startClient(closestNodeToTarget.getIp(), closestNodeToTarget.getPort(), e.getMessage(), false, closestNodeToTarget.getUsername());
-            } else { // Foward to Initializer
-                NodeDTO closestNodeToTarget = userService.getNodeWithHash(e.getInitializer().getHash());
-                clientHandler.startClient(closestNodeToTarget.getIp(), closestNodeToTarget.getPort(), e.getMessage(), false, closestNodeToTarget.getUsername());
-            }
-        }
+            return;
+        } 
+        clientHandler.startClient(closestNodeToTarget.getIp(), closestNodeToTarget.getPort(), e.getMessage(), false, closestNodeToTarget.getUsername());
     }
 
     public void addMessage(BigInteger target, byte[] message) {

@@ -139,9 +139,9 @@ public class UserService implements UserServiceInterface {
 
         int distanceToNext = Utils.getDistance(currentNode.getHashNumber(), currentNode.getNextNode().getHash(), getRingSize());
         int distanceToNode = Utils.getDistance(currentNode.getHashNumber(), node, getRingSize());
-        if (distanceToNext > distanceToNode) // If the node is between the current node and the next node (in these case the node does not exist)
+        if (distanceToNext > distanceToNode)  // If the node is between the current node and the next node (in these case the node does not exist)
             return null;
-
+        
         NodeDTO closestFingerNode = null;
         for (NodeDTO fingerNode : currentNode.getFingerTable()) {
             BigInteger fingerNodeHash = fingerNode.getHash();
