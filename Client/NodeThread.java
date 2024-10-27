@@ -14,6 +14,8 @@ import java.security.cert.Certificate;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import Events.*;
 import Handlers.EncryptionHandler;
@@ -32,6 +34,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     private final Object lock = new Object();
 
     private CopyOnWriteArrayList<Message> messages = new CopyOnWriteArrayList<>();
+    private CopyOnWriteArrayList<Message> messageQueue = new CopyOnWriteArrayList<>();
     private Listener<NodeEvent> listener;
     private KeyHandler keyHandler;
 
@@ -91,7 +94,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     private void waitForMessages() throws InterruptedException {
         synchronized (lock) {
             while (messages.isEmpty()) {
-                InterfaceHandler.internalInfo("Waiting for messages...");
+                InterfaceHandler.internalInfo("Waiting for messages to be added to the queue");
                 lock.wait();
                 InterfaceHandler.internalInfo("Thread woke up - Messages available");
             }
@@ -138,9 +141,21 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                 InterfaceHandler.internalInfo("Waiting for message...");
                 Message messageToProcess = (Message) in.readObject();
                 InterfaceHandler.internalInfo("Recived message: " + messageToProcess.getMsgType());
-                processCommand(messageToProcess);
+                messageQueue.add(messageToProcess); // Add the received message to the queue
+                InterfaceHandler.internalInfo("Message added to the queue: " + messageQueue.size());
+                new Thread(this::processMessages).start();
             }
-        } catch (ClassNotFoundException | NoSuchAlgorithmException | IOException e) {
+        } catch (ClassNotFoundException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void processMessages() {
+        try {
+            Message messageToProcess = messageQueue.remove(0); // Wait for messages if the queue is empty
+            InterfaceHandler.internalInfo("Processing message: " + messageToProcess.getMsgType());
+            processCommand(messageToProcess);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
