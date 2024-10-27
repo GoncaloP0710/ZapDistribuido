@@ -18,6 +18,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.security.MessageDigest;
 
 public final class Utils {
 
@@ -56,6 +57,23 @@ public final class Utils {
 
     public static int getDistance(BigInteger start, BigInteger end, int ringSize) {
         return ((end.intValue() - start.intValue()+ ringSize) % ringSize);
+    }
+
+    /**
+     * Instead of the ip and port we use name to be easier to find the user in the ring
+     * 
+     * @param name
+     * @return
+     * @throws NoSuchAlgorithmException
+     */
+    public static BigInteger calculateHash(String name) throws NoSuchAlgorithmException {
+        // Instead of the ip and port we use name to be easier to find the user in the ring
+        MessageDigest md = MessageDigest.getInstance("SHA-1");
+        byte[] hashBytes = md.digest(name.getBytes());
+
+        // Convert the hash bytes directly to a BigInteger
+        BigInteger hashNumber = new BigInteger(1, hashBytes);
+        return hashNumber;
     }
 
     /**

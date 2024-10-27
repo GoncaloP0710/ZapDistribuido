@@ -1,9 +1,11 @@
 package Message;
 
 import java.util.ArrayList;
+
+import Client.Node;
+
 import java.security.PublicKey;
 import java.security.cert.Certificate;
-import java.lang.classfile.components.ClassPrinter.Node;
 import java.math.BigInteger;
 
 import dtos.NodeDTO;
@@ -16,11 +18,10 @@ public class ChordInternalMessage extends Message {
     private NodeDTO nodeToUpdate; // UpdateNodeFingerTableEvent
     private int counter; // UpdateNodeFingerTableEvent
     private ArrayList<NodeDTO> fingerTable; // UpdateNodeFingerTableEvent
-    private NodeDTO initializer; // BroadcastUpdateFingerTableEvent | RecivePubKeyEvent | DiffHellmanEvent
+    private NodeDTO initializer; // BroadcastUpdateFingerTableEvent | DiffHellmanEvent | UpdateNeighbors Event
     private NodeDTO senderDto; // BroadcastUpdateFingerTableEvent 
     private boolean finishedBroadcasting; // BroadcastUpdateFingerTableEvent
-    private PublicKey receiverPubKey; // RecivePubKeyEvent
-    private BigInteger target; // RecivePubKeyEvent | DiffHellmanEvent
+    private BigInteger target; // DiffHellmanEvent | NotifyEvent
     private String aliasReciver; // AddCertificateToTrustStoreEvent
     private String aliasSender; // AddCertificateToTrustStoreEvent
     private Certificate certificate; // AddCertificateToTrustStoreEvent
@@ -28,13 +29,14 @@ public class ChordInternalMessage extends Message {
     private PublicKey targetPublicKey; // DiffHellmanEvent
 
 
-    private NodeDTO targetDTO; // RecivePubKeyEvent
+    private NodeDTO targetDTO; // 
 
     // UpdateNeighboringNodesEvent
-    public ChordInternalMessage(MessageType messageType, NodeDTO nextNode, NodeDTO previousNode) {
+    public ChordInternalMessage(MessageType messageType, NodeDTO nextNode, NodeDTO previousNode, NodeDTO initializer) {
         super(messageType);
         this.nextNode = nextNode;
         this.previousNode = previousNode;
+        this.initializer = initializer;
     }
 
     // EnterNodeEvent
@@ -68,17 +70,6 @@ public class ChordInternalMessage extends Message {
     }
 
     /**
-     * RecivePubKeyEvent
-     */
-    public ChordInternalMessage(MessageType messageType, PublicKey receiverPubKey, BigInteger target, NodeDTO initializer, NodeDTO targetDTO) {    
-        super(messageType);
-        this.receiverPubKey = receiverPubKey;
-        this.target = target;
-        this.initializer = initializer;
-        this.targetDTO = targetDTO;
-    }
-
-    /**
      * AddCertificateToTrustStoreEvent
      */
     public ChordInternalMessage(MessageType messageType, Certificate certificate, String aliasReciver, String aliasSender) {    
@@ -97,6 +88,14 @@ public class ChordInternalMessage extends Message {
         this.target = recieverDTO;
         this.targetPublicKey = targetPublicKey;
         this.initializerPublicKey = initializerPublicKey;
+    }
+
+    /**
+     * NotifyEvent
+     */
+    public ChordInternalMessage(MessageType messageType, BigInteger target) {
+        super(messageType);
+        this.target = target;
     }
 
     public NodeDTO getNextNode(){
@@ -147,20 +146,12 @@ public class ChordInternalMessage extends Message {
         return this.finishedBroadcasting;
     }
 
-    public PublicKey getReceiverPubKey(){
-        return this.receiverPubKey;
-    }
-
     public BigInteger getTarget(){
         return this.target;
     }
 
     public void setTarget(BigInteger target){
         this.target = target;
-    }
-
-    public void setReceiverPubKey(PublicKey receiverPubKey){
-        this.receiverPubKey = receiverPubKey;
     }
 
     public String getAliasReciver(){

@@ -6,6 +6,9 @@ import java.security.NoSuchAlgorithmException;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+import java.util.concurrent.ConcurrentHashMap;
+import java.math.BigInteger;
+
 
 import Client.*;
 import Message.*;
@@ -22,6 +25,9 @@ public class NodeClientHandler {
     String keystorePassword;
     File truststoreFile;
 
+    // ConcurrentHashMap to store the Threads
+    private ConcurrentHashMap<BigInteger, NodeThread> threads = new ConcurrentHashMap<>();
+
     public NodeClientHandler(UserService userService) {
         this.userService = userService;
         this.keyHandler = userService.getKeyHandler();
@@ -37,8 +43,16 @@ public class NodeClientHandler {
      * @param ip
      * @param port
      * @param command
+     * @throws NoSuchAlgorithmException 
      */
-    public void startClient(String ip, int port, Message msg, boolean waitForResponse, String alias) {
+    public void startClient(String ip, int port, Message msg, boolean waitForResponse, String alias) throws NoSuchAlgorithmException {
+        BigInteger hashAlias = Utils.calculateHash(alias);
+        if (threads.containsKey(hashAlias)) {
+            NodeThread thread = threads.get(hashAlias);
+            thread.addMessage(msg);
+            return;
+        }
+
         try {
             if (!keyHandler.getTruStore().containsAlias(alias)) // If the certificate of the other node is not in the truststore
                 shareCertificateClient(ip, port, new ChordInternalMessage(MessageType.addCertificateToTrustStore, keyHandler.getCertificate(alias), alias, currentNodeDTO.getUsername()));

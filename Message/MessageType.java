@@ -10,5 +10,6 @@ public enum MessageType {
     broadcastUpdateFingerTable,
     RecivePubKey,
     addCertificateToTrustStore,
-    diffHellman;
+    diffHellman,
+    Notify;
 }

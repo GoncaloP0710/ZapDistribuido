@@ -181,21 +181,41 @@ public class UserService implements UserServiceInterface {
 
     /**
      * Makes the changes needed to mantain the network correct when a node exits
+     * @throws InterruptedException 
+     * @throws NoSuchAlgorithmException 
      */
-    public void exitNode() {
+    public void exitNode() throws NoSuchAlgorithmException, InterruptedException {
         eventHandler.exitNode();
     }
 
     @Override
     public void processEvent(NodeEvent e) {
         if (e instanceof EnterNodeEvent) {
-            eventHandler.enterNode((EnterNodeEvent) e);
+            try {
+                eventHandler.enterNode((EnterNodeEvent) e);
+            } catch (NoSuchAlgorithmException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            } catch (InterruptedException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
         } else if (e instanceof UpdateNeighboringNodesEvent) {
             eventHandler.updateNeighbors((UpdateNeighboringNodesEvent) e);
         } else if (e instanceof UpdateNodeFingerTableEvent) {
-            eventHandler.updateFingerTable((UpdateNodeFingerTableEvent) e);
+            try {
+                eventHandler.updateFingerTable((UpdateNodeFingerTableEvent) e);
+            } catch (NoSuchAlgorithmException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
         } else if (e instanceof BroadcastUpdateFingerTableEvent) {
-            eventHandler.broadcastMessage(((BroadcastUpdateFingerTableEvent) e));
+            try {
+                eventHandler.broadcastMessage(((BroadcastUpdateFingerTableEvent) e));
+            } catch (NoSuchAlgorithmException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
         } else if (e instanceof NodeSendMessageEvent) {
             try {
                 eventHandler.sendUserMessage(((NodeSendMessageEvent) e));
@@ -210,7 +230,10 @@ public class UserService implements UserServiceInterface {
             } catch (InvalidKeyException | NoSuchAlgorithmException e1) {
                 e1.printStackTrace();
             }
-        } else {
+        } else if (e instanceof NotifyEvent){
+            
+        }
+         else {
             System.out.println("Exception class: " + e.getClass().getName());
             System.out.println("Exception instance: " + e.toString());
             throw new UnsupportedOperationException("Unhandled event type");

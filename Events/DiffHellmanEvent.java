@@ -12,7 +12,6 @@ public class DiffHellmanEvent extends NodeEvent {
     private NodeDTO initializer;
     private BigInteger target;
 
-
     public DiffHellmanEvent(ChordInternalMessage msg) {
         super(msg);
         this.initializer = msg.getInitializer();

@@ -3,6 +3,7 @@ package Client;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 
 import java.net.Socket;
 import java.security.KeyPair;
@@ -11,9 +12,11 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.List;
+
 import Events.*;
 import Handlers.EncryptionHandler;
-import Handlers.InterfaceHandler;
 import Handlers.KeyHandler;
 import Message.*;
 import Utils.observer.*;
@@ -25,14 +28,16 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     private ObjectInputStream in = null;
     private ObjectOutputStream out = null;
 
-    private Message msg;
+    private final Object lock = new Object();
+
+    private CopyOnWriteArrayList<Message> messages = new CopyOnWriteArrayList<>();
     private Listener<NodeEvent> listener;
     private KeyHandler keyHandler;
 
     // If msg is null, it means that the thread is a server and its objective is to process the command it receives
     public NodeThread (Socket socket, Message msg, Listener<NodeEvent> listener, KeyHandler keyHandler) {
+        addMessage(msg);
         this.socket = socket;
-        this.msg = msg;
         this.keyHandler = keyHandler;
         this.listener = listener;
         try {
@@ -49,7 +54,9 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
      * Function that is called when the thread is started
      */
     public void run() {
-        if (msg != null) sendMsg(); else reciveMsg();
+        System.out.println("Thread started");
+        System.out.println(getMessages());
+        if (!getMessages().isEmpty()) sendMsg(); else reciveMsg();
     }
 
     public void endThread() {
@@ -60,49 +67,74 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         }
     }
 
+    public void addMessage(Message msg) {
+        synchronized (lock) {
+            if (msg == null) return;
+            messages.add(msg);
+            lock.notifyAll();
+        }
+    }
+    
+    public void removeMessage(Message msg) {
+        synchronized (lock) {
+            messages.remove(msg);
+        }
+    }
+    
+    public List<Message> getMessages() {
+        return new ArrayList<>(messages);
+    }
+
+    private void waitForMessages() throws InterruptedException {
+        synchronized (lock) {
+            while (messages.isEmpty()) {
+                lock.wait();
+            }
+        }
+    }
+
     private void sendMsg() {
         try {
-            out.writeObject(msg); // Send the message to the node reciver
-            switch (msg.getMsgType()) {
-                case UpdateNeighbors:
-                    in.readObject(); // Force processCommand to finish before continuing
-                    break;
-                case UpdateFingerTable:
-                    in.readObject(); // Force processCommand to finish before continuing
-                    break;
-                case addCertificateToTrustStore: // The Sender also needs to add the reciver certificate to its trust store
-                    ChordInternalMessage message = (ChordInternalMessage) msg;
-                    message.setCertificate(sendCert());
-                    emitEvent(new AddCertificateToTrustStoreEvent((ChordInternalMessage) message));
-                    in.readObject(); // Force processCommand to finish before continuing
-                    break;
-                default:
-                    break;
+            while (true) {
+                waitForMessages(); // Wait for messages if the list is empty
+                Message msg;
+                synchronized (lock) {
+                    if (!messages.isEmpty()) {
+                        msg = messages.remove(0); // Remove the message from the list
+                    } else {
+                        continue;
+                    }
+                }
+                if (msg != null) {
+                    System.out.println(msg);
+                    System.out.println("Sending message: " + msg.getMsgType());
+                    out.writeObject(msg); // Send the message to the node receiver
+                    switch (msg.getMsgType()) {
+                        case addCertificateToTrustStore: // The Sender also needs to add the receiver certificate to its trust store
+                            ChordInternalMessage message = (ChordInternalMessage) msg;
+                            message.setCertificate(sendCert());
+                            emitEvent(new AddCertificateToTrustStoreEvent(message));
+                            in.readObject(); // Force processCommand to finish before continuing
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
-            endThread();
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException | ClassNotFoundException | InterruptedException e) {
             e.printStackTrace();
         }
     }
 
     private void reciveMsg() {
         try {
-            Message messageToProcess = (Message) in.readObject();
-            processCommand(messageToProcess);
-            switch (messageToProcess.getMsgType()) {
-                case UpdateNeighbors:
-                    out.writeObject("Force processCommand to finish before continuing");
-                    break;
-                case UpdateFingerTable:
-                    out.writeObject("Force processCommand to finish before continuing");
-                    break;
-                case addCertificateToTrustStore:
-                    out.writeObject("Force processCommand to finish before continuing");
-                    break;
-                default:
-                    break;
+            while (true) {
+                System.out.println("Waiting for message...");
+                Message messageToProcess = (Message) in.readObject();
+                System.out.println(messageToProcess);
+                System.out.println("Received message: " + messageToProcess.getMsgType());
+                processCommand(messageToProcess);
             }
-            endThread();
         } catch (ClassNotFoundException | NoSuchAlgorithmException | IOException e) {
             e.printStackTrace();
         }
@@ -162,7 +194,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     }    
 
     private void sendEncrypCert(KeyHandler keyHandler, byte[] aesKey, ObjectOutputStream out) throws Exception {
-        
         Certificate certificate = keyHandler.getCertificate();
         byte[] cerBytes = certificate.getEncoded();
         byte[] enCer = EncryptionHandler.encryptWithKey(cerBytes, aesKey);
