@@ -9,7 +9,6 @@ import dtos.NodeDTO;
 public class UserMessage extends Message {
 
     private byte[] messageEncryp;
-    PublicKey receiverPubKey;
     private LocalDateTime time;
     private NodeDTO senderDTO;
     private BigInteger receiverHash;
@@ -53,14 +52,6 @@ public class UserMessage extends Message {
         return this.receiverHash;
     }
 
-    public PublicKey getreceiverPubKey(){
-        return this.receiverPubKey;
-    }
-
-    public void setreceiverPubKey(PublicKey receiverPubKey){
-        this.receiverPubKey = receiverPubKey;
-    }
-
     public boolean getNeedConfirmation(){
         return this.needConfirmation;
     }
@@ -71,5 +62,13 @@ public class UserMessage extends Message {
 
     public boolean getDirectMessage(){
         return this.directMessage;
+    }
+
+    public void setMessageEncryp(byte[] messageEncryp){
+        this.messageEncryp = messageEncryp;
+    }
+
+    public void setMessageHash(byte[] messageHash){
+        this.messageHash = messageHash;
     }
 }

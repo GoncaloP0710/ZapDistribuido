@@ -76,12 +76,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                     emitEvent(new AddCertificateToTrustStoreEvent((ChordInternalMessage) message));
                     in.readObject(); // Force processCommand to finish before continuing
                     break;
-                case diffHellman:
-                    ChordInternalMessage messageDH = (ChordInternalMessage) msg;
-                    messageDH.setSharedKey(senderDiffieHellman());
-                    emitEvent(new DiffHellmanEvent((ChordInternalMessage) messageDH));
-                    in.readObject(); // Force processCommand to finish before continuing
-                    break;
                 default:
                     break;
             }
@@ -103,9 +97,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                     out.writeObject("Force processCommand to finish before continuing");
                     break;
                 case addCertificateToTrustStore:
-                    out.writeObject("Force processCommand to finish before continuing");
-                    break;
-                case diffHellman:
                     out.writeObject("Force processCommand to finish before continuing");
                     break;
                 default:
@@ -219,15 +210,11 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             case SendMsg:
                 emitEvent(new NodeSendMessageEvent((UserMessage) messageToProcess));
                 break;
-            case RecivePubKey:
-                emitEvent(new RecivePubKeyEvent((ChordInternalMessage) messageToProcess));
-                break;
             case addCertificateToTrustStore:
                 ((ChordInternalMessage) messageToProcess).setCertificate(reciveCert());
                 emitEvent(new AddCertificateToTrustStoreEvent((ChordInternalMessage) messageToProcess));
                 break;
             case diffHellman:
-                ((ChordInternalMessage) messageToProcess).setSharedKey(reciverDiffieHellman());
                 emitEvent(new DiffHellmanEvent((ChordInternalMessage) messageToProcess));
                 break;
             default:

@@ -1,25 +1,32 @@
 package Events;
 
 import java.math.BigInteger;
+import java.security.PublicKey;
 
 import Message.ChordInternalMessage;
 import dtos.NodeDTO;
 
 public class DiffHellmanEvent extends NodeEvent {
-    private byte[] key;
+    private PublicKey initializerPublicKey;
+    private PublicKey targetPublicKey;
     private NodeDTO initializer;
     private BigInteger target;
 
 
     public DiffHellmanEvent(ChordInternalMessage msg) {
         super(msg);
-        this.key = msg.getSharedKey();
         this.initializer = msg.getInitializer();
         this.target = msg.getTarget();
+        this.initializerPublicKey = msg.getInitializerPublicKey();
+        this.targetPublicKey = msg.getTargetPublicKey();
     }
 
-    public byte[] getSharedKey() {
-        return key;
+    public PublicKey getInitializerPublicKey() {
+        return initializerPublicKey;
+    }
+
+    public PublicKey getTargetPublicKey() {
+        return targetPublicKey;
     }
 
     public NodeDTO getInitializer() {

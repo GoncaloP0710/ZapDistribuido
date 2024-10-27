@@ -164,18 +164,16 @@ public class UserService implements UserServiceInterface {
             String reciver = interfaceHandler.getInput();
             System.out.println("Write the message: ");
             byte[] message = interfaceHandler.getInput().getBytes();
-            
-            NodeDTO reciverNode = currentNode.belongsToFingerTable(reciver);
+        
             BigInteger reciverHash = currentNode.calculateHash(reciver);
-            
-            if (reciverNode != null) { // Reciver is on the finger table
-                UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, reciverHash, message, true, EncryptionHandler.createMessageHash(message), true);
-                this.clientHandler.startClient(reciverNode.getIp(), reciverNode.getPort(), userMessage, false, reciverNode.getUsername());
-            } else { // Reciver is not on the finger table so we have to find its pubK
-                eventHandler.addMessage(reciverHash, message);
-                RecivePubKeyEvent event = new RecivePubKeyEvent(new ChordInternalMessage(MessageType.RecivePubKey, null, reciverHash, currentNodeDTO, null));
-                eventHandler.recivePubKey(event);
+            if (eventHandler.getSharedKey(reciverHash) == null) { // If the shared key does not exist
+                ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.diffHellman, currentNodeDTO, reciverHash, (PublicKey) null, (PublicKey) null);
+                DiffHellmanEvent diffHellmanEvent = new DiffHellmanEvent(messageToSend);
+                eventHandler.diffieHellman(diffHellmanEvent);
             }
+            UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, reciverHash, message, true, (byte[]) null, false);
+            NodeSendMessageEvent e = new NodeSendMessageEvent(userMessage);
+            eventHandler.sendUserMessage(e);
         } finally {
             nodeSendMessageLock.unlock();
         }
@@ -199,13 +197,19 @@ public class UserService implements UserServiceInterface {
         } else if (e instanceof BroadcastUpdateFingerTableEvent) {
             eventHandler.broadcastMessage(((BroadcastUpdateFingerTableEvent) e));
         } else if (e instanceof NodeSendMessageEvent) {
-            eventHandler.sendUserMessage(((NodeSendMessageEvent) e));
+            try {
+                eventHandler.sendUserMessage(((NodeSendMessageEvent) e));
+            } catch (Exception e1) {
+                e1.printStackTrace();
+            }
         } else if (e instanceof AddCertificateToTrustStoreEvent) {
             eventHandler.addCertificateToTrustStore((AddCertificateToTrustStoreEvent) e);
-        } else if (e instanceof RecivePubKeyEvent) {
-            eventHandler.recivePubKey((RecivePubKeyEvent) e);
         } else if (e instanceof DiffHellmanEvent) {
-            eventHandler.addSharedKey((DiffHellmanEvent) e);
+            try {
+                eventHandler.diffieHellman((DiffHellmanEvent) e);
+            } catch (InvalidKeyException | NoSuchAlgorithmException e1) {
+                e1.printStackTrace();
+            }
         } else {
             System.out.println("Exception class: " + e.getClass().getName());
             System.out.println("Exception instance: " + e.toString());

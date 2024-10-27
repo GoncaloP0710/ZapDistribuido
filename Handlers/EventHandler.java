@@ -4,21 +4,18 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import java.security.InvalidKeyException;
+import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Base64;
 import java.util.concurrent.ConcurrentHashMap;
 import java.security.cert.Certificate;
-import java.util.Arrays;
 import java.security.Signature;
 
 import Events.*;
 import Message.*;
+import Utils.Utils;
 import Client.Node;
 import Client.UserService;
 import dtos.*;
@@ -40,6 +37,9 @@ public class EventHandler {
 
     // ConcurrentHashMap to store NodeDTOs
     private ConcurrentHashMap<BigInteger, byte[]> messages = new ConcurrentHashMap<>();
+
+    // ConcurrentHashMap to store the pub keys created by this node in the Diffie-Hellman
+    private ConcurrentHashMap<BigInteger, PrivateKey> myPrivKeysDiffie = new ConcurrentHashMap<>();
 
     // ConcurrentHashMap to store the shared keys
     private ConcurrentHashMap<BigInteger, byte[]> sharedKeys = new ConcurrentHashMap<>();
@@ -153,112 +153,67 @@ public class EventHandler {
         }
     }
 
-    public synchronized void sendUserMessage(NodeSendMessageEvent event) {
-        if (event.getReciver().equals(currentNodeDTO.getHash())) { // Arrived at the target
-            try {
-                byte[] message = event.getMessageEncryp();
-
-                if (!event.getDirectMessage()) {
-                    byte[] decryptedBytes = EncryptionHandler.decryptWithKey(message, sharedKeys.get(event.getSenderDTO().getHash()));
-                    byte[] hashSigned = event.getMessageHash();
-
-                    // Verify the signature
-                    PublicKey senderPubKey = event.getSenderDTO().getPubK();
-                    Signature signature = Signature.getInstance("SHA256withRSA");
-                    signature.initVerify(senderPubKey);
-                    signature.update(EncryptionHandler.createMessageHash(message));
-
-                    if (!signature.verify(hashSigned)) {
-                        InterfaceHandler.erro("Message signature does not match!");
-                        return;
-                    }
-                    message = decryptedBytes;
-                }
-
-                String messageString = new String(message, StandardCharsets.UTF_8);
-                InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + messageString);
-                
-                String recivedMessage = "recived by " + currentNodeDTO.getUsername();
-                if (event.getNeedConfirmation() && !event.getDirectMessage()) { // Send a reciving message to the sender
-                    if (!sharedKeys.containsKey(event.getSenderDTO().getHash())) {
-                        ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.diffHellman, (byte[]) null, currentNodeDTO, event.getSenderDTO().getHash());        
-                        clientHandler.startClient(event.getSenderDTO().getIp(), event.getSenderDTO().getPort(), messageToSend, true, event.getSenderDTO().getUsername());
-                    }
-                    byte[] sharedKey = sharedKeys.get(event.getSenderDTO().getHash());
-                    byte[] encryptedBytesAut = EncryptionHandler.encryptWithKey(recivedMessage.getBytes(), sharedKey);
-                    byte[] hash = EncryptionHandler.createMessageHash(encryptedBytesAut);
-                    PrivateKey privK = userService.getKeyHandler().getPrivateKey();
-
-                    // Initialize the Signature object with the private key
-                    Signature signature = Signature.getInstance("SHA256withRSA");
-                    signature.initSign(privK);
-
-                    // Update the Signature object with the hash
-                    signature.update(hash);
-
-                    // Generate the digital signature
-                    byte[] digitalSignature = signature.sign();
-                    
-                    UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), encryptedBytesAut, false, digitalSignature, false);
-                    clientHandler.startClient(event.getSenderDTO().getIp(), event.getSenderDTO().getPort(), userMessage, false, event.getSenderDTO().getUsername());
-                
-                } else if (event.getNeedConfirmation()) {
-                    UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), recivedMessage.getBytes(), false, EncryptionHandler.createMessageHash(recivedMessage.getBytes()), true);
-                    clientHandler.startClient(event.getSenderDTO().getIp(), event.getSenderDTO().getPort(), userMessage, false, event.getSenderDTO().getUsername());
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            } 
-        } else { // Send to the target (foward to closest node to the target, in the finger table)
+    public synchronized void sendUserMessage(NodeSendMessageEvent event) throws Exception {
+        if (currentNodeDTO.getHash().equals(event.getReciver()) || currentNodeDTO.getHash().equals(event.getSenderDTO().getHash())) { // Arrived at a node that needs the shared key
+            while (sharedKeys.get(event.getReciver()) == null && sharedKeys.get(event.getSenderDTO().getHash()) == null) {
+                wait();
+            }
+        } else { // Foward to the target
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getReciver());
             clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false, nodeWithHashDTO.getUsername());
+            return;
+        }   
+        if (event.getSenderDTO().getHash().equals(currentNodeDTO.getHash())) { // Start of the process (initializer)
+            byte[] message = event.getMessageEncryp(); // In this step the message hasnt been encrypted yet
+            byte[] encryptedBytesAut = EncryptionHandler.encryptWithKey(message, sharedKeys.get(event.getReciver()));
+            byte[] hash = EncryptionHandler.createMessageHash(encryptedBytesAut);
+            byte[] hashSigned = getSignature(hash, userService.getKeyHandler().getPrivateKey());
+
+            UserMessage internalMsg = (UserMessage) event.getMessage();
+            internalMsg.setMessageEncryp(encryptedBytesAut);
+            internalMsg.setMessageHash(hashSigned);
+            
+            NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getReciver());
+            clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), internalMsg, false, nodeWithHashDTO.getUsername());
+
+        } else { // Reached the target
+            byte[] message = event.getMessageEncryp();
+            byte[] decryptedBytes = EncryptionHandler.decryptWithKey(message, sharedKeys.get(event.getSenderDTO().getHash()));
+            byte[] hashSigned = event.getMessageHash();
+
+            // Verify the signature
+            PublicKey senderPubKey = event.getSenderDTO().getPubK();
+            boolean isRightSignature = verifySignature(senderPubKey, message, hashSigned);
+            if (!isRightSignature) {
+                InterfaceHandler.erro("Message signature does not match!");
+                return;
+            }
+            String messageString = new String(decryptedBytes, StandardCharsets.UTF_8);
+            InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + messageString);
+            
+            String recivedMessage = "recived by " + currentNodeDTO.getUsername();
+            if (event.getNeedConfirmation()) { // Send a reciving message to the sender
+                UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), recivedMessage.getBytes(), false, (byte[]) null, false);
+                NodeSendMessageEvent e = new NodeSendMessageEvent(userMessage);
+                sendUserMessage(e);
+            }
         }
     }
 
-    public void recivePubKey(RecivePubKeyEvent event) {
-        if (event.getReceiverPubKey() != null && event.getInitializer().equals(currentNodeDTO)) { // Final destination
-            if (hasMessageWithTarget(event.getTarget())) {
-                byte[] message = messages.get(event.getTarget());
-                messages.remove(event.getTarget());
-                try {    
-                    if (!sharedKeys.containsKey(event.getInitializer().getHash())) {
-                        ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.diffHellman, (byte[]) null, currentNodeDTO, event.getTarget());       
-                        clientHandler.startClient(event.getTargetDTO().getIp(), event.getTargetDTO().getPort(), messageToSend, true, event.getInitializer().getUsername());
-                    }
-                    byte[] sharedKey = sharedKeys.get(event.getTarget());
-                    byte[] encryptedBytesAut = EncryptionHandler.encryptWithKey(message, sharedKey);
-                    byte[] hash = EncryptionHandler.createMessageHash(encryptedBytesAut);
-                    PrivateKey privK = userService.getKeyHandler().getPrivateKey();
+    private byte[] getSignature(byte[] hash, PrivateKey privK) throws Exception {
+        Signature signature = Signature.getInstance("SHA256withRSA");
+        signature.initSign(privK);
+        signature.update(hash);
+        byte[] digitalSignature = signature.sign();
+        return digitalSignature;
+    }
 
-                    // Initialize the Signature object with the private key
-                    Signature signature = Signature.getInstance("SHA256withRSA");
-                    signature.initSign(privK);
+    private boolean verifySignature(PublicKey senderPubKey, byte[] messageEncrypted, byte[] hashSigned) throws Exception {
+        Signature signature = Signature.getInstance("SHA256withRSA");
+        signature.initVerify(senderPubKey);
+        signature.update(EncryptionHandler.createMessageHash(messageEncrypted));
 
-                    // Update the Signature object with the hash
-                    signature.update(hash);
-
-                    // Generate the digital signature
-                    byte[] digitalSignature = signature.sign();
-                    sendUserMessage(new NodeSendMessageEvent(new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getTarget(), encryptedBytesAut, true, digitalSignature, false)));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            
-        } else if (event.getTarget().equals(currentNodeDTO.getHash())) { // Send back to the initializer | Arrived at the target
-            ChordInternalMessage message = (ChordInternalMessage) event.getMessage();
-            message.setReceiverPubKey(currentNodeDTO.getPubK());
-            message.setTargetDTO(currentNodeDTO);
-            clientHandler.startClient(event.getInitializer().getIp(), event.getInitializer().getPort(), message, false, event.getInitializer().getUsername());
-        
-        } else { // Send to the target (foward to closest node to the target, in the finger table)
-            NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getTarget());
-            if (nodeWithHashDTO == null) {
-                System.err.println("Node with hash not found");
-                return;
-            }
-            clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false, nodeWithHashDTO.getUsername());
-        }
+         return signature.verify(hashSigned);
     }
 
     public void addCertificateToTrustStore(AddCertificateToTrustStoreEvent event) {    
@@ -273,22 +228,53 @@ public class EventHandler {
             e.printStackTrace();
         }
     }
-    
+
+    public synchronized void diffieHellman (DiffHellmanEvent e) throws NoSuchAlgorithmException, InvalidKeyException {
+        if (currentNodeDTO.getHash().equals(e.getInitializer().getHash()) && e.getTargetPublicKey() == null) { // First time on the initializer
+            KeyPair keypair = Utils.generateKeyPair();
+            PrivateKey privK = keypair.getPrivate();
+            myPrivKeysDiffie.put(e.getTarget(), privK); // Save on the shared memory for later use
+            ChordInternalMessage msg = (ChordInternalMessage) e.getMessage();
+            msg.setInitializerPublicKey(keypair.getPublic());
+
+            // foward to the target
+            NodeDTO closestNodeToTarget = userService.getNodeWithHash(e.getTarget());
+            clientHandler.startClient(closestNodeToTarget.getIp(), closestNodeToTarget.getPort(), msg, false, closestNodeToTarget.getUsername());
+        
+        } else if (currentNodeDTO.getHash().equals(e.getInitializer().getHash())) { // Second time on the initializer (last stop)
+            PrivateKey privK = myPrivKeysDiffie.get(e.getTarget());
+            myPrivKeysDiffie.remove(e.getTarget()); // Remove from the shared memory
+            byte[] sharedKey = Utils.computeSKey(privK, e.getTargetPublicKey());
+            sharedKeys.put(e.getTarget(), sharedKey); // Now both users have the shared key
+            notifyAll();
+        
+        } else if (currentNodeDTO.getHash().equals(e.getTarget())) { // Reached the target for the first time (only time)
+            KeyPair keypair = Utils.generateKeyPair();
+            PrivateKey privK = keypair.getPrivate();
+            byte[] sharedKey = Utils.computeSKey(privK, e.getInitializerPublicKey());
+            sharedKeys.put(e.getInitializer().getHash(), sharedKey);
+            notifyAll();
+
+            ChordInternalMessage msg = (ChordInternalMessage) e.getMessage();
+            msg.setTargetPublicKey(keypair.getPublic());
+
+            // foward to initializer
+            NodeDTO closestNodeToTarget = userService.getNodeWithHash(e.getInitializer().getHash());
+            clientHandler.startClient(closestNodeToTarget.getIp(), closestNodeToTarget.getPort(), msg, false, closestNodeToTarget.getUsername());
+        
+        } else { // Foward to the target or initializer depending on the case
+            if (e.getTargetPublicKey() == null) { // Foward to Target
+                NodeDTO closestNodeToTarget = userService.getNodeWithHash(e.getTarget());
+                clientHandler.startClient(closestNodeToTarget.getIp(), closestNodeToTarget.getPort(), e.getMessage(), false, closestNodeToTarget.getUsername());
+            } else { // Foward to Initializer
+                NodeDTO closestNodeToTarget = userService.getNodeWithHash(e.getInitializer().getHash());
+                clientHandler.startClient(closestNodeToTarget.getIp(), closestNodeToTarget.getPort(), e.getMessage(), false, closestNodeToTarget.getUsername());
+            }
+        }
+    }
+
     public void addMessage(BigInteger target, byte[] message) {
         messages.put(target, message);
-    }
-
-    // Method to check if a message with the same target exists
-    private boolean hasMessageWithTarget(BigInteger target) {
-        return this.messages.containsKey(target);
-    }
-
-    public void addSharedKey(DiffHellmanEvent e) {
-        if(!e.getTarget().equals(currentNodeDTO.getHash())){
-            sharedKeys.put(e.getTarget(), e.getSharedKey());
-        }else{
-            sharedKeys.put(e.getInitializer().getHash(), e.getSharedKey());
-        } 
     }
 
     public byte[] getSharedKey(BigInteger name) {

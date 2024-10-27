@@ -24,7 +24,10 @@ public class ChordInternalMessage extends Message {
     private String aliasReciver; // AddCertificateToTrustStoreEvent
     private String aliasSender; // AddCertificateToTrustStoreEvent
     private Certificate certificate; // AddCertificateToTrustStoreEvent
-    private byte[] sharedKey; // DiffHellmanEvent
+    private PublicKey initializerPublicKey; // DiffHellmanEvent
+    private PublicKey targetPublicKey; // DiffHellmanEvent
+
+
     private NodeDTO targetDTO; // RecivePubKeyEvent
 
     // UpdateNeighboringNodesEvent
@@ -88,11 +91,12 @@ public class ChordInternalMessage extends Message {
     /**
      * DiffHellmanEvent
      */
-    public ChordInternalMessage(MessageType messageType, byte[] sharedKey, NodeDTO initializer, BigInteger recieverDTO) {
+    public ChordInternalMessage(MessageType messageType, NodeDTO initializer, BigInteger recieverDTO, PublicKey targetPublicKey, PublicKey initializerPublicKey) {
         super(messageType);
-        this.sharedKey = sharedKey;
         this.initializer = initializer;
         this.target = recieverDTO;
+        this.targetPublicKey = targetPublicKey;
+        this.initializerPublicKey = initializerPublicKey;
     }
 
     public NodeDTO getNextNode(){
@@ -183,11 +187,19 @@ public class ChordInternalMessage extends Message {
         this.certificate = certificate;
     }
 
-    public byte[] getSharedKey(){
-        return this.sharedKey;
+    public PublicKey getInitializerPublicKey(){
+        return this.initializerPublicKey;
     }
 
-    public void setSharedKey(byte[] sharedKey){
-        this.sharedKey = sharedKey;
+    public PublicKey getTargetPublicKey(){
+        return this.targetPublicKey;
+    }
+
+    public void setTargetPublicKey(PublicKey targetPublicKey){
+        this.targetPublicKey = targetPublicKey;
+    }
+
+    public void setInitializerPublicKey(PublicKey initializerPublicKey){
+        this.initializerPublicKey = initializerPublicKey;
     }
 }
