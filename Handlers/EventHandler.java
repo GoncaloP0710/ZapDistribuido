@@ -13,6 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.security.cert.Certificate;
 import java.security.Signature;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import Events.*;
 import Message.*;
@@ -137,6 +139,19 @@ public class EventHandler {
         NodeDTO nodeToUpdateDTO = event.getNodeToUpdate(); // Node that started the event
     
         if (currentNodeDTO.equals(nodeToUpdateDTO)) { // Update the finger table of the current node
+
+            //try { // Wait for 1 second intervals
+            //    wait(3000);
+            //} catch (InterruptedException e) {
+            //    e.printStackTrace();
+            //} 
+
+            for (NodeDTO node : userService.getCurrentNode().getFingerTable()) {
+                if (!message.getFingerTable().contains(node)) {
+                    clientHandler.endConection(node);
+                }
+            }
+
             userService.getCurrentNode().setFingerTable(message.getFingerTable());
             InterfaceHandler.info("Finger table updated successfully");
             return;

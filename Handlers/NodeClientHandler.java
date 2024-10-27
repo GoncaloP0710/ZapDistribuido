@@ -36,6 +36,13 @@ public class NodeClientHandler {
         this.keystorePassword = keyHandler.getKeyStorePassword();
         this.truststoreFile = keyHandler.getTrustStoreFile();
     }
+
+    public void endConection (NodeDTO node) {
+        InterfaceHandler.info("Ending conection with: " + node.getUsername());
+        threads.get(node.getHash()).endThread();
+        threads.remove(node.getHash());
+        InterfaceHandler.info("Ended conection with: " + node.getUsername());
+    }
     
     /**
      * Send command to the Node with the respective ip and port

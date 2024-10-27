@@ -11,11 +11,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
+import java.io.*;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import Events.*;
 import Handlers.EncryptionHandler;
@@ -30,6 +29,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     private Socket socket = null;
     private ObjectInputStream in = null;
     private ObjectOutputStream out = null;
+    private boolean running = true;
 
     private final Object lock = new Object();
 
@@ -63,8 +63,10 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     }
 
     public void endThread() {
+        running = false;
         try {
             this.socket.close();
+            InterfaceHandler.internalInfo("Ended thread");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -103,7 +105,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
 
     private void sendMsg() {
         try {
-            while (true) {
+            while (running) {
                 waitForMessages(); // Wait for messages if the list is empty
                 Message msg;
                 synchronized (lock) {
@@ -137,7 +139,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
 
     private void reciveMsg() {
         try {
-            while (true) {
+            while (running) {
                 InterfaceHandler.internalInfo("Waiting for message...");
                 Message messageToProcess = (Message) in.readObject();
                 InterfaceHandler.internalInfo("Recived message: " + messageToProcess.getMsgType());
@@ -145,6 +147,9 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                 InterfaceHandler.internalInfo("Message added to the queue: " + messageQueue.size());
                 new Thread(this::processMessages).start();
             }
+        } catch (EOFException e) {
+            System.err.println("End of stream reached. Connection might be closed.");
+            return; // Exit the loop if the end of the stream is reached
         } catch (ClassNotFoundException | IOException e) {
             e.printStackTrace();
         }
