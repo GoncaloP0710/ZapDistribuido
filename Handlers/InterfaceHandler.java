@@ -30,15 +30,27 @@ public class InterfaceHandler {
     }
 
     public String getUserName(){
-        System.out.print("Insira o seu Username: ");
-        String ret = getInput();
-        return ret;
+        do {
+            System.out.print("Insira o seu Username: ");
+            String ret = getInput();
+            if (ret.length() == 0) {
+                System.out.println("Username não pode ser vazio");
+            } else {
+                return ret;
+            }
+        } while (true);
     }
 
     public String getPassword(){
-        System.out.print("Insira a sua password: ");
-        String ret = getInput();
-        return ret;
+        do {
+            System.out.print("Insira a sua password: ");
+            String ret = getInput();
+            if (ret.length() < 8) {
+                System.out.println("Password não pode ser menor que 8 caracteres");
+            } else {
+                return ret;
+            }
+        } while (true);
     }
 
     public String getPort(){

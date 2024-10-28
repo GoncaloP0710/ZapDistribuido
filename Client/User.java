@@ -17,6 +17,7 @@ public class User {
     public static void main(String[] args) throws Exception {
         interfaceHandler = new InterfaceHandler();
         interfaceHandler.startUp();
+     
         String name = interfaceHandler.getUserName();
         String password = interfaceHandler.getPassword();
 
