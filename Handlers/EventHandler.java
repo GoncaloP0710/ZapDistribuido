@@ -265,10 +265,6 @@ public class EventHandler {
     }
 
     public void addCertificateToTrustStore(AddCertificateToTrustStoreEvent e) throws Exception {   
-        InterfaceHandler.info("Username: " + currentNodeDTO.getUsername()); 
-        InterfaceHandler.info("Alias Reciver: " + e.getAliasReciver());
-        InterfaceHandler.info("Alias Sender: " + e.getAliasSender());
-
         if (currentNodeDTO.getUsername().equals(e.getAliasSender()) && e.getTargetPublicKey() == null) { // First time on the initializer
             
             InterfaceHandler.info("First time on the initializer");
@@ -281,7 +277,6 @@ public class EventHandler {
             message.setInitializer(currentNodeDTO);
             message.setInitializerPublicKey(keypair.getPublic());
 
-            InterfaceHandler.info("Sending pubK to: " + e.getInitializer().getUsername());
             clientHandler.shareCertificateClient(e.getInitializer().getIp(), e.getInitializer().getPort(), message, e.getInitializer().getUsername());
             return;
             
@@ -292,11 +287,10 @@ public class EventHandler {
             PrivateKey privK = myPrivKeysDiffie.get(e.getInitializer().getHash());
             myPrivKeysDiffie.remove(e.getInitializer().getHash()); // Remove from the shared memory
             byte[] sharedKey = Utils.computeSKey(privK, e.getTargetPublicKey());
-            sharedKeys.put(e.getInitializer().getHash(), sharedKey); // Now both users have the shared key
             
             // Get the others certificate and decrypt it
             byte[] certificate = e.getCertificateReciver();
-            byte[] decryptedBytes = EncryptionHandler.decryptWithKey(certificate, sharedKeys.get(e.getInitializer().getHash()));
+            byte[] decryptedBytes = EncryptionHandler.decryptWithKey(certificate, sharedKey);
             Certificate toAdd =  Utils.byteArrToCertificate(decryptedBytes);
             String alias = currentNodeDTO.getUsername().equals(e.getAliasSender()) ? e.getAliasReciver() : e.getAliasSender();
             userService.getKeyHandler().addCertificateToTrustStore(alias, toAdd);
@@ -319,7 +313,6 @@ public class EventHandler {
             KeyPair keypair = Utils.generateKeyPair();
             PrivateKey privK = keypair.getPrivate();
             byte[] sharedKey = Utils.computeSKey(privK, e.getInitializerPublicKey());
-            InterfaceHandler.success("Init pubK: " + e.getInitializerPublicKey());
             sharedKeys.put(e.getInitializer().getHash(), sharedKey);
             myPrivKeysDiffie.put(e.getInitializer().getHash(), privK); // Save on the shared memory for later use
 
@@ -340,14 +333,14 @@ public class EventHandler {
             PrivateKey privK = myPrivKeysDiffie.get(e.getInitializer().getHash());
             myPrivKeysDiffie.remove(e.getInitializer().getHash()); // Remove from the shared memory
             byte[] sharedKey = Utils.computeSKey(privK, e.getInitializerPublicKey());
-            sharedKeys.put(e.getInitializer().getHash(), sharedKey); // Now both users have the shared key
             
             // Get the others certificate and decrypt it
             byte[] certificate = e.getCertificateInitializer();
-            byte[] decryptedBytes = EncryptionHandler.decryptWithKey(certificate, sharedKeys.get(e.getInitializer().getHash()));
+            byte[] decryptedBytes = EncryptionHandler.decryptWithKey(certificate, sharedKey);
             Certificate toAdd =  Utils.byteArrToCertificate(decryptedBytes);
             String alias = currentNodeDTO.getUsername().equals(e.getAliasSender()) ? e.getAliasReciver() : e.getAliasSender();
             userService.getKeyHandler().addCertificateToTrustStore(alias, toAdd);
+            
             Utils.loadTrustStore(userService.getKeyHandler().getTruststorePath(), userService.getKeyHandler().getKeyStorePassword());
         }
     }

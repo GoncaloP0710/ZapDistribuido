@@ -6,6 +6,9 @@ import java.io.FileInputStream;
 import javax.crypto.KeyAgreement;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
+
+import Handlers.InterfaceHandler;
+
 import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
@@ -104,6 +107,8 @@ public final class Utils {
 
             // Step 5: Set the new SSLContext as the default for future connections
             SSLContext.setDefault(sslContext);
+
+            InterfaceHandler.success(trustStorePath + " loaded successfully");
         } catch (Exception e) {
             e.printStackTrace();
         }

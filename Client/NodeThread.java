@@ -30,8 +30,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     private ObjectOutputStream out = null;
     private boolean running = true;
 
-    private final Object lock = new Object();
-
     private BlockingQueue<Message> messageQueue = new LinkedBlockingQueue<>();
     private Listener<NodeEvent> listener;
     private KeyHandler keyHandler;

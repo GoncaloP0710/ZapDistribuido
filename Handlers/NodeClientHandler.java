@@ -70,14 +70,7 @@ public class NodeClientHandler {
         try {
             if (!keyHandler.getTruStore().containsAlias(alias)) {// If the certificate of the other node is not in the truststore
                 shareCertificateClient(ip, port, new ChordInternalMessage(MessageType.addCertificateToTrustStore, (byte[]) null, (byte[]) null, currentNodeDTO.getUsername(), alias, currentNodeDTO, (PublicKey) null, (PublicKey) null), alias);
-                synchronized (lock) {
-                    try {
-                        lock.wait(2000); // Wait for the certificate to be added to the truststore
-                    } catch (Exception e) {
-                        InterfaceHandler.erro("Error waiting for the certificate to be added to the truststore niiiiiiiiiiiiiiiiggggggggggggggaaaaaaaaaaasssssssssss");
-                        e.printStackTrace();
-                    }
-                }
+                Thread.sleep(1000);
             }
 
             System.setProperty("javax.net.ssl.keyStore", keystoreFile.toString());
@@ -118,6 +111,7 @@ public class NodeClientHandler {
             if (threadsNotSecure.containsKey(hashAlias)) {
                 NodeThread thread = threadsNotSecure.get(hashAlias);
                 thread.addMessage(msg);
+                InterfaceHandler.info("Insecure conection with: " + alias + " already exists, added the message to the thread: " + msg.getMsgType());
                 return;
             }
             InterfaceHandler.info("Creating a new Insecure conection with: " + alias);
