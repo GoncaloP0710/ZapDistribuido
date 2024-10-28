@@ -113,7 +113,6 @@ public class EventHandler {
         NodeDTO nextNodeDTO = currentNode.getNextNode();
         
         // mudar next do prev para o next do current
-        System.out.println("Before first wait");
         ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateNeighbors, nextNodeDTO, (NodeDTO) null, currentNodeDTO);
         clientHandler.startClient(prevNodeDTO.getIp(), prevNodeDTO.getPort(), message, true, prevNodeDTO.getUsername());
         synchronized (locker) {

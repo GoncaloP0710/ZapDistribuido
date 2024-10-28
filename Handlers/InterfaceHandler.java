@@ -100,15 +100,11 @@ public class InterfaceHandler {
     }
 
     public void help(){
-        
-    }
-
-    public void printMenu() {
-        System.out.println("1 - Print neighbors");
-        System.out.println("2 - Print node");
-        System.out.println("3 - Send message");
-        System.out.println("4 - Help");
-        System.out.println("5 - Exit");
+        System.out.println(ANSI_GREEN + "1 - (ne) " +  ANSI_UNDERLINE + "Print neighbors" + ANSI_RESET + ANSI_PURPLE + " - Print the neighbors of the node"+ ANSI_RESET);
+        System.out.println(ANSI_GREEN + "2 - (pn) "+  ANSI_UNDERLINE + "Print node" + ANSI_RESET + ANSI_PURPLE + " - Print the node information"+ ANSI_RESET);
+        System.out.println(ANSI_GREEN + "3 - (s)  "+  ANSI_UNDERLINE + "Send message" + ANSI_RESET + ANSI_PURPLE + " - Send a message to a node"+ ANSI_RESET);
+        System.out.println(ANSI_GREEN + "4 - (h)  "+  ANSI_UNDERLINE + "Help"+ ANSI_RESET);
+        System.out.println(ANSI_GREEN + "5 - (e)  "+  ANSI_UNDERLINE + "Exit" + ANSI_RESET + ANSI_PURPLE + " - Exit the program"+ ANSI_RESET);
     }
 
     public String getInput() {

@@ -49,18 +49,24 @@ public class User {
             String option = interfaceHandler.getInput();
                switch (option) {
                 case "1":
+                case "ne":
                     System.out.println(node.neighborsStatus());
                     break;
                 case "2":
+                case "pn":
                     System.out.println(node.toString());
                     break;
                 case "3":
+                case "s":
                     userService.sendMessage(interfaceHandler);
                     break;
                 case "4":
+                case "h":
+                case "help":
                     interfaceHandler.help();
                     break;
                 case "5":
+                case "e":
                     userService.exitNode();
                     System.exit(0);
                     break;

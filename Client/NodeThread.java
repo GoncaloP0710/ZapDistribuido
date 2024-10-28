@@ -66,7 +66,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         running = false;
         try {
             this.socket.close();
-            InterfaceHandler.internalInfo("Ended thread");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -78,7 +77,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                 return;
             }
             messages.add(msg);
-            InterfaceHandler.internalInfo("Added message to the queue: " + msg.getMsgType());
             lock.notifyAll();
         }
     }
@@ -96,9 +94,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     private void waitForMessages() throws InterruptedException {
         synchronized (lock) {
             while (messages.isEmpty()) {
-                InterfaceHandler.internalInfo("Waiting for messages to be added to the queue");
                 lock.wait();
-                InterfaceHandler.internalInfo("Thread woke up - Messages available");
             }
         }
     }
@@ -116,10 +112,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                     }
                 }
                 if (msg != null) {
-                    InterfaceHandler.internalInfo("Sending message: " + msg.getMsgType());
                     out.writeObject(msg); // Send the message to the node receiver
-                    InterfaceHandler.internalInfo("Message sent.");
-
                     switch (msg.getMsgType()) {
                         case addCertificateToTrustStore: // The Sender also needs to add the receiver certificate to its trust store
                             ChordInternalMessage message = (ChordInternalMessage) msg;
@@ -140,15 +133,11 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     private void reciveMsg() {
         try {
             while (running) {
-                InterfaceHandler.internalInfo("Waiting for message...");
                 Message messageToProcess = (Message) in.readObject();
-                InterfaceHandler.internalInfo("Recived message: " + messageToProcess.getMsgType());
                 messageQueue.add(messageToProcess); // Add the received message to the queue
-                InterfaceHandler.internalInfo("Message added to the queue: " + messageQueue.size());
                 new Thread(this::processMessages).start();
             }
         } catch (EOFException e) {
-            System.err.println("End of stream reached. Connection might be closed.");
             return; // Exit the loop if the end of the stream is reached
         } catch (ClassNotFoundException | IOException e) {
             e.printStackTrace();
