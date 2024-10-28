@@ -76,6 +76,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             if (msg == null) {
                 return;
             }
+            InterfaceHandler.internalInfo("Adding message to the queue to send latter: " + msg.getMsgType());
             messages.add(msg);
             lock.notifyAll();
         }
@@ -112,20 +113,11 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                     }
                 }
                 if (msg != null) {
+                    InterfaceHandler.internalInfo("Sending message: " + msg.getMsgType());
                     out.writeObject(msg); // Send the message to the node receiver
-                    switch (msg.getMsgType()) {
-                        case addCertificateToTrustStore: // The Sender also needs to add the receiver certificate to its trust store
-                            ChordInternalMessage message = (ChordInternalMessage) msg;
-                            message.setCertificate(sendCert());
-                            emitEvent(new AddCertificateToTrustStoreEvent(message));
-                            in.readObject(); // Force processCommand to finish before continuing
-                            break;
-                        default:
-                            break;
-                    }
                 }
             }
-        } catch (IOException | ClassNotFoundException | InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -152,81 +144,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private byte[] reciverDiffieHellman() {
-        try{
-            KeyPair userKeyPair = Utils.generateKeyPair();
-            PrivateKey userPrivateKey = userKeyPair.getPrivate();
-            PublicKey userPublicKey = userKeyPair.getPublic();
-            PublicKey pubK = (PublicKey) in.readObject(); //Exchange public keys
-            out.writeObject(userPublicKey);
-            byte[] aesKey = Utils.computeSKey(userPrivateKey, pubK); // Compute the shared secret
-            return aesKey;
-        } catch(Exception e){
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private byte[] senderDiffieHellman() {
-        try{
-            KeyPair userKeyPair = Utils.generateKeyPair();
-            PrivateKey userPrivateKey = userKeyPair.getPrivate();
-            PublicKey userPublicKey = userKeyPair.getPublic();
-            out.writeObject(userPublicKey); //Exchange public keys
-            PublicKey pubK = (PublicKey) in.readObject();
-            byte[] aesKey = Utils.computeSKey(userPrivateKey, pubK); // Compute the shared secret
-            return aesKey;
-        } catch(Exception e){
-            e.printStackTrace();
-            return null;
-        }   
-    }
-
-    private Certificate reciveCert() { // Diffie-Hellman
-        try{
-            byte[] aesKey = reciverDiffieHellman(); // Compute the shared secret
-            Certificate toAdd =  reciveEncrypCert(aesKey, in); // Recive encrypted certificate and decrypt it
-            sendEncrypCert(keyHandler, aesKey, out); // Send encrypted certificate
-            return toAdd;
-        } catch(Exception e){
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private Certificate sendCert() { // Diffie-Hellman
-        try{
-            byte[] aesKey = senderDiffieHellman(); // Compute the shared secret
-            sendEncrypCert(keyHandler, aesKey, out); // Send encrypted certificate
-            return reciveEncrypCert(aesKey, in); // Recive encrypted certificate and decrypt it
-        } catch(Exception e){
-            e.printStackTrace();
-        }
-        return null;  
-    }    
-
-    private void sendEncrypCert(KeyHandler keyHandler, byte[] aesKey, ObjectOutputStream out) throws Exception {
-        Certificate certificate = keyHandler.getCertificate();
-        byte[] cerBytes = certificate.getEncoded();
-        byte[] enCer = EncryptionHandler.encryptWithKey(cerBytes, aesKey);
-        out.writeObject(enCer);
-    }
-
-    /**
-     * Recives the encrypted certificate and decrypts it
-     * 
-     * @param aesKey
-     * @return
-     * @throws Exception
-     */
-    private Certificate reciveEncrypCert(byte[] aesKey, ObjectInputStream in) throws Exception {
-        
-        byte[] enCer = (byte[]) in.readObject();
-        byte[] deCer = EncryptionHandler.decryptWithKey(enCer, aesKey);
-        Certificate toAdd =  Utils.byteArrToCertificate(deCer);
-        return toAdd;
     }
 
     /**
@@ -256,7 +173,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                 emitEvent(new NodeSendMessageEvent((UserMessage) messageToProcess));
                 break;
             case addCertificateToTrustStore:
-                ((ChordInternalMessage) messageToProcess).setCertificate(reciveCert());
                 emitEvent(new AddCertificateToTrustStoreEvent((ChordInternalMessage) messageToProcess));
                 break;
             case diffHellman:

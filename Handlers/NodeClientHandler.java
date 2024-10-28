@@ -3,6 +3,7 @@ package Handlers;
 import java.io.File;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -59,11 +60,13 @@ public class NodeClientHandler {
             thread.addMessage(msg);
             return;
         }
-        InterfaceHandler.info("Created a new conection with: " + alias);
+        InterfaceHandler.info("Creating a new conection with: " + alias);
 
         try {
-            if (!keyHandler.getTruStore().containsAlias(alias)) // If the certificate of the other node is not in the truststore
-                shareCertificateClient(ip, port, new ChordInternalMessage(MessageType.addCertificateToTrustStore, keyHandler.getCertificate(alias), alias, currentNodeDTO.getUsername()));
+            if (!keyHandler.getTruStore().containsAlias(alias)) {// If the certificate of the other node is not in the truststore
+                shareCertificateClient(ip, port, new ChordInternalMessage(MessageType.addCertificateToTrustStore, (byte[]) null, (byte[]) null, currentNodeDTO.getUsername(), alias, currentNodeDTO, (PublicKey) null, (PublicKey) null));
+                wait(2000); // Wait for the certificate to be added to the truststore
+            }
 
             System.setProperty("javax.net.ssl.keyStore", keystoreFile.toString());
             System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
@@ -95,13 +98,12 @@ public class NodeClientHandler {
      * @param msg
      * @throws NoSuchAlgorithmException
      */
-    private void shareCertificateClient(String ip, int port, Message msg) throws NoSuchAlgorithmException {
+    public void shareCertificateClient(String ip, int port, Message msg) throws NoSuchAlgorithmException {
         try {
             // Create normal socket
-            Socket clientSocket = new Socket(ip, (port+1));
+            Socket clientSocket = new Socket(ip, port+1);
             NodeThread newClientThread = new NodeThread(clientSocket, msg, userService, keyHandler);
             newClientThread.start();
-            Utils.loadTrustStore(keyHandler.getTruststorePath(), keyHandler.getKeyStorePassword());
         } catch (Exception e) {
             System.err.println(e.getMessage());
             System.exit(-1);

@@ -72,6 +72,7 @@ public class NodeServerHandler {
             Socket clientSocket = null; // other node sockets
             try {
                 clientSocket = serverSocket.accept();
+                InterfaceHandler.info("New Secure connection from: " + clientSocket.getInetAddress().getHostAddress());
                 NodeThread newServerThread = new NodeThread(clientSocket, null, userService, keyHandler);
                 newServerThread.start();
             } catch (IOException e) {
@@ -92,9 +93,9 @@ public class NodeServerHandler {
             Socket clientSocket = null; // other node sockets
             try {
                 clientSocket = sSocket.accept();
+                InterfaceHandler.info("New connection from: " + clientSocket.getInetAddress().getHostAddress());
                 NodeThread newServerThread = new NodeThread(clientSocket, null, userService, keyHandler);
                 newServerThread.start();
-                newServerThread.join(); // Wait for the thread to finish
                 Utils.loadTrustStore(keyHandler.getTruststorePath(), keyHandler.getKeyStorePassword());
             } catch (IOException e) {
                 System.err.println(e.getMessage());

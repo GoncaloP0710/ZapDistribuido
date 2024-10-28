@@ -264,18 +264,106 @@ public class EventHandler {
          return signature.verify(hashSigned);
     }
 
-    public void addCertificateToTrustStore(AddCertificateToTrustStoreEvent event) {    
-        try {
-            // Extract the certificate and alias from the event
-            Certificate certificate = event.getCertificate();
-            String alias = currentNodeDTO.getUsername().equals(event.getAliasSender()) ? event.getAliasReciver() : event.getAliasSender();
-            userService.getKeyHandler().addCertificateToTrustStore(alias, certificate);
-            InterfaceHandler.info("Certificate added to trust store successfully");
-        } catch (Exception e) {
-            System.err.println("Error adding certificate to trust store: " + e.getMessage());
-            e.printStackTrace();
+    public void addCertificateToTrustStore(AddCertificateToTrustStoreEvent e) throws Exception {   
+        InterfaceHandler.info("Username: " + currentNodeDTO.getUsername()); 
+        InterfaceHandler.info("Alias Reciver: " + e.getAliasReciver());
+        InterfaceHandler.info("Alias Sender: " + e.getAliasSender());
+
+        if (currentNodeDTO.getUsername().equals(e.getAliasSender()) && e.getTargetPublicKey() == null) { // First time on the initializer
+            KeyPair keypair = Utils.generateKeyPair();
+            PrivateKey privK = keypair.getPrivate();
+            myPrivKeysDiffie.put(e.getInitializer().getHash(), privK); // Save on the shared memory for later use
+            ChordInternalMessage msg = (ChordInternalMessage) e.getMessage();
+            msg.setInitializerPublicKey(keypair.getPublic());
+
+            // foward to the target
+            ChordInternalMessage message = (ChordInternalMessage) e.getMessage();
+            message.setInitializer(currentNodeDTO);
+            message.setInitializerPublicKey(keypair.getPublic());
+
+            InterfaceHandler.info("Sending pubK to: " + e.getInitializer().getUsername());
+            clientHandler.shareCertificateClient(e.getInitializer().getIp(), e.getInitializer().getPort(), msg);
+            return;
+            
+        } else if (currentNodeDTO.getUsername().equals(e.getAliasSender())) { // Second time on the initializer
+            PrivateKey privK = myPrivKeysDiffie.get(e.getInitializer().getHash());
+            myPrivKeysDiffie.remove(e.getInitializer().getHash()); // Remove from the shared memory
+            byte[] sharedKey = Utils.computeSKey(privK, e.getTargetPublicKey());
+            sharedKeys.put(e.getInitializer().getHash(), sharedKey); // Now both users have the shared key
+            
+            // Get the others certificate and decrypt it
+            byte[] certificate = e.getCertificateReciver();
+            byte[] decryptedBytes = EncryptionHandler.decryptWithKey(certificate, sharedKeys.get(e.getInitializer().getHash()));
+            Certificate toAdd =  Utils.byteArrToCertificate(decryptedBytes);
+            String alias = currentNodeDTO.getUsername().equals(e.getAliasSender()) ? e.getAliasReciver() : e.getAliasSender();
+            userService.getKeyHandler().addCertificateToTrustStore(alias, toAdd);
+            Utils.loadTrustStore(userService.getKeyHandler().getTruststorePath(), userService.getKeyHandler().getKeyStorePassword());
+            
+            // foward to the target
+            ChordInternalMessage message = (ChordInternalMessage) e.getMessage();
+            message.setInitializer(currentNodeDTO);
+            Certificate cert = userService.getKeyHandler().getCertificate();
+            byte[] cerBytes = cert.getEncoded();
+            byte[] enCer = EncryptionHandler.encryptWithKey(cerBytes, sharedKey);
+            message.setCertificateInitializer(enCer);
+            clientHandler.shareCertificateClient(e.getInitializer().getIp(), e.getInitializer().getPort(), message); 
+            return;
+        
+        } else if (e.getCertificateInitializer() != null) { // Reached the target for the first time 
+            KeyPair keypair = Utils.generateKeyPair();
+            PrivateKey privK = keypair.getPrivate();
+            byte[] sharedKey = Utils.computeSKey(privK, e.getInitializerPublicKey());
+            sharedKeys.put(e.getInitializer().getHash(), sharedKey);
+
+            ChordInternalMessage message = (ChordInternalMessage) e.getMessage();
+            message.setInitializer(currentNodeDTO);
+            message.setTargetPublicKey(keypair.getPublic());
+            Certificate cert = userService.getKeyHandler().getCertificate();
+            byte[] cerBytes = cert.getEncoded();
+            byte[] enCer = EncryptionHandler.encryptWithKey(cerBytes, sharedKey);
+            message.setCetificateReciver(enCer);
+            clientHandler.shareCertificateClient(e.getInitializer().getIp(), e.getInitializer().getPort(), message);
+            return;
+        } else {
+            PrivateKey privK = myPrivKeysDiffie.get(e.getInitializer().getHash());
+            myPrivKeysDiffie.remove(e.getInitializer().getHash()); // Remove from the shared memory
+            byte[] sharedKey = Utils.computeSKey(privK, e.getTargetPublicKey());
+            sharedKeys.put(e.getInitializer().getHash(), sharedKey); // Now both users have the shared key
+            
+            // Get the others certificate and decrypt it
+            byte[] certificate = e.getCertificateInitializer();
+            byte[] decryptedBytes = EncryptionHandler.decryptWithKey(certificate, sharedKeys.get(e.getInitializer().getHash()));
+            Certificate toAdd =  Utils.byteArrToCertificate(decryptedBytes);
+            String alias = currentNodeDTO.getUsername().equals(e.getAliasSender()) ? e.getAliasReciver() : e.getAliasSender();
+            userService.getKeyHandler().addCertificateToTrustStore(alias, toAdd);
+            Utils.loadTrustStore(userService.getKeyHandler().getTruststorePath(), userService.getKeyHandler().getKeyStorePassword());
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     public synchronized void diffieHellman (DiffHellmanEvent e) throws NoSuchAlgorithmException, InvalidKeyException {
         

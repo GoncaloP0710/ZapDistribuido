@@ -223,7 +223,12 @@ public class UserService implements UserServiceInterface {
                 e1.printStackTrace();
             }
         } else if (e instanceof AddCertificateToTrustStoreEvent) {
-            eventHandler.addCertificateToTrustStore((AddCertificateToTrustStoreEvent) e);
+            try {
+                eventHandler.addCertificateToTrustStore((AddCertificateToTrustStoreEvent) e);
+            } catch (Exception e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
         } else if (e instanceof DiffHellmanEvent) {
             try {
                 eventHandler.diffieHellman((DiffHellmanEvent) e);

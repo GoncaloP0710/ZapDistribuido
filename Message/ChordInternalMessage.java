@@ -18,13 +18,14 @@ public class ChordInternalMessage extends Message {
     private NodeDTO nodeToUpdate; // UpdateNodeFingerTableEvent
     private int counter; // UpdateNodeFingerTableEvent
     private ArrayList<NodeDTO> fingerTable; // UpdateNodeFingerTableEvent
-    private NodeDTO initializer; // BroadcastUpdateFingerTableEvent | DiffHellmanEvent | UpdateNeighbors Event | NotifyEvent
+    private NodeDTO initializer; // BroadcastUpdateFingerTableEvent | DiffHellmanEvent | UpdateNeighbors Event | NotifyEvent | AddCertificateToTrustStoreEvent
     private NodeDTO senderDto; // BroadcastUpdateFingerTableEvent 
     private boolean finishedBroadcasting; // BroadcastUpdateFingerTableEvent
     private BigInteger target; // DiffHellmanEvent 
     private String aliasReciver; // AddCertificateToTrustStoreEvent
     private String aliasSender; // AddCertificateToTrustStoreEvent
-    private Certificate certificate; // AddCertificateToTrustStoreEvent
+    private byte[] certificateInitializer; // AddCertificateToTrustStoreEvent
+    private byte[] certificateReciver; // AddCertificateToTrustStoreEvent
     private PublicKey initializerPublicKey; // DiffHellmanEvent
     private PublicKey targetPublicKey; // DiffHellmanEvent
 
@@ -72,11 +73,15 @@ public class ChordInternalMessage extends Message {
     /**
      * AddCertificateToTrustStoreEvent
      */
-    public ChordInternalMessage(MessageType messageType, Certificate certificate, String aliasReciver, String aliasSender) {    
+    public ChordInternalMessage(MessageType messageType, byte[] certificateInitializer, byte[] certificateReciver, String aliasReciver, String aliasSender, NodeDTO initializer, PublicKey targetPublicKey, PublicKey initializerPublicKey) {    
         super(messageType);
-        this.certificate = certificate;
+        this.certificateInitializer = certificateInitializer;
+        this.certificateReciver = certificateReciver;
         this.aliasReciver = aliasReciver;
         this.aliasSender = aliasSender;
+        this.initializer = initializer;
+        this.targetPublicKey = targetPublicKey;
+        this.initializerPublicKey = initializerPublicKey;
     }
 
     /**
@@ -126,6 +131,10 @@ public class ChordInternalMessage extends Message {
         return this.initializer;
     }
 
+    public void setInitializer(NodeDTO initializer){
+        this.initializer = initializer;
+    }
+
     public NodeDTO getSenderDto(){
         return this.senderDto;
     }
@@ -154,8 +163,12 @@ public class ChordInternalMessage extends Message {
         return this.aliasSender;
     }
 
-    public Certificate getCertificate(){
-        return this.certificate;
+    public byte[] getCertificateInitializer(){
+        return this.certificateInitializer;
+    }
+
+    public byte[] getCertificateReciver(){
+        return this.certificateReciver;
     }
 
     public NodeDTO getTargetDTO(){
@@ -166,8 +179,12 @@ public class ChordInternalMessage extends Message {
         this.targetDTO = targetDTO;
     }
 
-    public void setCertificate(Certificate certificate){
-        this.certificate = certificate;
+    public void setCetificateReciver(byte[] certificateReciver){
+        this.certificateReciver = certificateReciver;
+    }
+
+    public void setCertificateInitializer(byte[] certificateInitializer){
+        this.certificateInitializer = certificateInitializer;
     }
 
     public PublicKey getInitializerPublicKey(){
