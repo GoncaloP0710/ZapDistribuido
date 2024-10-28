@@ -96,7 +96,6 @@ public class NodeServerHandler {
                 InterfaceHandler.info("New connection from: " + clientSocket.getInetAddress().getHostAddress());
                 NodeThread newServerThread = new NodeThread(clientSocket, null, userService, keyHandler);
                 newServerThread.start();
-                Utils.loadTrustStore(keyHandler.getTruststorePath(), keyHandler.getKeyStorePassword());
             } catch (IOException e) {
                 System.err.println(e.getMessage());
                 System.exit(-1);

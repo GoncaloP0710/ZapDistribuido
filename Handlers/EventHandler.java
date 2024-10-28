@@ -194,10 +194,10 @@ public class EventHandler {
             long startTime = System.currentTimeMillis();
             while (sharedKeys.get(event.getReciver()) == null && sharedKeys.get(event.getSenderDTO().getHash()) == null) {
                try {
-                    wait(1000); // Wait for 1 second intervals
+                    wait(2000); // Wait for 1 second intervals
                     long elapsedTime = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime);
                     if (elapsedTime >= TIMEOUT) {
-                        InterfaceHandler.erro("Connection timeout!");
+                        InterfaceHandler.erro("Connection timeout! - Shared key not found");
                         return;
                     }
                 } catch (InterruptedException e) {
@@ -287,6 +287,7 @@ public class EventHandler {
             PrivateKey privK = myPrivKeysDiffie.get(e.getInitializer().getHash());
             myPrivKeysDiffie.remove(e.getInitializer().getHash()); // Remove from the shared memory
             byte[] sharedKey = Utils.computeSKey(privK, e.getTargetPublicKey());
+            sharedKeys.put(e.getInitializer().getHash(), sharedKey);
             
             // Get the others certificate and decrypt it
             byte[] certificate = e.getCertificateReciver();
@@ -402,6 +403,7 @@ public class EventHandler {
             return;
         
         } else if (currentNodeDTO.getHash().equals(e.getTarget())) { // Reached the target for the first time (only time)
+            InterfaceHandler.info("Reached the target for the first time whem doing the Diffie-Hellman");
             KeyPair keypair = Utils.generateKeyPair();
             PrivateKey privK = keypair.getPrivate();
             byte[] sharedKey = Utils.computeSKey(privK, e.getInitializerPublicKey());

@@ -167,6 +167,7 @@ public class UserService implements UserServiceInterface {
         
             BigInteger reciverHash = currentNode.calculateHash(reciver);
             if (eventHandler.getSharedKey(reciverHash) == null) { // If the shared key does not exist
+                InterfaceHandler.erro("The shared key does not exist, creating a new one.");
                 ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.diffHellman, currentNodeDTO, reciverHash, (PublicKey) null, (PublicKey) null);
                 DiffHellmanEvent diffHellmanEvent = new DiffHellmanEvent(messageToSend);
                 eventHandler.diffieHellman(diffHellmanEvent);

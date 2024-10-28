@@ -90,7 +90,6 @@ public class NodeClientHandler {
             threads.put(hashAlias, newClientThread);
 
         } catch (Exception e) {
-            InterfaceHandler.erro("Error creating a new conection aspd,masodkm,aop");
             System.err.println(e.getMessage());
             System.exit(-1);
         }
