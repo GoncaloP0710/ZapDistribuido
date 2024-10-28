@@ -95,7 +95,7 @@ public class EventHandler {
                 }
 
                 // Update all the finger tables
-                clientHandler.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, currentNodeDTO, currentNodeDTO), true, nodeToEnterDTO.getUsername());
+                clientHandler.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, currentNodeDTO, currentNodeDTO, false), true, nodeToEnterDTO.getUsername());
  
 
             } else { // foward to the closest node in the finger table of the current node to the new node
@@ -125,8 +125,9 @@ public class EventHandler {
         }
 
         // Update all the finger tables | Next e mandas o current
-        clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, prevNodeDTO, prevNodeDTO), true, nextNodeDTO.getUsername());
+        clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, prevNodeDTO, prevNodeDTO, true), true, nextNodeDTO.getUsername());
 
+        Thread.sleep(1000);
         InterfaceHandler.success("Node exited the network successfully");
     }
 
@@ -179,6 +180,8 @@ public class EventHandler {
     public synchronized void broadcastMessage(BroadcastUpdateFingerTableEvent event) throws NoSuchAlgorithmException {
         ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateFingerTable, event.getSenderDto(), 0);
         updateFingerTable(new UpdateNodeFingerTableEvent(message)); 
+        if (event.getIsExiting() && sharedKeys.remove(event.getInitializer().getHash()) != null)
+            InterfaceHandler.erro("Node exited the network successfully");
 
         if (!event.getInitializer().equals(currentNodeDTO)) { // foward to the next node
             NodeDTO nextNodeDTO = currentNode.getNextNode();

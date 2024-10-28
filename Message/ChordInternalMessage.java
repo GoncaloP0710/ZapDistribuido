@@ -1,11 +1,7 @@
 package Message;
 
 import java.util.ArrayList;
-
-import Client.Node;
-
 import java.security.PublicKey;
-import java.security.cert.Certificate;
 import java.math.BigInteger;
 
 import dtos.NodeDTO;
@@ -21,6 +17,7 @@ public class ChordInternalMessage extends Message {
     private NodeDTO initializer; // BroadcastUpdateFingerTableEvent | DiffHellmanEvent | UpdateNeighbors Event | NotifyEvent | AddCertificateToTrustStoreEvent
     private NodeDTO senderDto; // BroadcastUpdateFingerTableEvent 
     private boolean finishedBroadcasting; // BroadcastUpdateFingerTableEvent
+    private boolean isExiting; // BroadcastUpdateFingerTableEvent
     private BigInteger target; // DiffHellmanEvent 
     private String aliasReciver; // AddCertificateToTrustStoreEvent
     private String aliasSender; // AddCertificateToTrustStoreEvent
@@ -63,11 +60,12 @@ public class ChordInternalMessage extends Message {
      * BroadcastUpdateFingerTableEvent
      * @requires finishedBroadcasting == false
      */
-    public ChordInternalMessage(MessageType messageType, Boolean finishedBroadcasting, NodeDTO initializer, NodeDTO senderDto) {
+    public ChordInternalMessage(MessageType messageType, Boolean finishedBroadcasting, NodeDTO initializer, NodeDTO senderDto, Boolean isExiting) {
         super(messageType);
         this.initializer = initializer;
         this.senderDto = senderDto;
         this.finishedBroadcasting = finishedBroadcasting;
+        this.isExiting = isExiting;
     }
 
     /**
@@ -201,5 +199,9 @@ public class ChordInternalMessage extends Message {
 
     public void setInitializerPublicKey(PublicKey initializerPublicKey){
         this.initializerPublicKey = initializerPublicKey;
+    }
+
+    public boolean getIsExiting(){
+        return this.isExiting;
     }
 }

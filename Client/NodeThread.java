@@ -3,25 +3,16 @@ package Client;
 import java.util.ArrayList;
 
 import java.net.Socket;
-import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.Certificate;
 import java.io.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
 
 import Events.*;
-import Handlers.EncryptionHandler;
 import Handlers.InterfaceHandler;
-import Handlers.KeyHandler;
 import Message.*;
 import Utils.observer.*;
-import Utils.*;
 
 public class NodeThread extends Thread implements Subject<NodeEvent> {
 
@@ -32,13 +23,11 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
 
     private BlockingQueue<Message> messageQueue = new LinkedBlockingQueue<>();
     private Listener<NodeEvent> listener;
-    private KeyHandler keyHandler;
 
     // If msg is null, it means that the thread is a server and its objective is to process the command it receives
-    public NodeThread (Socket socket, Message msg, Listener<NodeEvent> listener, KeyHandler keyHandler) {
+    public NodeThread (Socket socket, Message msg, Listener<NodeEvent> listener) {
         addMessage(msg);
         this.socket = socket;
-        this.keyHandler = keyHandler;
         this.listener = listener;
         try {
             this.out = new ObjectOutputStream(socket.getOutputStream());
@@ -108,7 +97,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             InterfaceHandler.erro("Connection closed");
             return; // Exit the loop if the end of the stream is reached
         } catch (ClassNotFoundException | IOException e) {
-            e.printStackTrace();
             InterfaceHandler.erro("Error receiving message");
         }
     }

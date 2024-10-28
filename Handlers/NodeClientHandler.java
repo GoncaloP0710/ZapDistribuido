@@ -10,7 +10,6 @@ import javax.net.ssl.SSLSocketFactory;
 import java.util.concurrent.ConcurrentHashMap;
 import java.math.BigInteger;
 
-import Handlers.*;
 import Client.*;
 import Message.*;
 import dtos.NodeDTO;
@@ -18,10 +17,7 @@ import Utils.Utils;
 
 public class NodeClientHandler {
 
-    private final Object lock = new Object();
-
     UserService userService;
-
     KeyHandler keyHandler;
     NodeDTO currentNodeDTO;
     File keystoreFile;
@@ -85,7 +81,7 @@ public class NodeClientHandler {
             SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
             SSLSocket sslClientSocket = (SSLSocket) factory.createSocket(ip, port);
 
-            NodeThread newClientThread = new NodeThread(sslClientSocket, msg, userService, keyHandler);
+            NodeThread newClientThread = new NodeThread(sslClientSocket, msg, userService);
             newClientThread.start();
             threads.put(hashAlias, newClientThread);
             InterfaceHandler.info("Secure conection with: " + alias + " created");
@@ -118,7 +114,7 @@ public class NodeClientHandler {
             
             // Create normal socket
             Socket clientSocket = new Socket(ip, port+1);
-            NodeThread newClientThread = new NodeThread(clientSocket, msg, userService, keyHandler);
+            NodeThread newClientThread = new NodeThread(clientSocket, msg, userService);
             newClientThread.start();
             threadsNotSecure.put(hashAlias, newClientThread);
         } catch (Exception e) {

@@ -12,7 +12,6 @@ import javax.net.ssl.SSLServerSocketFactory;
 import Client.Node;
 import Client.NodeThread;
 import Client.UserService;
-import Utils.Utils;
 import dtos.NodeDTO;
 
 public class NodeServerHandler {
@@ -73,7 +72,7 @@ public class NodeServerHandler {
             try {
                 clientSocket = serverSocket.accept();
                 InterfaceHandler.info("New Secure connection: " + clientSocket.getInetAddress().getHostAddress() + ":" + clientSocket.getPort());
-                NodeThread newServerThread = new NodeThread(clientSocket, null, userService, keyHandler);
+                NodeThread newServerThread = new NodeThread(clientSocket, null, userService);
                 newServerThread.start();
             } catch (IOException e) {
                 System.err.println(e.getMessage());
@@ -94,7 +93,7 @@ public class NodeServerHandler {
             try {
                 clientSocket = sSocket.accept();
                 InterfaceHandler.info("New connection from: " + clientSocket.getInetAddress().getHostAddress() + ":" + clientSocket.getPort());
-                NodeThread newServerThread = new NodeThread(clientSocket, null, userService, keyHandler);
+                NodeThread newServerThread = new NodeThread(clientSocket, null, userService);
                 newServerThread.start();
             } catch (IOException e) {
                 System.err.println(e.getMessage());
