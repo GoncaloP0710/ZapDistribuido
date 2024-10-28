@@ -18,6 +18,8 @@ import Utils.Utils;
 
 public class NodeClientHandler {
 
+    private final Object lock = new Object();
+
     UserService userService;
 
     KeyHandler keyHandler;
@@ -28,6 +30,9 @@ public class NodeClientHandler {
 
     // ConcurrentHashMap to store the Threads
     private ConcurrentHashMap<BigInteger, NodeThread> threads = new ConcurrentHashMap<>();
+
+    // ConcurrentHashMap to store the Threads not secure
+    private ConcurrentHashMap<BigInteger, NodeThread> threadsNotSecure = new ConcurrentHashMap<>();
 
     public NodeClientHandler(UserService userService) {
         this.userService = userService;
@@ -64,8 +69,15 @@ public class NodeClientHandler {
 
         try {
             if (!keyHandler.getTruStore().containsAlias(alias)) {// If the certificate of the other node is not in the truststore
-                shareCertificateClient(ip, port, new ChordInternalMessage(MessageType.addCertificateToTrustStore, (byte[]) null, (byte[]) null, currentNodeDTO.getUsername(), alias, currentNodeDTO, (PublicKey) null, (PublicKey) null));
-                wait(2000); // Wait for the certificate to be added to the truststore
+                shareCertificateClient(ip, port, new ChordInternalMessage(MessageType.addCertificateToTrustStore, (byte[]) null, (byte[]) null, currentNodeDTO.getUsername(), alias, currentNodeDTO, (PublicKey) null, (PublicKey) null), alias);
+                synchronized (lock) {
+                    try {
+                        lock.wait(2000); // Wait for the certificate to be added to the truststore
+                    } catch (Exception e) {
+                        InterfaceHandler.erro("Error waiting for the certificate to be added to the truststore niiiiiiiiiiiiiiiiggggggggggggggaaaaaaaaaaasssssssssss");
+                        e.printStackTrace();
+                    }
+                }
             }
 
             System.setProperty("javax.net.ssl.keyStore", keystoreFile.toString());
@@ -85,6 +97,7 @@ public class NodeClientHandler {
             threads.put(hashAlias, newClientThread);
 
         } catch (Exception e) {
+            InterfaceHandler.erro("Error creating a new conection aspd,masodkm,aop");
             System.err.println(e.getMessage());
             System.exit(-1);
         }
@@ -98,13 +111,24 @@ public class NodeClientHandler {
      * @param msg
      * @throws NoSuchAlgorithmException
      */
-    public void shareCertificateClient(String ip, int port, Message msg) throws NoSuchAlgorithmException {
+    public void shareCertificateClient(String ip, int port, Message msg, String alias) throws NoSuchAlgorithmException {
         try {
+
+            BigInteger hashAlias = Utils.calculateHash(alias);
+            if (threadsNotSecure.containsKey(hashAlias)) {
+                NodeThread thread = threadsNotSecure.get(hashAlias);
+                thread.addMessage(msg);
+                return;
+            }
+            InterfaceHandler.info("Creating a new Insecure conection with: " + alias);
+            
             // Create normal socket
             Socket clientSocket = new Socket(ip, port+1);
             NodeThread newClientThread = new NodeThread(clientSocket, msg, userService, keyHandler);
             newClientThread.start();
+            threadsNotSecure.put(hashAlias, newClientThread);
         } catch (Exception e) {
+            InterfaceHandler.erro("Error creating a new conection to share the certificate");
             System.err.println(e.getMessage());
             System.exit(-1);
         }

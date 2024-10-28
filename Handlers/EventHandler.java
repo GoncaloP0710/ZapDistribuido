@@ -270,11 +270,11 @@ public class EventHandler {
         InterfaceHandler.info("Alias Sender: " + e.getAliasSender());
 
         if (currentNodeDTO.getUsername().equals(e.getAliasSender()) && e.getTargetPublicKey() == null) { // First time on the initializer
+            
+            InterfaceHandler.info("First time on the initializer");
             KeyPair keypair = Utils.generateKeyPair();
             PrivateKey privK = keypair.getPrivate();
             myPrivKeysDiffie.put(e.getInitializer().getHash(), privK); // Save on the shared memory for later use
-            ChordInternalMessage msg = (ChordInternalMessage) e.getMessage();
-            msg.setInitializerPublicKey(keypair.getPublic());
 
             // foward to the target
             ChordInternalMessage message = (ChordInternalMessage) e.getMessage();
@@ -282,10 +282,13 @@ public class EventHandler {
             message.setInitializerPublicKey(keypair.getPublic());
 
             InterfaceHandler.info("Sending pubK to: " + e.getInitializer().getUsername());
-            clientHandler.shareCertificateClient(e.getInitializer().getIp(), e.getInitializer().getPort(), msg);
+            clientHandler.shareCertificateClient(e.getInitializer().getIp(), e.getInitializer().getPort(), message, e.getInitializer().getUsername());
             return;
             
         } else if (currentNodeDTO.getUsername().equals(e.getAliasSender())) { // Second time on the initializer
+            
+            InterfaceHandler.info("Second time on the initializer");
+            
             PrivateKey privK = myPrivKeysDiffie.get(e.getInitializer().getHash());
             myPrivKeysDiffie.remove(e.getInitializer().getHash()); // Remove from the shared memory
             byte[] sharedKey = Utils.computeSKey(privK, e.getTargetPublicKey());
@@ -306,28 +309,37 @@ public class EventHandler {
             byte[] cerBytes = cert.getEncoded();
             byte[] enCer = EncryptionHandler.encryptWithKey(cerBytes, sharedKey);
             message.setCertificateInitializer(enCer);
-            clientHandler.shareCertificateClient(e.getInitializer().getIp(), e.getInitializer().getPort(), message); 
+            clientHandler.shareCertificateClient(e.getInitializer().getIp(), e.getInitializer().getPort(), message, e.getInitializer().getUsername()); 
             return;
         
-        } else if (e.getCertificateInitializer() != null) { // Reached the target for the first time 
+        } else if (e.getInitializerPublicKey() != null && e.getCertificateInitializer() == null) { // Reached the target for the first time 
+
+            InterfaceHandler.info("Reached the target for the first time ");
+
             KeyPair keypair = Utils.generateKeyPair();
             PrivateKey privK = keypair.getPrivate();
             byte[] sharedKey = Utils.computeSKey(privK, e.getInitializerPublicKey());
+            InterfaceHandler.success("Init pubK: " + e.getInitializerPublicKey());
             sharedKeys.put(e.getInitializer().getHash(), sharedKey);
+            myPrivKeysDiffie.put(e.getInitializer().getHash(), privK); // Save on the shared memory for later use
 
             ChordInternalMessage message = (ChordInternalMessage) e.getMessage();
             message.setInitializer(currentNodeDTO);
             message.setTargetPublicKey(keypair.getPublic());
+
             Certificate cert = userService.getKeyHandler().getCertificate();
             byte[] cerBytes = cert.getEncoded();
             byte[] enCer = EncryptionHandler.encryptWithKey(cerBytes, sharedKey);
             message.setCetificateReciver(enCer);
-            clientHandler.shareCertificateClient(e.getInitializer().getIp(), e.getInitializer().getPort(), message);
+            clientHandler.shareCertificateClient(e.getInitializer().getIp(), e.getInitializer().getPort(), message, e.getInitializer().getUsername());
             return;
         } else {
+
+            InterfaceHandler.info("Reached the target for the second time? Its the else");
+
             PrivateKey privK = myPrivKeysDiffie.get(e.getInitializer().getHash());
             myPrivKeysDiffie.remove(e.getInitializer().getHash()); // Remove from the shared memory
-            byte[] sharedKey = Utils.computeSKey(privK, e.getTargetPublicKey());
+            byte[] sharedKey = Utils.computeSKey(privK, e.getInitializerPublicKey());
             sharedKeys.put(e.getInitializer().getHash(), sharedKey); // Now both users have the shared key
             
             // Get the others certificate and decrypt it

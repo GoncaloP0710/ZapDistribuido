@@ -1,8 +1,5 @@
 package Client;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
 import java.net.Socket;
@@ -12,6 +9,8 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.io.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
@@ -33,8 +32,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
 
     private final Object lock = new Object();
 
-    private CopyOnWriteArrayList<Message> messages = new CopyOnWriteArrayList<>();
-    private CopyOnWriteArrayList<Message> messageQueue = new CopyOnWriteArrayList<>();
+    private BlockingQueue<Message> messageQueue = new LinkedBlockingQueue<>();
     private Listener<NodeEvent> listener;
     private KeyHandler keyHandler;
 
@@ -52,6 +50,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             e.printStackTrace();
             System.exit(-1);
         }
+        InterfaceHandler.internalInfo("NodeThread created");
     }
 
     /**
@@ -72,73 +71,54 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     }
 
     public void addMessage(Message msg) {
-        synchronized (lock) {
-            if (msg == null) {
-                return;
-            }
-            InterfaceHandler.internalInfo("Adding message to the queue to send latter: " + msg.getMsgType());
-            messages.add(msg);
-            lock.notifyAll();
+        if (msg == null) {
+            return;
         }
+        messageQueue.offer(msg);
     }
     
     public void removeMessage(Message msg) {
-        synchronized (lock) {
-            messages.remove(msg);
-        }
+        messageQueue.remove(msg);
     }
     
     public List<Message> getMessages() {
-        return new ArrayList<>(messages);
-    }
-
-    private void waitForMessages() throws InterruptedException {
-        synchronized (lock) {
-            while (messages.isEmpty()) {
-                lock.wait();
-            }
-        }
-    }
+        return new ArrayList<>(messageQueue);
+    }   
 
     private void sendMsg() {
         try {
+            InterfaceHandler.internalInfo("Starting sendMsg thread");
             while (running) {
-                waitForMessages(); // Wait for messages if the list is empty
-                Message msg;
-                synchronized (lock) {
-                    if (!messages.isEmpty()) {
-                        msg = messages.remove(0); // Remove the message from the list
-                    } else {
-                        continue;
-                    }
-                }
-                if (msg != null) {
-                    InterfaceHandler.internalInfo("Sending message: " + msg.getMsgType());
-                    out.writeObject(msg); // Send the message to the node receiver
-                }
+                Message msg = messageQueue.take(); // Wait for messages if the queue is empty
+                out.writeObject(msg); // Send the message to the node receiver
             }
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            if (running) {
+                e.printStackTrace();
+            } else {
+                System.out.println("Thread interrupted, exiting sendMsg loop.");
+            }
         }
     }
 
     private void reciveMsg() {
         try {
+            InterfaceHandler.internalInfo("Waiting for messages to recive and send to the processMessages");
             while (running) {
                 Message messageToProcess = (Message) in.readObject();
-                messageQueue.add(messageToProcess); // Add the received message to the queue
-                new Thread(this::processMessages).start();
+                new Thread(() -> processMessages(messageToProcess)).start();
             }
         } catch (EOFException e) {
+            InterfaceHandler.erro("Connection closed");
             return; // Exit the loop if the end of the stream is reached
         } catch (ClassNotFoundException | IOException e) {
             e.printStackTrace();
+            InterfaceHandler.erro("Error receiving message");
         }
     }
 
-    private void processMessages() {
+    private void processMessages(Message messageToProcess) {
         try {
-            Message messageToProcess = messageQueue.remove(0); // Wait for messages if the queue is empty
             InterfaceHandler.internalInfo("Processing message: " + messageToProcess.getMsgType());
             processCommand(messageToProcess);
         } catch (Exception e) {
