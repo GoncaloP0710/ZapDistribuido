@@ -54,9 +54,15 @@ public class InterfaceHandler {
     }
 
     public String getPort(){
-        System.out.print("Insira port: ");
-        String ret = getInput();
-        return ret;
+        do {
+            System.out.print("Insira port: ");
+            String ret = getInput();
+            if (ret.length() == 0) {
+                System.out.println("Port não pode ser vazio");
+            } else {
+                return ret;
+            }
+        } while (true);
     }
 
     private static String getCurrentDateTime() {
