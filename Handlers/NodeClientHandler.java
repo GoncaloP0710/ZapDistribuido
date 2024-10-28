@@ -61,16 +61,16 @@ public class NodeClientHandler {
         BigInteger hashAlias = Utils.calculateHash(alias);
         if (threads.containsKey(hashAlias)) {
             NodeThread thread = threads.get(hashAlias);
-            InterfaceHandler.internalInfo(alias + " already has a thread, added the message to the thread");
+            InterfaceHandler.internalInfo(alias + " already has a Secure conection, added the message to the queue");
             thread.addMessage(msg);
             return;
         }
-        InterfaceHandler.info("Creating a new conection with: " + alias);
+        InterfaceHandler.info("Creating a new Secure conection with: " + alias);
 
         try {
             if (!keyHandler.getTruStore().containsAlias(alias)) {// If the certificate of the other node is not in the truststore
                 shareCertificateClient(ip, port, new ChordInternalMessage(MessageType.addCertificateToTrustStore, (byte[]) null, (byte[]) null, currentNodeDTO.getUsername(), alias, currentNodeDTO, (PublicKey) null, (PublicKey) null), alias);
-                Thread.sleep(1000);
+                Thread.sleep(250);
             }
 
             System.setProperty("javax.net.ssl.keyStore", keystoreFile.toString());
@@ -88,6 +88,7 @@ public class NodeClientHandler {
             NodeThread newClientThread = new NodeThread(sslClientSocket, msg, userService, keyHandler);
             newClientThread.start();
             threads.put(hashAlias, newClientThread);
+            InterfaceHandler.info("Secure conection with: " + alias + " created");
 
         } catch (Exception e) {
             System.err.println(e.getMessage());

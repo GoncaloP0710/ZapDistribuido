@@ -74,7 +74,6 @@ public class UserService implements UserServiceInterface {
             ChordInternalMessage message = new ChordInternalMessage(MessageType.EnterNode, currentNodeDTO);
             this.clientHandler.startClient(ipDefault, portDefault, message, true, usernameDefault);
         }
-        InterfaceHandler.success("Node entered the network successfully."); 
     }
 
     public void initializeCurrentNodeDTO(String username, Node currentNode, Certificate cer) {
@@ -167,7 +166,7 @@ public class UserService implements UserServiceInterface {
         
             BigInteger reciverHash = currentNode.calculateHash(reciver);
             if (eventHandler.getSharedKey(reciverHash) == null) { // If the shared key does not exist
-                InterfaceHandler.erro("The shared key does not exist, creating a new one.");
+                InterfaceHandler.internalInfo("The shared key does not exist, creating a new one to be able to send message.");
                 ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.diffHellman, currentNodeDTO, reciverHash, (PublicKey) null, (PublicKey) null);
                 DiffHellmanEvent diffHellmanEvent = new DiffHellmanEvent(messageToSend);
                 eventHandler.diffieHellman(diffHellmanEvent);

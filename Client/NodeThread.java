@@ -48,7 +48,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             e.printStackTrace();
             System.exit(-1);
         }
-        InterfaceHandler.internalInfo("NodeThread created");
     }
 
     /**
@@ -85,9 +84,9 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
 
     private void sendMsg() {
         try {
-            InterfaceHandler.internalInfo("Starting sendMsg thread");
             while (running) {
                 Message msg = messageQueue.take(); // Wait for messages if the queue is empty
+                InterfaceHandler.internalInfo("Sending message: " + msg.getMsgType());
                 out.writeObject(msg); // Send the message to the node receiver
             }
         } catch (IOException | InterruptedException e) {
@@ -101,7 +100,6 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
 
     private void reciveMsg() {
         try {
-            InterfaceHandler.internalInfo("Waiting for messages to recive and send to the processMessages");
             while (running) {
                 Message messageToProcess = (Message) in.readObject();
                 new Thread(() -> processMessages(messageToProcess)).start();

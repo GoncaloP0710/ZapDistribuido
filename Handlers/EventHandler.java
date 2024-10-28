@@ -13,8 +13,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.security.cert.Certificate;
 import java.security.Signature;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 import Events.*;
 import Message.*;
@@ -267,7 +265,6 @@ public class EventHandler {
     public void addCertificateToTrustStore(AddCertificateToTrustStoreEvent e) throws Exception {   
         if (currentNodeDTO.getUsername().equals(e.getAliasSender()) && e.getTargetPublicKey() == null) { // First time on the initializer
             
-            InterfaceHandler.info("First time on the initializer");
             KeyPair keypair = Utils.generateKeyPair();
             PrivateKey privK = keypair.getPrivate();
             myPrivKeysDiffie.put(e.getInitializer().getHash(), privK); // Save on the shared memory for later use
@@ -281,8 +278,6 @@ public class EventHandler {
             return;
             
         } else if (currentNodeDTO.getUsername().equals(e.getAliasSender())) { // Second time on the initializer
-            
-            InterfaceHandler.info("Second time on the initializer");
             
             PrivateKey privK = myPrivKeysDiffie.get(e.getInitializer().getHash());
             myPrivKeysDiffie.remove(e.getInitializer().getHash()); // Remove from the shared memory
@@ -309,8 +304,6 @@ public class EventHandler {
         
         } else if (e.getInitializerPublicKey() != null && e.getCertificateInitializer() == null) { // Reached the target for the first time 
 
-            InterfaceHandler.info("Reached the target for the first time ");
-
             KeyPair keypair = Utils.generateKeyPair();
             PrivateKey privK = keypair.getPrivate();
             byte[] sharedKey = Utils.computeSKey(privK, e.getInitializerPublicKey());
@@ -329,8 +322,6 @@ public class EventHandler {
             return;
         } else {
 
-            InterfaceHandler.info("Reached the target for the second time? Its the else");
-
             PrivateKey privK = myPrivKeysDiffie.get(e.getInitializer().getHash());
             myPrivKeysDiffie.remove(e.getInitializer().getHash()); // Remove from the shared memory
             byte[] sharedKey = Utils.computeSKey(privK, e.getInitializerPublicKey());
@@ -345,31 +336,6 @@ public class EventHandler {
             Utils.loadTrustStore(userService.getKeyHandler().getTruststorePath(), userService.getKeyHandler().getKeyStorePassword());
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     public synchronized void diffieHellman (DiffHellmanEvent e) throws NoSuchAlgorithmException, InvalidKeyException {
         
@@ -403,7 +369,6 @@ public class EventHandler {
             return;
         
         } else if (currentNodeDTO.getHash().equals(e.getTarget())) { // Reached the target for the first time (only time)
-            InterfaceHandler.info("Reached the target for the first time whem doing the Diffie-Hellman");
             KeyPair keypair = Utils.generateKeyPair();
             PrivateKey privK = keypair.getPrivate();
             byte[] sharedKey = Utils.computeSKey(privK, e.getInitializerPublicKey());

@@ -72,7 +72,7 @@ public class NodeServerHandler {
             Socket clientSocket = null; // other node sockets
             try {
                 clientSocket = serverSocket.accept();
-                InterfaceHandler.info("New Secure connection from: " + clientSocket.getInetAddress().getHostAddress());
+                InterfaceHandler.info("New Secure connection: " + clientSocket.getInetAddress().getHostAddress() + ":" + clientSocket.getPort());
                 NodeThread newServerThread = new NodeThread(clientSocket, null, userService, keyHandler);
                 newServerThread.start();
             } catch (IOException e) {
@@ -90,10 +90,10 @@ public class NodeServerHandler {
         ServerSocket sSocket = new ServerSocket(port); //socket novo
 
         while (true) {
-            Socket clientSocket = null; // other node sockets
+            Socket clientSocket = null; // other node sockets       
             try {
                 clientSocket = sSocket.accept();
-                InterfaceHandler.info("New connection from: " + clientSocket.getInetAddress().getHostAddress());
+                InterfaceHandler.info("New connection from: " + clientSocket.getInetAddress().getHostAddress() + ":" + clientSocket.getPort());
                 NodeThread newServerThread = new NodeThread(clientSocket, null, userService, keyHandler);
                 newServerThread.start();
             } catch (IOException e) {
