@@ -109,6 +109,11 @@ public class EventHandler {
     public synchronized void exitNode() throws NoSuchAlgorithmException, InterruptedException {
         NodeDTO prevNodeDTO = currentNode.getPreviousNode();
         NodeDTO nextNodeDTO = currentNode.getNextNode();
+
+        if (prevNodeDTO.equals(currentNodeDTO) && nextNodeDTO.equals(currentNodeDTO)) { // Only one node in the network
+            InterfaceHandler.erro("Node exited the network successfully");
+            return;
+        }
         
         // mudar next do prev para o next do current
         ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateNeighbors, nextNodeDTO, (NodeDTO) null, currentNodeDTO);
