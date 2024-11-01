@@ -132,6 +132,11 @@ public class EventHandler {
         // Update all the finger tables | Next e mandas o current
         clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, prevNodeDTO, prevNodeDTO, true), true, nextNodeDTO.getUsername());
 
+        for (BigInteger key : sharedKeys.keySet()) {
+            NodeDTO nodeWithHashDTO = userService.getNodeWithHash(key);
+            clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), new ChordInternalMessage(MessageType.RemoveSharedKey, key, currentNodeDTO), false, nodeWithHashDTO.getUsername());
+        }
+
         Thread.sleep(1000);
         InterfaceHandler.success("Node exited the network successfully");
     }
@@ -348,16 +353,16 @@ public class EventHandler {
     public synchronized void diffieHellman (DiffHellmanEvent e) throws NoSuchAlgorithmException, InvalidKeyException {
         
         NodeDTO closestNodeToTarget = null;
-        if (e.getTargetPublicKey() == null) { // Foward to Target
+        if (e.getTargetPublicKey() == null && !currentNodeDTO.getHash().equals(e.getTarget())) { // Foward to Target
+            InterfaceHandler.info("Foward to Target - Diffie-Hellman");
             closestNodeToTarget = userService.getNodeWithHash(e.getTarget());
         } else { // Foward to Initializer
+            InterfaceHandler.info("Foward to Initializer - Diffie-Hellman");
             closestNodeToTarget = userService.getNodeWithHash(e.getInitializer().getHash());
         }
-
-        if (closestNodeToTarget == null && !(e.getInitializer().equals(currentNodeDTO) && e.getTargetPublicKey() != null)) // If the target does not exist
-            return;
         
         if (currentNodeDTO.getHash().equals(e.getInitializer().getHash()) && e.getTargetPublicKey() == null) { // First time on the initializer
+            InterfaceHandler.info("Starting Diffie-Hellman key exchange");
             KeyPair keypair = Utils.generateKeyPair();
             PrivateKey privK = keypair.getPrivate();
             myPrivKeysDiffie.put(e.getTarget(), privK); // Save on the shared memory for later use
@@ -369,6 +374,7 @@ public class EventHandler {
             return;
             
         } else if (currentNodeDTO.getHash().equals(e.getInitializer().getHash())) { // Second time on the initializer (last stop)
+            InterfaceHandler.info("Second time on the initializer - Diffie-Hellman key exchange");
             PrivateKey privK = myPrivKeysDiffie.get(e.getTarget());
             myPrivKeysDiffie.remove(e.getTarget()); // Remove from the shared memory
             byte[] sharedKey = Utils.computeSKey(privK, e.getTargetPublicKey());
@@ -377,6 +383,7 @@ public class EventHandler {
             return;
         
         } else if (currentNodeDTO.getHash().equals(e.getTarget())) { // Reached the target for the first time (only time)
+            InterfaceHandler.info("Reached the target for the first time - Diffie-Hellman key exchange");
             KeyPair keypair = Utils.generateKeyPair();
             PrivateKey privK = keypair.getPrivate();
             byte[] sharedKey = Utils.computeSKey(privK, e.getInitializerPublicKey());
@@ -409,6 +416,19 @@ public class EventHandler {
         } else {
             try {
                 clientHandler.startClient(e.getTarget().getIp(), e.getTarget().getPort(), e.getMessage(), false, e.getTarget().getUsername());
+            } catch (NoSuchAlgorithmException e1) {
+                e1.printStackTrace();
+            }
+        }
+    }
+
+    public void removeSharedKey(RemoveSharedKeyEvent e) {
+        if (currentNodeDTO.getHash().equals(e.getTarget())) {
+            sharedKeys.remove(e.getInitializer().getHash());
+        } else {
+            NodeDTO nodeWithHashDTO = userService.getNodeWithHash(e.getTarget());
+            try {
+                clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), e.getMessage(), false, nodeWithHashDTO.getUsername());
             } catch (NoSuchAlgorithmException e1) {
                 e1.printStackTrace();
             }

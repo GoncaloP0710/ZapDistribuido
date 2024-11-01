@@ -93,6 +93,15 @@ public class ChordInternalMessage extends Message {
         this.initializerPublicKey = initializerPublicKey;
     }
 
+    /**
+     * RemoveSharedKeyEvent
+     */
+    public ChordInternalMessage(MessageType messageType, BigInteger target, NodeDTO initializer) {
+        super(messageType);
+        this.target = target;
+        this.initializer = initializer;
+    }
+
     public NodeDTO getNextNode(){
         return this.nextNode;
     }

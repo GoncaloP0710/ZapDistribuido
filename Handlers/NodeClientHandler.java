@@ -42,7 +42,7 @@ public class NodeClientHandler {
     public void endConection (NodeDTO node) {
         threads.get(node.getHash()).endThread();
         threads.remove(node.getHash());
-        InterfaceHandler.info("Ended conection with: " + node.getUsername());
+        InterfaceHandler.success("Ended conection with: " + node.getUsername());
     }
     
     /**

@@ -237,8 +237,9 @@ public class UserService implements UserServiceInterface {
             }
         } else if (e instanceof NotifyEvent){
             eventHandler.handleNotify((NotifyEvent) e);
-        }
-         else {
+        } else if (e instanceof RemoveSharedKeyEvent) {
+            eventHandler.removeSharedKey((RemoveSharedKeyEvent) e);
+        } else {
             System.out.println("Exception class: " + e.getClass().getName());
             System.out.println("Exception instance: " + e.toString());
             throw new UnsupportedOperationException("Unhandled event type");

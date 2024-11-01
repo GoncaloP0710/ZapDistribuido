@@ -11,5 +11,6 @@ public enum MessageType {
     RecivePubKey,
     addCertificateToTrustStore,
     diffHellman,
-    Notify;
+    Notify,
+    RemoveSharedKey,
 }

@@ -145,6 +145,9 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             case Notify:
                 emitEvent(new NotifyEvent((ChordInternalMessage) messageToProcess));
                 break;
+            case RemoveSharedKey:
+                emitEvent(new RemoveSharedKeyEvent((ChordInternalMessage) messageToProcess));
+                break;
             default:
                 break;
         }
