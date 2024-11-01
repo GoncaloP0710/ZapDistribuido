@@ -415,6 +415,11 @@ public class EventHandler {
             }
         } else {
             try {
+                NodeDTO nodeWithHashDTO = userService.getNodeWithHash(e.getTarget().getHash());
+                if (nodeWithHashDTO != null) {
+                    clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), e.getMessage(), false, nodeWithHashDTO.getUsername());
+                    return;
+                }
                 clientHandler.startClient(e.getTarget().getIp(), e.getTarget().getPort(), e.getMessage(), false, e.getTarget().getUsername());
             } catch (NoSuchAlgorithmException e1) {
                 e1.printStackTrace();
