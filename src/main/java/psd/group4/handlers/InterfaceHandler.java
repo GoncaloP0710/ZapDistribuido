@@ -3,6 +3,8 @@ package psd.group4.handlers;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class InterfaceHandler {
 
@@ -18,6 +20,11 @@ public class InterfaceHandler {
     public static final String ANSI_CYAN = "\u001B[36m";
     public static final String ANSI_WHITE = "\u001B[37m";
     public static final String ANSI_UNDERLINE = "\u001B[4m";
+
+    private static final String IP_REGEX = 
+        "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+    private static final Pattern IP_PATTERN = Pattern.compile(IP_REGEX);
+
 
     public InterfaceHandler() {
         this.scanner = new Scanner(System.in);
@@ -63,6 +70,23 @@ public class InterfaceHandler {
                 return ret;
             }
         } while (true);
+    }
+
+    public String getIP() {
+        do {
+            System.out.print("Insira o seu ip: ");
+            String ret = getInput();
+            if (!isValidIP(ret)) {
+                System.out.println("IP digitado não é válido");
+            } else {
+                return ret;
+            }
+        } while (true);
+    }
+
+    private boolean isValidIP(String ip) {
+        Matcher matcher = IP_PATTERN.matcher(ip);
+        return matcher.matches();
     }
 
     private static String getCurrentDateTime() {

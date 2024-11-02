@@ -36,7 +36,7 @@ public class User {
             }
         }
 
-        String serverIp = "localhost";
+        String serverIp = interfaceHandler.getIP();
         int serverPort = Integer.parseInt(interfaceHandler.getPort());
         node = new Node(name, serverIp, serverPort);
         userService = new UserService(name, node, keyHandler);
