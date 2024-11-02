@@ -2,6 +2,8 @@ package psd.group4.handlers;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyStoreException;
@@ -65,7 +67,8 @@ public class NodeServerHandler {
 
         // Get an SSLSocketFactory from the SSLContext
         SSLServerSocketFactory factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-        SSLServerSocket serverSocket = (SSLServerSocket) factory.createServerSocket(port);
+        InetAddress inetAddress = InetAddress.getByName(ip);
+        SSLServerSocket serverSocket = (SSLServerSocket) factory.createServerSocket(port, 0, inetAddress);
 
         while (true) {
             Socket clientSocket = null; // other node sockets
