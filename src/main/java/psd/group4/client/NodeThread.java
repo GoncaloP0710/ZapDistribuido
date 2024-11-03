@@ -94,10 +94,10 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
                 new Thread(() -> processMessages(messageToProcess)).start();
             }
         } catch (EOFException e) {
-            InterfaceHandler.erro("Connection closed");
+            InterfaceHandler.info("Connection closed");
             return; // Exit the loop if the end of the stream is reached
         } catch (ClassNotFoundException | IOException e) {
-            InterfaceHandler.erro("Error receiving message");
+            InterfaceHandler.info("Error receiving message");
         }
     }
 

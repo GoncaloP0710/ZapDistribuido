@@ -55,6 +55,12 @@ public class InterfaceHandler {
         } else {
             infoLogger.setLevel(Level.OFF);
         }
+
+        if (enabled) {
+            InterfaceHandler.success("Info enabled");
+        } else {
+            InterfaceHandler.success("Info disabled");
+        }
     }
 
     public static void setErrorLoggingEnabled(boolean enabled) {
@@ -63,6 +69,12 @@ public class InterfaceHandler {
             errorLogger.setLevel(Level.ALL);
         } else {
             errorLogger.setLevel(Level.OFF);
+        }
+
+        if (enabled) {
+            InterfaceHandler.success("Error enabled");
+        } else {
+            InterfaceHandler.success("Error disabled");
         }
     }
 
@@ -73,12 +85,18 @@ public class InterfaceHandler {
         } else {
             internalInfoLogger.setLevel(Level.OFF);
         }
+
+        if (enabled) {
+            InterfaceHandler.success("Internal info enabled");
+        } else {
+            InterfaceHandler.success("Internal info disabled");
+        }
     }
 
-    public void startUp(){
-        System.out.println("----------------------------------");
-        System.out.println("-------WHATSAPP DISTRIBUIDO-------");
-        System.out.println("----------------------------------");
+    public void startUp() {
+        System.out.println(ANSI_GREEN + "----------------------------------" + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "-------" + ANSI_UNDERLINE + "WHATSAPP DISTRIBUIDO" + ANSI_RESET + ANSI_GREEN + "-------" + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "----------------------------------" + ANSI_RESET);
     }
 
     public String getUserName(){
@@ -178,6 +196,11 @@ public class InterfaceHandler {
         System.out.println(ANSI_GREEN + "3 - (s)  "+  ANSI_UNDERLINE + "Send message" + ANSI_RESET + ANSI_PURPLE + " - Send a message to a node"+ ANSI_RESET);
         System.out.println(ANSI_GREEN + "4 - (h)  "+  ANSI_UNDERLINE + "Help"+ ANSI_RESET);
         System.out.println(ANSI_GREEN + "5 - (e)  "+  ANSI_UNDERLINE + "Exit" + ANSI_RESET + ANSI_PURPLE + " - Exit the program"+ ANSI_RESET);
+    
+        System.out.println(ANSI_GREEN + "6 - (iinfo 0)  " + ANSI_UNDERLINE + "Disable internal info logging" + ANSI_RESET + ANSI_PURPLE + " - Disable internal info logging on the terminal" + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "7 - (iinfo 1)  " + ANSI_UNDERLINE + "Enable internal info logging" + ANSI_RESET + ANSI_PURPLE + " - Enable internal info logging on the terminal" + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "8 -  (info 0)  " + ANSI_UNDERLINE + "Disable info logging" + ANSI_RESET + ANSI_PURPLE + " - Disable info logging on the terminal" + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "9 -  (info 1)  " + ANSI_UNDERLINE + "Enable info logging" + ANSI_RESET + ANSI_PURPLE + " - Enable info logging on the terminal" + ANSI_RESET);
     }
 
     public String getInput() {

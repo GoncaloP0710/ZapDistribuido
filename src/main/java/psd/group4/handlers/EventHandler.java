@@ -112,7 +112,7 @@ public class EventHandler {
         NodeDTO nextNodeDTO = currentNode.getNextNode();
 
         if (prevNodeDTO.equals(currentNodeDTO) && nextNodeDTO.equals(currentNodeDTO)) { // Only one node in the network
-            InterfaceHandler.erro("Node exited the network successfully");
+            InterfaceHandler.success("Node exited the network successfully");
             return;
         }
         
@@ -192,7 +192,7 @@ public class EventHandler {
         ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateFingerTable, event.getSenderDto(), 0);
         updateFingerTable(new UpdateNodeFingerTableEvent(message)); 
         if (event.getIsExiting() && sharedKeys.remove(event.getInitializer().getHash()) != null)
-            InterfaceHandler.erro("Node exited the network successfully");
+            InterfaceHandler.info("Node exited the network successfully");
 
         if (!event.getInitializer().equals(currentNodeDTO)) { // foward to the next node
             NodeDTO nextNodeDTO = currentNode.getNextNode();

@@ -42,6 +42,15 @@ public class User {
         int serverPort = Integer.parseInt(interfaceHandler.getPort());
         node = new Node(name, serverIp, serverPort);
         userService = new UserService(name, node, keyHandler);
+
+        // Add shutdown hook to handle Ctrl+C
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                userService.exitNode();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }));
         
         mainLoop(); // Main loop - User interface
     }
@@ -73,11 +82,21 @@ public class User {
                     userService.exitNode();
                     System.exit(0);
                     break;
+                case "6":
                 case "iinfo 0":
                     InterfaceHandler.setInternalInfoLoggingEnabled(false);
                     break;
+                case "7":
                 case "iinfo 1":
                     InterfaceHandler.setInternalInfoLoggingEnabled(true);
+                    break;
+                case "8":
+                case "info 0":
+                    InterfaceHandler.setInfoLoggingEnabled(false);
+                    break;
+                case "9":
+                case "info 1":
+                    InterfaceHandler.setInfoLoggingEnabled(true);
                     break;
                 default:
                     InterfaceHandler.erro("Opção inválida!");
