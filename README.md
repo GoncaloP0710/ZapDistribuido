@@ -43,6 +43,11 @@ mvn clean package
 ```
 #### Correr 
 Para correr o ficheiro Jar previamente compilado, use o seguinte comando:
+- Windows:
 ```bash
 java -jar .\target\ZapDistribuido-1.0-SNAPSHOT.jar
+```
+- Linux:
+```bash
+java -jar ./target/ZapDistribuido-1.0-SNAPSHOT.jar
 ```
