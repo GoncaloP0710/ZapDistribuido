@@ -3,6 +3,7 @@ package psd.group4.handlers;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
+import java.util.logging.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,9 +26,53 @@ public class InterfaceHandler {
         "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
     private static final Pattern IP_PATTERN = Pattern.compile(IP_REGEX);
 
+    private static final Logger infoLogger = Logger.getLogger("InfoLogger");
+    private static final Logger errorLogger = Logger.getLogger("ErrorLogger");
+    private static final Logger internalInfoLogger = Logger.getLogger("InternalInfoLogger");
+
+    private static boolean infoLoggingEnabled = true;
+    private static boolean errorLoggingEnabled = true;
+    private static boolean internalInfoLoggingEnabled = true;
 
     public InterfaceHandler() {
         this.scanner = new Scanner(System.in);
+        setupLogger(infoLogger);
+        setupLogger(errorLogger);
+        setupLogger(internalInfoLogger);
+    }
+
+    private void setupLogger(Logger logger) {
+        ConsoleHandler handler = new ConsoleHandler();
+        handler.setLevel(Level.ALL);
+        logger.addHandler(handler);
+        logger.setUseParentHandlers(false);
+    }
+
+    public static void setInfoLoggingEnabled(boolean enabled) {
+        infoLoggingEnabled = enabled;
+        if (infoLoggingEnabled) {
+            infoLogger.setLevel(Level.ALL);
+        } else {
+            infoLogger.setLevel(Level.OFF);
+        }
+    }
+
+    public static void setErrorLoggingEnabled(boolean enabled) {
+        errorLoggingEnabled = enabled;
+        if (errorLoggingEnabled) {
+            errorLogger.setLevel(Level.ALL);
+        } else {
+            errorLogger.setLevel(Level.OFF);
+        }
+    }
+
+    public static void setInternalInfoLoggingEnabled(boolean enabled) {
+        internalInfoLoggingEnabled = enabled;
+        if (internalInfoLoggingEnabled) {
+            internalInfoLogger.setLevel(Level.ALL);
+        } else {
+            internalInfoLogger.setLevel(Level.OFF);
+        }
     }
 
     public void startUp(){
@@ -105,7 +150,9 @@ public class InterfaceHandler {
 
     public static void info(String s) {
         String dateTime = getCurrentDateTime();
-        System.out.println(ANSI_YELLOW + ANSI_UNDERLINE + dateTime + ANSI_RESET + " | " + ANSI_YELLOW + "[i]Info:" + " " + s + ANSI_RESET);
+        if (infoLoggingEnabled) {
+            System.out.println(ANSI_YELLOW + ANSI_UNDERLINE + dateTime + ANSI_RESET + " | " + ANSI_YELLOW + "[i]Info:" + " " + s + ANSI_RESET);
+        }
     }
 
     public static void success(String s) {
@@ -120,7 +167,9 @@ public class InterfaceHandler {
 
     public static void internalInfo(String s) {
         String dateTime = getCurrentDateTime();
-        System.out.println(ANSI_CYAN + ANSI_UNDERLINE + dateTime + ANSI_RESET + " | " + ANSI_CYAN + "[i]Internal Info:" + " " + s + ANSI_RESET);
+        if (internalInfoLoggingEnabled) {
+            System.out.println(ANSI_CYAN + ANSI_UNDERLINE + dateTime + ANSI_RESET + " | " + ANSI_CYAN + "[i]Internal Info:" + " " + s + ANSI_RESET);
+        }
     }
 
     public void help(){

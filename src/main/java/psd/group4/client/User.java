@@ -1,6 +1,8 @@
 package psd.group4.client;
 
 import java.security.InvalidKeyException;
+import java.util.logging.Level;
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
@@ -45,6 +47,7 @@ public class User {
     }
 
     private static void mainLoop() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException, Exception {
+        interfaceHandler.help();
         while (true) {
             String option = interfaceHandler.getInput();
                switch (option) {
@@ -69,6 +72,12 @@ public class User {
                 case "e":
                     userService.exitNode();
                     System.exit(0);
+                    break;
+                case "iinfo 0":
+                    InterfaceHandler.setInternalInfoLoggingEnabled(false);
+                    break;
+                case "iinfo 1":
+                    InterfaceHandler.setInternalInfoLoggingEnabled(true);
                     break;
                 default:
                     InterfaceHandler.erro("Opção inválida!");

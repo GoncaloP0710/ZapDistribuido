@@ -30,19 +30,19 @@ Para obter uma encriptação "end-to-end", decidimos enviar a mensagem encriptad
 
 Para este projeto, o grupo decidiu utilizar a linguagem `Java`. Isto implica ter uma instalação do mesmo para conseguir executar o projeto.
 
-Além disso, com base na nossa implementação do sistema Chord, o primeiro utilizador a entrar na rede é denominado como o `default node` e necessita de ter como IP, porta e nome: localhost, 8080 e "Wang", respetivamente. Este requirimento deve-se ao facto de facilitar o encontro com um node presente na network quando um novo se liga. Se este se desconectar a rede permanece funcional mas mais nenhum user se vai poder juntar.
+Além disso, com base na nossa implementação do sistema Chord, o primeiro utilizador a entrar na rede é denominado como o `default node` e necessita de ter como IP, porta e nome: IP onde este foi criado (ou se ainda não existir, escolher o IP da rede do seu computador), 8080 e "Wang", respetivamente. Este requirimento deve-se ao facto de facilitar o encontro com um node presente na network quando um novo se liga. Se este se desconectar a rede permanece funcional mas mais nenhum user se vai poder juntar.
 
-## Project Limitations
-
-Uma vez que o professor indicou que os testes seriam realizados no mesmo computador, foi decidido usar "localhost" como IP predefinido.
+Por fim, como manager de dependencias decidimos utilizar a ferramenta do `Maven`, o que implica ter este instalado de modo a correr o projeto.
 
 ## How to run the project
 
 #### Complilar 
-```
+Para compilar o projeto use o seguinte comando Mavem:
+```bash
 mvn clean package
 ```
 #### Correr 
-```
+Para correr o ficheiro Jar previamente compilado, use o seguinte comando:
+```bash
 java -jar .\target\ZapDistribuido-1.0-SNAPSHOT.jar
 ```
