@@ -32,7 +32,7 @@ Para este projeto, o grupo decidiu utilizar a linguagem `Java`. Isto implica ter
 
 Além disso, com base na nossa implementação do sistema Chord, o primeiro utilizador a entrar na rede é denominado como o `default node` e necessita de ter como IP, porta e nome: IP onde este foi criado (ou se ainda não existir, escolher o IP da rede do seu computador), 8080 e "Wang", respetivamente. Este requirimento deve-se ao facto de facilitar o encontro com um node presente na network quando um novo se liga. Se este se desconectar a rede permanece funcional mas mais nenhum user se vai poder juntar.
 
-Para o programa funcionar é necessário ir a src\main\java\psd\group4\client\UserService.java linha 26 e mudar a varivel ipDefault para ter o ip da máquina onde o default node está a correr. Caso contrário o programa não vai funcionar.
+`Para o programa funcionar é necessário ir a src\main\java\psd\group4\client\UserService.java linha 26 e mudar a varivel ipDefault para ter o ip da máquina onde o default node está a correr. Caso contrário o programa não vai funcionar.`
 
 Por fim, como manager de dependencias decidimos utilizar a ferramenta do `Maven`, o que implica ter este instalado de modo a correr o projeto.
 
