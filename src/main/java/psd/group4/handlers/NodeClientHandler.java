@@ -40,6 +40,11 @@ public class NodeClientHandler {
         this.truststoreFile = keyHandler.getTrustStoreFile();
     }
 
+    /**
+     * Handles the end of a conection with a node
+     * 
+     * @param node
+     */
     public void endConection (NodeDTO node) {
         if (threads.get(node.getHash()) == null) {
             InterfaceHandler.info("There is no conection with: " + node.getUsername());

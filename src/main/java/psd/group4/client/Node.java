@@ -79,7 +79,7 @@ public class Node {
     }
 
     /**
-     * 
+     * Check if the node is the default node
      * 
      * @param ip default ip
      * @param port default port
@@ -131,6 +131,12 @@ public class Node {
         return sb.toString();
     }
 
+    /**
+     * Checks if the node with the name given belongs to the finger table
+     * 
+     * @param name
+     * @return
+     */
     public NodeDTO belongsToFingerTable(String name) {
         for (NodeDTO node : fingerTable) {
             if (node.getUsername().equals(name)) {

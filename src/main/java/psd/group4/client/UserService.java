@@ -156,6 +156,16 @@ public class UserService implements UserServiceInterface {
         return closestFingerNode;
     }
 
+    /**
+     * Handles the user input and calls the respective method to send the message
+     * 
+     * @param interfaceHandler
+     * @throws InvalidKeyException
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     * @throws NoSuchPaddingException
+     * @throws Exception
+     */
     public void sendMessage(InterfaceHandler interfaceHandler) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException, Exception {
         nodeSendMessageLock.lock();
         try {
@@ -189,15 +199,11 @@ public class UserService implements UserServiceInterface {
     }
 
     @Override
-    public void processEvent(NodeEvent e) {
+    public void processEvent(NodeEvent e) { // Forwards the event to the event handler
         if (e instanceof EnterNodeEvent) {
             try {
                 eventHandler.enterNode((EnterNodeEvent) e);
-            } catch (NoSuchAlgorithmException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            } catch (InterruptedException e1) {
-                // TODO Auto-generated catch block
+            } catch (NoSuchAlgorithmException | InterruptedException e1) {
                 e1.printStackTrace();
             }
         } else if (e instanceof UpdateNeighboringNodesEvent) {
@@ -206,14 +212,12 @@ public class UserService implements UserServiceInterface {
             try {
                 eventHandler.updateFingerTable((UpdateNodeFingerTableEvent) e);
             } catch (NoSuchAlgorithmException e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
         } else if (e instanceof BroadcastUpdateFingerTableEvent) {
             try {
                 eventHandler.broadcastMessage(((BroadcastUpdateFingerTableEvent) e));
             } catch (NoSuchAlgorithmException e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
         } else if (e instanceof NodeSendMessageEvent) {
@@ -226,7 +230,6 @@ public class UserService implements UserServiceInterface {
             try {
                 eventHandler.addCertificateToTrustStore((AddCertificateToTrustStoreEvent) e);
             } catch (Exception e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
         } else if (e instanceof DiffHellmanEvent) {

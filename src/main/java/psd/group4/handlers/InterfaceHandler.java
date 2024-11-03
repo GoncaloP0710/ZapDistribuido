@@ -34,6 +34,9 @@ public class InterfaceHandler {
     private static boolean errorLoggingEnabled = true;
     private static boolean internalInfoLoggingEnabled = true;
 
+    /**
+     * Constructor
+     */
     public InterfaceHandler() {
         this.scanner = new Scanner(System.in);
         setupLogger(infoLogger);
@@ -41,6 +44,11 @@ public class InterfaceHandler {
         setupLogger(internalInfoLogger);
     }
 
+    /**
+     * Setup the logger
+     * 
+     * @param logger Logger to be setup
+     */
     private void setupLogger(Logger logger) {
         ConsoleHandler handler = new ConsoleHandler();
         handler.setLevel(Level.ALL);
@@ -48,6 +56,11 @@ public class InterfaceHandler {
         logger.setUseParentHandlers(false);
     }
 
+    /**
+     * Enable or disable info logging
+     * 
+     * @param enabled true to enable, false to disable
+     */
     public static void setInfoLoggingEnabled(boolean enabled) {
         infoLoggingEnabled = enabled;
         if (infoLoggingEnabled) {
@@ -63,6 +76,11 @@ public class InterfaceHandler {
         }
     }
 
+    /**
+     * Enable or disable error logging
+     * 
+     * @param enabled true to enable, false to disable
+     */
     public static void setErrorLoggingEnabled(boolean enabled) {
         errorLoggingEnabled = enabled;
         if (errorLoggingEnabled) {
@@ -78,6 +96,11 @@ public class InterfaceHandler {
         }
     }
 
+    /**
+     * Enable or disable internal info logging
+     * 
+     * @param enabled true to enable, false to disable
+     */
     public static void setInternalInfoLoggingEnabled(boolean enabled) {
         internalInfoLoggingEnabled = enabled;
         if (internalInfoLoggingEnabled) {
@@ -93,12 +116,18 @@ public class InterfaceHandler {
         }
     }
 
+    /**
+     * Print the startup message
+     */
     public void startUp() {
         System.out.println(ANSI_GREEN + "----------------------------------" + ANSI_RESET);
         System.out.println(ANSI_GREEN + "-------" + ANSI_UNDERLINE + "WHATSAPP DISTRIBUIDO" + ANSI_RESET + ANSI_GREEN + "-------" + ANSI_RESET);
         System.out.println(ANSI_GREEN + "----------------------------------" + ANSI_RESET);
     }
 
+    /**
+     * Get the username from the user
+     */
     public String getUserName(){
         do {
             System.out.print("Insira o seu Username: ");
@@ -111,6 +140,9 @@ public class InterfaceHandler {
         } while (true);
     }
 
+    /**
+     * Get the password from the user
+     */
     public String getPassword(){
         do {
             System.out.print("Insira a sua password: ");
@@ -123,6 +155,9 @@ public class InterfaceHandler {
         } while (true);
     }
 
+    /**
+     * Get the port from the user
+     */
     public String getPort(){
         do {
             System.out.print("Insira port: ");
@@ -135,6 +170,9 @@ public class InterfaceHandler {
         } while (true);
     }
 
+    /**
+     * Get the IP from the user
+     */
     public String getIP() {
         do {
             System.out.print("Insira o seu ip: ");
@@ -147,25 +185,44 @@ public class InterfaceHandler {
         } while (true);
     }
 
+    /**
+     * Verify if the IP is valid
+     * 
+     * @param ip IP to be verified
+     */
     private boolean isValidIP(String ip) {
         Matcher matcher = IP_PATTERN.matcher(ip);
         return matcher.matches();
     }
 
+    /**
+     * Get the current date and time
+     */
     private static String getCurrentDateTime() {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
         return dtf.format(LocalDateTime.now());
     }
 
+    /**
+     * Print a error message to the user
+     */
     public static void erro() {
         System.out.println(ANSI_RED + "[e] Error: Ocorreu um erro" + ANSI_RESET);
     }
 
+    /**
+     * Print a error message to the user
+     * 
+     * @param s Error message
+     */
     public static void erro(String s) {
         String dateTime = getCurrentDateTime();
         System.out.println(ANSI_RED + ANSI_UNDERLINE + dateTime + ANSI_RESET + " | " + ANSI_RED + "[e]Error:" + " " + s + ANSI_RESET);
     }
 
+    /**
+     * Print a info message to the user
+     */
     public static void info(String s) {
         String dateTime = getCurrentDateTime();
         if (infoLoggingEnabled) {
@@ -173,16 +230,29 @@ public class InterfaceHandler {
         }
     }
 
+    /**
+     * Print a success message to the user
+     */
     public static void success(String s) {
         String dateTime = getCurrentDateTime();
         System.out.println(ANSI_GREEN + ANSI_UNDERLINE + dateTime + ANSI_RESET + " | " + ANSI_GREEN + "[s]Success:" + " " + s + ANSI_RESET);
     }
 
+    /**
+     * Print a message received to the user
+     * 
+     * @param s Message received
+     */
     public static void messageRecived(String s) {
         String dateTime = getCurrentDateTime();
         System.out.println(ANSI_PURPLE + ANSI_UNDERLINE + dateTime + ANSI_RESET + " | " + ANSI_PURPLE + "[m]Message:" + " " + s + ANSI_RESET);
     }
 
+    /**
+     * Print a internal Info message to the user
+     * 
+     * @param s Message sent
+     */
     public static void internalInfo(String s) {
         String dateTime = getCurrentDateTime();
         if (internalInfoLoggingEnabled) {
@@ -190,6 +260,9 @@ public class InterfaceHandler {
         }
     }
 
+    /**
+     * Print the help menu
+     */
     public void help(){
         System.out.println(ANSI_GREEN + "1 - (ne) " +  ANSI_UNDERLINE + "Print neighbors" + ANSI_RESET + ANSI_PURPLE + " - Print the neighbors of the node"+ ANSI_RESET);
         System.out.println(ANSI_GREEN + "2 - (pn) "+  ANSI_UNDERLINE + "Print node" + ANSI_RESET + ANSI_PURPLE + " - Print the node information"+ ANSI_RESET);
@@ -203,6 +276,9 @@ public class InterfaceHandler {
         System.out.println(ANSI_GREEN + "9 -  (info 1)  " + ANSI_UNDERLINE + "Enable info logging" + ANSI_RESET + ANSI_PURPLE + " - Enable info logging on the terminal" + ANSI_RESET);
     }
 
+    /**
+     * Get the user input
+     */
     public String getInput() {
         if (scanner.hasNextLine()) {
             return scanner.nextLine();
@@ -212,6 +288,11 @@ public class InterfaceHandler {
         }
     }
 
+    /**
+     * Get the user multiple input
+     * 
+     * @param s number of lines to get
+     */
     public String[] getMultipleInput(int n){
         Scanner sc = new Scanner(System.in);
         String s[] = new String[n];

@@ -17,6 +17,18 @@ public class EncryptionHandler{
 
     public EncryptionHandler(){}
 
+    /**
+     * Encrypts data with a private key
+     * 
+     * @param data
+     * @param chave
+     * @return 
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     * @throws InvalidKeyException
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchPaddingException
+     */
     public static byte[] encryptWithPrivK(byte[] data, PrivateKey chave) //encripta com chave privada do emissor
     throws  IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
         
@@ -27,6 +39,18 @@ public class EncryptionHandler{
         return c.doFinal(data);
     }
 
+    /**
+     * Encrypts data with a public key
+     * 
+     * @param data
+     * @param chave
+     * @return
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     * @throws InvalidKeyException
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchPaddingException
+     */
     public static byte[] encryptWithPubK(byte[] data, PublicKey chave) //encripta com a chave publica do recetor
     throws  IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
   
@@ -38,6 +62,18 @@ public class EncryptionHandler{
 
     }
 
+    /**
+     * Decrypts data with a private key
+     * 
+     * @param data
+     * @param chave
+     * @return
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     * @throws InvalidKeyException
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchPaddingException
+     */
     public static byte[] decryptWithPrivK(byte[] data, PrivateKey chave) //desencripta com chave privada do recetor
     throws  IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
         
@@ -48,6 +84,18 @@ public class EncryptionHandler{
         return c.doFinal(data);
     }
 
+    /**
+     * Decrypts data with a public key
+     * 
+     * @param data
+     * @param chave
+     * @return
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     * @throws InvalidKeyException
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchPaddingException
+     */
     public static byte[] decryptWithPubK(byte[] data, PublicKey chave) //desencriptar com a chave publica do emissor
     throws  IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
         
@@ -58,6 +106,18 @@ public class EncryptionHandler{
         return c.doFinal(data);
     }
 
+    /**
+     * Encrypts data with a symmetric key
+     * 
+     * @param data
+     * @param key
+     * @return
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     * @throws InvalidKeyException
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchPaddingException
+     */
     public static byte[] encryptWithKey(byte[] data, byte[] key) //encripta com chave custom (em byte[])
     throws  IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
         if (key.length != 32) {
@@ -70,6 +130,18 @@ public class EncryptionHandler{
         return cipher.doFinal(data);
     }
 
+    /**
+     * Decrypts data with a symmetric key
+     * 
+     * @param data
+     * @param key
+     * @return
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     * @throws InvalidKeyException
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchPaddingException
+     */
     public static byte[] decryptWithKey(byte[] data, byte[] key)  //desencripta com chave custom (em byte[])
     throws  IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
         if (key.length != 32) {
@@ -82,6 +154,12 @@ public class EncryptionHandler{
         return cipher.doFinal(data);
     }
 
+    /**
+     * Creates a hash of a message
+     * 
+     * @param data
+     * @return
+     */
     public static byte[] createMessageHash(byte[] data) { // cria hash de uma mensagem
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

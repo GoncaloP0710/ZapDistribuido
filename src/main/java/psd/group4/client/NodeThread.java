@@ -56,6 +56,11 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         }
     }
 
+    /**
+     * Add a message to the queue
+     * 
+     * @param msg
+     */
     public void addMessage(Message msg) {
         if (msg == null) {
             return;
@@ -63,6 +68,11 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         messageQueue.offer(msg);
     }
     
+    /**
+     * Remove a message from the queue
+     * 
+     * @param msg
+     */
     public void removeMessage(Message msg) {
         messageQueue.remove(msg);
     }
@@ -71,6 +81,9 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         return new ArrayList<>(messageQueue);
     }   
 
+    /**
+     * Send messages to the node receiver
+     */
     private void sendMsg() {
         try {
             while (running) {
@@ -87,6 +100,9 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         }
     }
 
+    /**
+     * Receive messages from the node sender and sends them to the processMessages function
+     */
     private void reciveMsg() {
         try {
             while (running) {
@@ -101,6 +117,11 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
         }
     }
 
+    /**
+     * Process the messages received
+     * 
+     * @param messageToProcess
+     */
     private void processMessages(Message messageToProcess) {
         try {
             InterfaceHandler.internalInfo("Processing message: " + messageToProcess.getMsgType());
@@ -111,7 +132,7 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
     }
 
     /**
-     * Transform the command on a NodeEvent
+     * Transform the command on a NodeEvent and emit it
      * 
      * @param command
      * @return

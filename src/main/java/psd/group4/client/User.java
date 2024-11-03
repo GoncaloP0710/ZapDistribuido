@@ -55,6 +55,15 @@ public class User {
         mainLoop(); // Main loop - User interface
     }
 
+    /**
+     * Main loop of the user interface that handles the user input
+     * 
+     * @throws InvalidKeyException
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     * @throws NoSuchPaddingException
+     * @throws Exception
+     */
     private static void mainLoop() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException, Exception {
         interfaceHandler.help();
         while (true) {

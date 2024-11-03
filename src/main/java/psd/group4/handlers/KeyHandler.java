@@ -31,6 +31,13 @@ public class KeyHandler {
     private String trustStorePath;
     private String certificatePath;
 
+    /**
+     * Creates an instance of KeyHandler if it doesnt exit yet
+     * 
+     * @param keyStorePassword
+     * @param keystoreSting
+     * @throws Exception
+     */
     public static KeyHandler getInstance(String keyStorePassword, String keystoreString) throws Exception {
         if (instance == null) {
             instance = new KeyHandler(keyStorePassword, keystoreString);
@@ -38,6 +45,13 @@ public class KeyHandler {
         return instance;
     }
 
+    /**
+     * Creates a new instance of KeyHandler even if it already exists
+     * 
+     * @param keyStorePassword
+     * @param keystoreSting
+     * @throws Exception
+     */
     public static KeyHandler newInstance(String keyStorePassword, String keystoreString) throws Exception {
         instance = new KeyHandler(keyStorePassword, keystoreString);
         return instance;
@@ -67,6 +81,11 @@ public class KeyHandler {
         
     }
 
+    /**
+     * Calls the necessary functions for the inialization process of KeyHandler
+     * 
+     * @throws Exceptiom
+     */
     public void initialize() throws Exception{
         if(!isFirstTimeUser(keyStoreString)){ //existing user
             try {
@@ -84,11 +103,22 @@ public class KeyHandler {
         this.certificate = getCertificate(keyStoreString);
     }
 
+    /**
+     * Determines if the user already exists or not
+     * 
+     * @param userName
+     */
     public Boolean isFirstTimeUser(String userName) {
         File userFile = new File("files/" + userName + "/" + userName + ".jks");
         return !userFile.exists();
     }
 
+    /**
+     * Determines if the files for keyStore, trustStore and Certificate exists
+     * 
+     * @param userName
+     * @throws Exception
+     */
     public Boolean existsStore(String userName) throws Exception {
         File keyStoreFile = new File(keyStorePath);
         File trustStoreFile = new File(trustStorePath);
@@ -105,6 +135,11 @@ public class KeyHandler {
         return true;
     }
 
+    /**
+     * Loads the keyStore
+     * 
+     * @throws Exception
+     */
     public void loadKeyStore() throws Exception {
         keyStore = KeyStore.getInstance("JKS");
         try(FileInputStream fis = new FileInputStream(keyStorePath)){
@@ -116,6 +151,11 @@ public class KeyHandler {
  
     }
 
+    /**
+     * Loads the trustStore
+     * 
+     * @throws Exception
+     */
     public void loadTrustStore() throws Exception { 
         trustStore = KeyStore.getInstance("JKS");
         try (FileInputStream fis = new FileInputStream(trustStoreFile)) {
@@ -126,6 +166,11 @@ public class KeyHandler {
 
     }
 
+    /**
+     * Calls all functions required for a new user
+     * 
+     * @throws Exception
+     */
     public void firstTimeUser() throws Exception{
         createKeyStore();
         createCertificate();
@@ -133,6 +178,15 @@ public class KeyHandler {
         addCertificateToTrustStore(keyStoreString, keyStore.getCertificate(keyStoreString));
     }
 
+    /**
+     * Creates a new keyStore file and loads it
+     * 
+     * @throws KeyStoreException
+     * @throws NoSuchAlgorithmException
+     * @throws CertificateException
+     * @throws IOException
+     * @throws InterruptedException
+     */
     public void createKeyStore() 
     throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, InterruptedException {
 
@@ -169,6 +223,15 @@ public class KeyHandler {
         }
     }
 
+    /**
+     * Creates a new trustStore file and loads it
+     * 
+     * @throws KeyStoreException
+     * @throws NoSuchAlgorithmException
+     * @throws CertificateException
+     * @throws IOException
+     * @throws InterruptedException
+     */
     public void createTrustStore () 
     throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, InterruptedException {
         // String trustStoreFilePath = "files/" + keyStoreString + "_TrustStore" + ".jks";
@@ -202,6 +265,11 @@ public class KeyHandler {
         }
     }
 
+    /**
+     * Creates a new certificate file
+     * 
+     * @throws Exception
+     */
     public void createCertificate() throws Exception{
         // String certificateFilePath = "files/" + keyStoreString + ".cer";
 
@@ -217,6 +285,11 @@ public class KeyHandler {
         
     }
 
+    /**
+     * Prints Errors associated with keytool
+     * 
+     * @param proc
+     */
     public void printKeytoolError(Process proc) 
     throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, InterruptedException {
         if (proc.exitValue() != 0) {
@@ -236,6 +309,13 @@ public class KeyHandler {
     }
 
 
+    /**
+     * Adds the given certificate to this users trustStore
+     * 
+     * @param username
+     * @param cer
+     * @throws Exception
+     */
     public void addCertificateToTrustStore(String username, Certificate cer) throws Exception {
         // String trustStoreFilePath = "files/" + keyStoreString + "_TrustStore" + ".jks";
 

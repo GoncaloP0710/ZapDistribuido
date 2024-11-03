@@ -59,6 +59,11 @@ public class EventHandler {
         clientHandler = userService.getClientHandler();
     }
 
+    /**
+     * Update the neighbors of the current node
+     * 
+     * @param event
+     */
     public synchronized void updateNeighbors(UpdateNeighboringNodesEvent event) {
         if (event.getNext() != null) {
             currentNode.setNextNode(event.getNext());
@@ -72,6 +77,13 @@ public class EventHandler {
         handleNotify(new NotifyEvent(new ChordInternalMessage(MessageType.Notify, event.getInitializer())));
     }
 
+    /**
+     * Handles the enter node event
+     * 
+     * @param event
+     * @throws NoSuchAlgorithmException
+     * @throws InterruptedException
+     */
     public void enterNode(EnterNodeEvent event) throws NoSuchAlgorithmException, InterruptedException {
         enterNodeLock.lock();
         try {
@@ -107,6 +119,12 @@ public class EventHandler {
         }
     }
 
+    /**
+     * Handles the node trying to exit the network
+     * 
+     * @throws NoSuchAlgorithmException
+     * @throws InterruptedException
+     */
     public synchronized void exitNode() throws NoSuchAlgorithmException, InterruptedException {
         NodeDTO prevNodeDTO = currentNode.getPreviousNode();
         NodeDTO nextNodeDTO = currentNode.getNextNode();
@@ -142,18 +160,18 @@ public class EventHandler {
         InterfaceHandler.success("Node exited the network successfully");
     }
 
+    /**
+     * Handles the update finger table event
+     * 
+     * @param event
+     * @throws NoSuchAlgorithmException
+     */
     public synchronized void updateFingerTable(UpdateNodeFingerTableEvent event) throws NoSuchAlgorithmException {
         ChordInternalMessage message = (ChordInternalMessage) event.getMessage();
         int counter = event.getCounter();
         NodeDTO nodeToUpdateDTO = event.getNodeToUpdate(); // Node that started the event
     
         if (currentNodeDTO.equals(nodeToUpdateDTO)) { // Update the finger table of the current node
-
-            //try { // Wait for 1 second intervals
-            //    wait(3000);
-            //} catch (InterruptedException e) {
-            //    e.printStackTrace();
-            //} 
 
             for (NodeDTO node : userService.getCurrentNode().getFingerTable()) {
                 if (!message.getFingerTable().contains(node)) {
@@ -188,6 +206,12 @@ public class EventHandler {
         clientHandler.startClient(nextNode.getIp(), nextNode.getPort(), message, false, nextNode.getUsername());
     }
     
+    /**
+     * Recives the message and fowards it to all network eventually
+     * 
+     * @param event
+     * @throws NoSuchAlgorithmException
+     */
     public synchronized void broadcastMessage(BroadcastUpdateFingerTableEvent event) throws NoSuchAlgorithmException {
         ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateFingerTable, event.getSenderDto(), 0);
         updateFingerTable(new UpdateNodeFingerTableEvent(message)); 
@@ -201,6 +225,12 @@ public class EventHandler {
         }
     }
 
+    /**
+     * Sends, Recives and fowards the messages between the nodes
+     * 
+     * @param event
+     * @throws Exception
+     */
     public synchronized void sendUserMessage(NodeSendMessageEvent event) throws Exception {
         if (currentNodeDTO.getHash().equals(event.getReciver()) || currentNodeDTO.getHash().equals(event.getSenderDTO().getHash())) { // Arrived at a node that needs the shared key
             long startTime = System.currentTimeMillis();
@@ -260,6 +290,14 @@ public class EventHandler {
         }
     }
 
+    /**
+     * Makes the signature of the bytes received (hash)
+     * 
+     * @param hash
+     * @param privK
+     * @return
+     * @throws Exception
+     */
     private byte[] getSignature(byte[] hash, PrivateKey privK) throws Exception {
         Signature signature = Signature.getInstance("SHA256withRSA");
         signature.initSign(privK);
@@ -268,6 +306,15 @@ public class EventHandler {
         return digitalSignature;
     }
 
+    /**
+     * Verifies the signature of the message with the public key of the sender
+     * 
+     * @param senderPubKey
+     * @param messageEncrypted
+     * @param hashSigned
+     * @return
+     * @throws Exception
+     */
     private boolean verifySignature(PublicKey senderPubKey, byte[] messageEncrypted, byte[] hashSigned) throws Exception {
         Signature signature = Signature.getInstance("SHA256withRSA");
         signature.initVerify(senderPubKey);
@@ -276,6 +323,12 @@ public class EventHandler {
          return signature.verify(hashSigned);
     }
 
+    /**
+     * Handles the event of adding a certificate to the truststore as well as the Diffie-Hellman key exchange to make the process secure
+     * 
+     * @param e
+     * @throws Exception
+     */
     public void addCertificateToTrustStore(AddCertificateToTrustStoreEvent e) throws Exception {   
         if (currentNodeDTO.getUsername().equals(e.getAliasSender()) && e.getTargetPublicKey() == null) { // First time on the initializer
             
@@ -351,6 +404,13 @@ public class EventHandler {
         }
     }
 
+    /**
+     * Handles the Diffie-Hellman key exchange between the nodes to make the process of sending messages secure
+     * 
+     * @param e
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeyException
+     */
     public synchronized void diffieHellman (DiffHellmanEvent e) throws NoSuchAlgorithmException, InvalidKeyException {
         
         NodeDTO closestNodeToTarget = null;
@@ -415,6 +475,12 @@ public class EventHandler {
         clientHandler.startClient(closestNodeToTarget.getIp(), closestNodeToTarget.getPort(), e.getMessage(), false, closestNodeToTarget.getUsername());
     }
 
+    /**
+     * Add a message to the ConcurrentHashMap messages
+     * 
+     * @param target
+     * @param message
+     */
     public void addMessage(BigInteger target, byte[] message) {
         messages.put(target, message);
     }
@@ -423,6 +489,11 @@ public class EventHandler {
         return sharedKeys.get(name); 
     }
 
+    /**
+     * Handles the notify event
+     * 
+     * @param e
+     */
     public void handleNotify(NotifyEvent e) {
         if (currentNodeDTO.getHash().equals(e.getTarget().getHash())) {
             synchronized (locker) {
@@ -442,6 +513,11 @@ public class EventHandler {
         }
     }
 
+    /**
+     * Handles the remove shared key event
+     * 
+     * @param e
+     */
     public void removeSharedKey(RemoveSharedKeyEvent e) {
         if (currentNodeDTO.getHash().equals(e.getTarget())) {
             sharedKeys.remove(e.getInitializer().getHash());

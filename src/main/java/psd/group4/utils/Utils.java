@@ -33,6 +33,11 @@ public final class Utils {
     private Utils() {
     }
 
+    /**
+     * Create a directory if it does not exist
+     * 
+     * @param path
+     */
     public static void createDir(String path) {
         File serverFilesDir = new File(path);
         if (!serverFilesDir.exists()) {
@@ -40,20 +45,41 @@ public final class Utils {
         }
     }
 
+    /**
+     * Generate a random nonce
+     * 
+     * @return nonce
+     */
     public static Long nonceGenarator() {
         return SECRANDOM.nextLong();
     }
 
+    /**
+     * Generate a random salt
+     * 
+     * @return salt
+     */
     public static byte[] generateSalt() {
         byte[] salt = new byte[16];
         SECRANDOM.nextBytes(salt);
         return salt;
     }
 
+    /**
+     * Generate a random number of iterations
+     * 
+     * @return iterations
+     */
     public static int generateIterations() {
         return SECRANDOM.nextInt(1000) + 1000;
     }
 
+    /**
+     * Check if a number is a power of two
+     * 
+     * @param n number to check
+     * @return true if n is a power of two, false otherwise
+     */
     public static boolean isPowerOfTwo(int n) {
         return (n > 0) && ((n & (n - 1)) == 0);
     }
@@ -65,8 +91,8 @@ public final class Utils {
     /**
      * Instead of the ip and port we use name to be easier to find the user in the ring
      * 
-     * @param name
-     * @return
+     * @param name 
+     * @return hashNumber
      * @throws NoSuchAlgorithmException
      */
     public static BigInteger calculateHash(String name) throws NoSuchAlgorithmException {
@@ -114,6 +140,12 @@ public final class Utils {
         }
     }
 
+    /**
+     * Generate a key pair for the Diffie-Hellman key exchange
+     * 
+     * @return key pair
+     * @throws NoSuchAlgorithmException
+     */
     public static KeyPair generateKeyPair() throws NoSuchAlgorithmException {
         // Step 1: Generate parameters
         int primeLength = 2048;
@@ -125,6 +157,15 @@ public final class Utils {
         return userKeyPair;
     }
 
+    /**
+     * Compute the shared secret key
+     * 
+     * @param userPrivateKey
+     * @param pubK
+     * @return shared secret key
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeyException
+     */
     public static byte[] computeSKey(PrivateKey userPrivateKey, PublicKey pubK) throws NoSuchAlgorithmException, InvalidKeyException {
         // Step 4: Compute the shared secret
         KeyAgreement userKeyAgreement = KeyAgreement.getInstance("DH");
@@ -138,6 +179,12 @@ public final class Utils {
         return aesKey;
     }
 
+    /**
+     * Convert a byte array to a certificate
+     * 
+     * @param bytes
+     * @return certificate
+     */
     public static Certificate byteArrToCertificate(byte[] bytes){
         try{
             CertificateFactory certFactory = CertificateFactory.getInstance("X.509");

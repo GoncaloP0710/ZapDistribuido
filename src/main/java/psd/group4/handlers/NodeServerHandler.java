@@ -35,6 +35,12 @@ public class NodeServerHandler {
         this.truststoreFile = keyHandler.getTrustStoreFile();
     }
     
+    /**
+     * Start the server in a new thread
+     * 
+     * @param node
+     * @param secure
+     */
     public void startServerInThread(Node node, boolean secure) {
         Runnable serverTask = () -> {
             try {
@@ -52,6 +58,13 @@ public class NodeServerHandler {
         serverThread.start();
     }
 
+    /**
+     * Start secure server
+     * 
+     * @param node
+     * @throws IOException
+     * @throws KeyStoreException
+     */
     public void startServer(Node node) throws IOException, KeyStoreException {
 
         System.setProperty("javax.net.ssl.keyStore", keystoreFile.toString());
@@ -84,15 +97,25 @@ public class NodeServerHandler {
         }
     }
 
+    /**
+     * Start insecure server
+     * 
+     * @param node
+     * @throws IOException
+     * @throws InterruptedException
+     */
     public void serverInsecure(Node node) throws IOException, InterruptedException {
         String ip = node.getIp();
         int port = node.getPort()+1;
 
-        // Use normal ServerSocket instead of SSLServerSocket
-        ServerSocket sSocket = new ServerSocket(port); //socket novo
+        // Create InetAddress from the IP
+        InetAddress inetAddress = InetAddress.getByName(ip);
+
+        // Use normal ServerSocket instead of SSLServerSocket, binding to the specific IP address
+        ServerSocket sSocket = new ServerSocket(port, 0, inetAddress); //socket novo
 
         while (true) {
-            Socket clientSocket = null; // other node sockets       
+            Socket clientSocket = null; // other node sockets
             try {
                 clientSocket = sSocket.accept();
                 InterfaceHandler.info("New connection from: " + clientSocket.getInetAddress().getHostAddress() + ":" + clientSocket.getPort());
