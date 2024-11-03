@@ -22,6 +22,7 @@ public class EncryptionHandler{
         
         Cipher c = Cipher.getInstance("RSA");
 		c.init(Cipher.ENCRYPT_MODE, chave);
+        InterfaceHandler.info("Data encrypted with private key");
 
         return c.doFinal(data);
     }
@@ -31,6 +32,7 @@ public class EncryptionHandler{
   
         Cipher c = Cipher.getInstance("RSA");
         c.init(Cipher.ENCRYPT_MODE, chave);
+        InterfaceHandler.info("Data encrypted with public key");
 
         return c.doFinal(data);
 
@@ -41,6 +43,7 @@ public class EncryptionHandler{
         
         Cipher c = Cipher.getInstance("RSA");
 		c.init(Cipher.DECRYPT_MODE, chave);
+        InterfaceHandler.info("Data decrypted with private key");
 
         return c.doFinal(data);
     }
@@ -50,6 +53,7 @@ public class EncryptionHandler{
         
         Cipher c = Cipher.getInstance("RSA");
 		c.init(Cipher.DECRYPT_MODE, chave);
+        InterfaceHandler.info("Data decrypted with public key");
 
         return c.doFinal(data);
     }
@@ -62,6 +66,7 @@ public class EncryptionHandler{
         Key secretKey = new SecretKeySpec(key, "AES");
         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
         cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+        InterfaceHandler.info("Data encrypted with session key");
         return cipher.doFinal(data);
     }
 
@@ -73,12 +78,14 @@ public class EncryptionHandler{
         Key secretKey = new SecretKeySpec(key, "AES");
         Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
         cipher.init(Cipher.DECRYPT_MODE, secretKey);
+        InterfaceHandler.info("Data decrypted with session key");
         return cipher.doFinal(data);
     }
 
     public static byte[] createMessageHash(byte[] data) { // cria hash de uma mensagem
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            InterfaceHandler.info("Message hashed");
             return digest.digest(data);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 algorithm not found", e);
