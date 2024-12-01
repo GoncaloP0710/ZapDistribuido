@@ -21,7 +21,31 @@
             <artifactId>mongodb-driver-sync</artifactId>
             <version>4.3.4</version>
         </dependency>
+
+        <!--
+        <dependency>
+            <groupId>com.github.liuweiran900217</groupId>
+            <artifactId>CloudCrypto</artifactId>
+            <version>master-SNAPSHOT</version>
+        </dependency>
+        -->
+
+        <dependency>
+            <groupId>com.github.liuweiran900217</groupId>
+            <artifactId>CloudCrypto</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/libs/CloudCrypto.jar</systemPath>
+        </dependency>
+
     </dependencies>
+
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
 
     <build>
         <plugins>

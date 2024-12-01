@@ -115,7 +115,7 @@ public class User {
                     break;
                 case "10":
                 case "sg":
-
+                    userService.sendGroupMessage(interfaceHandler);
                     break;
                 default:
                     InterfaceHandler.erro("Opção inválida!");

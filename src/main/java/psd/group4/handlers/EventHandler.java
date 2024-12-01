@@ -5,6 +5,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import cn.edu.buaa.crypto.algebra.generators.PairingParametersGenerator;
+import cn.edu.buaa.crypto.encryption.abe.kpabe.gpsw06a.KPABEGPSW06aEngine;
 import psd.group4.utils.Utils;
 import psd.group4.client.Node;
 import psd.group4.client.UserService;
@@ -21,6 +23,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.security.cert.Certificate;
 import java.security.Signature;
+
+
+import cn.edu.buaa.crypto.encryption.abe.kpabe.KPABEEngine;
+
 
 public class EventHandler { 
 
@@ -537,9 +543,10 @@ public class EventHandler {
 
     public void sendGroupMessage(NodeSendGroupMessageEvent event) {
 
-        if (!event.getLeftUser()) { // start of the process
+        String groupName = event.getGroupName();
 
-        }
+        KPABEGPSW06aEngine engine = KPABEGPSW06aEngine.getInstance();
+
 
     }
 

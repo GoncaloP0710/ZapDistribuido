@@ -5,7 +5,7 @@ import java.math.BigInteger;
 import psd.group4.dtos.NodeDTO;
 import psd.group4.message.UserMessage;
 
-public class NodeSendGroupMessageEvent {
+public class NodeSendGroupMessageEvent extends NodeEvent {
     private byte[] messageEncryp;
     private BigInteger receiver;
     private NodeDTO senderDTO;

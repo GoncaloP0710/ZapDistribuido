@@ -1,3 +1,4 @@
+psd/group4/events/NodeSendGroupMessageEvent.class
 psd/group4/message/ChordInternalMessage.class
 psd/group4/message/Message.class
 psd/group4/events/NodeSendMessageEvent.class

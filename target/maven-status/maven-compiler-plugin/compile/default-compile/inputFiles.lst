@@ -26,5 +26,6 @@
 /home/goncalop0710/Desktop/Mestrado/Data-Privacy-and-Security/Data-Privacy-and-Security-Project/src/main/java/psd/group4/events/UpdateNeighboringNodesEvent.java
 /home/goncalop0710/Desktop/Mestrado/Data-Privacy-and-Security/Data-Privacy-and-Security-Project/src/main/java/psd/group4/events/RemoveSharedKeyEvent.java
 /home/goncalop0710/Desktop/Mestrado/Data-Privacy-and-Security/Data-Privacy-and-Security-Project/src/main/java/psd/group4/handlers/EncryptionHandler.java
+/home/goncalop0710/Desktop/Mestrado/Data-Privacy-and-Security/Data-Privacy-and-Security-Project/src/main/java/psd/group4/events/NodeSendGroupMessageEvent.java
 /home/goncalop0710/Desktop/Mestrado/Data-Privacy-and-Security/Data-Privacy-and-Security-Project/src/main/java/psd/group4/message/Message.java
 /home/goncalop0710/Desktop/Mestrado/Data-Privacy-and-Security/Data-Privacy-and-Security-Project/src/main/java/psd/group4/client/NodeThread.java
