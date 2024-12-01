@@ -197,4 +197,17 @@ public final class Utils {
         }
         return null;
     }
+
+    /**
+     * Generate a random byte array to serve as an attribute for ABE
+     * 
+     * @param length the length of the byte array
+     * @return a random byte array
+     */
+    public static byte[] generateRandomAttribute(int length) {
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] randomBytes = new byte[length];
+        secureRandom.nextBytes(randomBytes);
+        return randomBytes;
+    }
 }

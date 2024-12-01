@@ -16,6 +16,11 @@ public class UserMessage extends Message {
     private byte[] messageHash;
     private boolean directMessage; // If the message is a direct message, it is double encrypted. Use only the ssl/tls encryption
 
+    private String groupName;
+
+    /**
+     * Normal message
+     */
     public UserMessage(MessageType messageType, NodeDTO senderDTO, BigInteger receiverHash, byte[] messageEncryp, boolean needConfirmation, byte[] messageHash, boolean directMessage) {
         super(messageType);
         this.receiverHash = receiverHash;
@@ -25,6 +30,18 @@ public class UserMessage extends Message {
         this.needConfirmation = needConfirmation;
         this.messageHash = messageHash;
         this.directMessage = directMessage;
+    }
+
+    /**
+     * Group Message
+     */
+    public UserMessage(MessageType messageType, NodeDTO senderDTO, byte[] messageEncryp, byte[] messageHash, String groupName) {
+        super(messageType);
+        this.senderDTO = senderDTO;
+        this.time = LocalDateTime.now();
+        this.messageEncryp = messageEncryp;
+        this.messageHash = messageHash;
+        this.groupName = groupName;
     }
 
     public LocalDateTime getTime(){
@@ -69,5 +86,9 @@ public class UserMessage extends Message {
 
     public void setMessageHash(byte[] messageHash){
         this.messageHash = messageHash;
+    }
+
+    public String getGroupName(){
+        return this.groupName;
     }
 }

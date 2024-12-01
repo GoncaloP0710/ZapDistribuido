@@ -13,4 +13,5 @@ public enum MessageType {
     diffHellman,
     Notify,
     RemoveSharedKey,
+    SendGroupMsg,
 }

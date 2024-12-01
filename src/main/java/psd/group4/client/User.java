@@ -1,5 +1,7 @@
 package psd.group4.client;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.InvalidKeyException;
 import java.util.logging.Level;
 
@@ -38,7 +40,11 @@ public class User {
             }
         }
 
-        String serverIp = interfaceHandler.getIP();
+        String serverIp = getLocalIpAddress();
+        if (serverIp.equals("-1")) {
+            InterfaceHandler.erro("Erro ao obter o endereço IP local!");
+            serverIp = interfaceHandler.getIP();
+        }
         int serverPort = Integer.parseInt(interfaceHandler.getPort());
         node = new Node(name, serverIp, serverPort);
         userService = new UserService(name, node, keyHandler);
@@ -107,6 +113,10 @@ public class User {
                 case "info 1":
                     InterfaceHandler.setInfoLoggingEnabled(true);
                     break;
+                case "10":
+                case "sg":
+
+                    break;
                 default:
                     InterfaceHandler.erro("Opção inválida!");
                     break;
@@ -116,6 +126,15 @@ public class User {
 
     public String getUserName() {
         return user_name;
+    }
+
+    private static String getLocalIpAddress() {
+        try {
+            InetAddress inetAddress = InetAddress.getLocalHost();
+            return inetAddress.getHostAddress();
+        } catch (UnknownHostException e) {
+            return "-1";
+        }
     }
     
     public boolean equals(Object obj) {

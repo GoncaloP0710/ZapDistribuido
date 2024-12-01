@@ -49,6 +49,10 @@ public class EventHandler {
     // ConcurrentHashMap to store the shared keys
     private ConcurrentHashMap<BigInteger, byte[]> sharedKeys = new ConcurrentHashMap<>();
 
+    // ConcurrentHashMap to store the group attributes
+    private ConcurrentHashMap<String, byte[]> groupAtributes = new ConcurrentHashMap<>();
+
+
     public EventHandler(UserService userService) {
         this.userService = userService;
         ipDefault = userService.getIpDefault();
@@ -529,5 +533,18 @@ public class EventHandler {
                 e1.printStackTrace();
             }
         }
+    }
+
+    public void sendGroupMessage(NodeSendGroupMessageEvent event) {
+
+        if (!event.getLeftUser()) { // start of the process
+
+        }
+
+    }
+
+    public void createGroup(String groupName) {
+        byte[] groupKey = Utils.generateRandomAttribute(32);
+        groupAtributes.put(groupName, groupKey);
     }
 }

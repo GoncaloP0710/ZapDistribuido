@@ -23,7 +23,7 @@ import psd.group4.message.*;
 public class UserService implements UserServiceInterface {
 
    // ---------------------- Default Node ----------------------
-    private String ipDefault = "change to the correct ip";
+    private String ipDefault = "192.168.1.3";
     private int portDefault = 8080;
     private String usernameDefault = "Wang";
     // ----------------------------------------------------------
@@ -184,6 +184,21 @@ public class UserService implements UserServiceInterface {
             UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, reciverHash, message, true, (byte[]) null, false);
             NodeSendMessageEvent e = new NodeSendMessageEvent(userMessage);
             eventHandler.sendUserMessage(e);
+        } finally {
+            nodeSendMessageLock.unlock();
+        }
+    }
+
+    public void sendGroupMessage(InterfaceHandler interfaceHandler) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException, Exception {
+        nodeSendMessageLock.lock();
+        try {
+            System.out.println("Select the group you want to send a message to: ");
+            String reciver = interfaceHandler.getInput();
+            System.out.println("Write the message: ");
+            byte[] message = interfaceHandler.getInput().getBytes();
+        
+            NodeSendGroupMessageEvent event = new NodeSendGroupMessageEvent(new UserMessage(MessageType.SendGroupMsg, currentNodeDTO, message, (byte[]) null, reciver));
+            eventHandler.sendGroupMessage(event);
         } finally {
             nodeSendMessageLock.unlock();
         }
