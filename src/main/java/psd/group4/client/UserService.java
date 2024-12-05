@@ -23,7 +23,7 @@ import psd.group4.message.*;
 public class UserService implements UserServiceInterface {
 
    // ---------------------- Default Node ----------------------
-    private String ipDefault = "192.168.1.3";
+    private String ipDefault = "192.168.1.9";
     private int portDefault = 8080;
     private String usernameDefault = "Wang";
     // ----------------------------------------------------------
@@ -60,7 +60,10 @@ public class UserService implements UserServiceInterface {
         initializeCurrentNodeDTO(username, currentNode, keyHandler.getCertificate(username));
         this.clientHandler = new NodeClientHandler(this);
         this.serverHandler = new NodeServerHandler(this);
-        this.eventHandler = new EventHandler(this);
+        this.eventHandler = new Event            <groupId>org.bouncycastle</groupId>
+        <artifactId>bcprov-jdk18on</artifactId>
+        <version>1.79</version>
+    </dependency>Handler(this);
 
         // ------------------ Start servers ------------------
         serverHandler.startServerInThread(currentNode, false);

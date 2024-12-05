@@ -5,8 +5,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import cn.edu.buaa.crypto.algebra.generators.PairingParametersGenerator;
-import cn.edu.buaa.crypto.encryption.abe.kpabe.gpsw06a.KPABEGPSW06aEngine;
 import psd.group4.utils.Utils;
 import psd.group4.client.Node;
 import psd.group4.client.UserService;
@@ -17,6 +15,7 @@ import psd.group4.message.*;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,9 +23,18 @@ import java.util.concurrent.TimeUnit;
 import java.security.cert.Certificate;
 import java.security.Signature;
 
+// ----------------- Bouncy Castle -----------------
 
-import cn.edu.buaa.crypto.encryption.abe.kpabe.KPABEEngine;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.security.Security;
+import java.util.Base64;
 
 public class EventHandler { 
 
@@ -58,8 +66,9 @@ public class EventHandler {
     // ConcurrentHashMap to store the group attributes
     private ConcurrentHashMap<String, byte[]> groupAtributes = new ConcurrentHashMap<>();
 
-
+ 
     public EventHandler(UserService userService) {
+        Security.addProvider(new BouncyCastleProvider());
         this.userService = userService;
         ipDefault = userService.getIpDefault();
         portDefault = userService.getPortDefault();
@@ -545,8 +554,18 @@ public class EventHandler {
 
         String groupName = event.getGroupName();
 
-        KPABEGPSW06aEngine engine = KPABEGPSW06aEngine.getInstance();
-
+        // KPABEGPSW06aEngine engine = KPABEGPSW06aEngine.getInstance();
+        Cipher cipher;
+        try {
+            cipher = Cipher.getInstance(groupName, "BC");
+            SecretKey key = new SecretKeySpec("1234567890123456".getBytes(), groupName);
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+            byte[] encrypted = cipher.doFinal(event.getMessageEncryp().toString().getBytes());
+        } catch (NoSuchAlgorithmException | NoSuchProviderException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
 
     }
 
