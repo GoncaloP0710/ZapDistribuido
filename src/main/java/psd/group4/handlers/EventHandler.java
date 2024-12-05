@@ -18,6 +18,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Arrays;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.security.cert.Certificate;
@@ -32,6 +34,21 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+
+import org.bouncycastle.crypto.InvalidCipherTextException;
+
+import cn.edu.buaa.crypto.access.parser.ParserUtils;
+import cn.edu.buaa.crypto.access.parser.PolicySyntaxException;
+import cn.edu.buaa.crypto.algebra.serparams.PairingCipherSerParameter;
+import cn.edu.buaa.crypto.algebra.serparams.PairingKeySerPair;
+import cn.edu.buaa.crypto.algebra.serparams.PairingKeySerParameter;
+import cn.edu.buaa.crypto.encryption.abe.kpabe.KPABEEngine;
+import cn.edu.buaa.crypto.encryption.abe.kpabe.gpsw06a.KPABEGPSW06aEngine;
+import it.unisa.dia.gas.jpbc.Element;
+import it.unisa.dia.gas.jpbc.Pairing;
+import it.unisa.dia.gas.jpbc.PairingParameters;
+import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
+import it.unisa.dia.gas.plaf.jpbc.pairing.a.TypeACurveGenerator;
 
 public class EventHandler { 
 
@@ -60,9 +77,13 @@ public class EventHandler {
     // ConcurrentHashMap to store the shared keys
     private ConcurrentHashMap<BigInteger, byte[]> sharedKeys = new ConcurrentHashMap<>();
 
-    // ConcurrentHashMap to store the group attributes
-    private ConcurrentHashMap<String, byte[]> groupAtributes = new ConcurrentHashMap<>();
+    // Fase 2 - Grupos --------------------------------------------
 
+    // ConcurrentHashMap to store the group attributes
+    private ConcurrentHashMap<String, String[]> groupAtributes = new ConcurrentHashMap<>();
+
+    // ConcurrentHashMap to store the group attributes
+    private ConcurrentHashMap<String, String> groupPolicy = new ConcurrentHashMap<>();
  
     public EventHandler(UserService userService) {
         this.userService = userService;
@@ -547,26 +568,124 @@ public class EventHandler {
     }
 
     public void sendGroupMessage(NodeSendGroupMessageEvent event) {
-
-        String groupName = event.getGroupName();
-
-        // KPABEGPSW06aEngine engine = KPABEGPSW06aEngine.getInstance();
-        Cipher cipher;
-        try {
-            cipher = Cipher.getInstance(groupName, "BC");
-            SecretKey key = new SecretKeySpec("1234567890123456".getBytes(), groupName);
-            cipher.init(Cipher.ENCRYPT_MODE, key);
-            byte[] encrypted = cipher.doFinal(event.getMessageEncryp().toString().getBytes());
-        } catch (NoSuchAlgorithmException | NoSuchProviderException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
         
+        if (groupAtributes.get(event.getGroupName()) == null) {
+            InterfaceHandler.internalInfo("Arrived a group message that the user does not belong to");
+        } else {
+            
+        }
 
+        //if (!event.getInitializer().equals(currentNodeDTO)) { // foward to the next node
+        //    NodeDTO nextNodeDTO = currentNode.getNextNode();
+        //    ((ChordInternalMessage) event.getMessage()).setSenderDto(currentNodeDTO);
+        //    clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), event.getMessage(), false, nextNodeDTO.getUsername());
+        //}
     }
 
-    public void createGroup(String groupName) {
-        byte[] groupKey = Utils.generateRandomAttribute(32);
-        groupAtributes.put(groupName, groupKey);
+
+    public void createGroup(String groupName) throws PolicySyntaxException {
+        String policy = generateRandomPolicy();
+        String[] attributes = generateAttributesForPolicy(policy);
+        groupAtributes.put(groupName, attributes);
+        groupPolicy.put(groupName, policy);
+
+        // Setup
+        KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
+
+        // Step 2: Generate pairing parameters using TypeACurveGenerator
+        int rBits = 160; // Number of bits for the order of the curve
+        int qBits = 512; // Number of bits for the field size
+        TypeACurveGenerator curveGenerator = new TypeACurveGenerator(rBits, qBits);
+        PairingParameters pairingParameters = curveGenerator.generate();
+        Pairing pairing = PairingFactory.getPairing(pairingParameters);
+        System.out.println("Pairing parameters generated and pairing instance created.");
+
+        // Key generation - done by the PKG
+        PairingKeySerPair keyPair = engine.setup(pairingParameters, 50); // Setup with 50 attributes (0 to 49)
+        PairingKeySerParameter publicKey = keyPair.getPublic();
+        PairingKeySerParameter masterKey = keyPair.getPrivate();
+
+        int[][] accessPolicy = ParserUtils.GenerateAccessPolicy(policy);
+        String[] rhos = ParserUtils.GenerateRhos(policy);
+        PairingKeySerParameter secretKey = engine.keyGen(publicKey, masterKey, accessPolicy, rhos);
+    }
+
+    public void addMemberToGroup() {
+        // TODO
+        // send the pubK
+        // send the accessPolicy
+        // send the rhos
+        // create unique master key
+        // create unique secret key
+    }
+
+
+
+
+    // -------------- To be moved to another class --------------
+
+
+    private static String generateRandomPolicy() {
+        Random random = new Random();
+        int numClauses = random.nextInt(3) + 1; // Number of clauses in the policy
+        StringBuilder policy = new StringBuilder();
+    
+        for (int i = 0; i < numClauses; i++) {
+            if (i > 0) {
+                policy.append(" and ");
+            }
+            int numTerms = random.nextInt(2) + 1; // Number of terms in the clause
+            if (numTerms == 1) {
+                policy.append(random.nextInt(50));
+            } else {
+                policy.append("(");
+                for (int j = 0; j < numTerms; j++) {
+                    if (j > 0) {
+                        policy.append(" or ");
+                    }
+                    policy.append(random.nextInt(50));
+                }
+                policy.append(")");
+            }
+        }
+    
+        return policy.toString();
+    }
+            
+    private static String[] generateAttributesForPolicy(String policy) {
+        // Extract numbers from the policy
+        String[] tokens = policy.split("[^0-9]+");
+        return Arrays.stream(tokens)
+                .filter(token -> !token.isEmpty())
+                .distinct()
+                .toArray(String[]::new);
+    }
+
+    private void encryptGroupMessage(String groupName, String originalMessage) throws PolicySyntaxException {
+        String[] attributes = groupAtributes.get(groupName);
+        byte[] messageBytes = originalMessage.getBytes(StandardCharsets.UTF_8);
+        Element message = encodeBytesToGroup(pairing, messageBytes);
+        PairingCipherSerParameter ciphertext = engine.encryption(publicKey, attributes, message);
+    }
+
+    private void decryptGroupMessage(PairingKeySerParameter publicKey, PairingKeySerParameter secretKey, String[] attributes, PairingCipherSerParameter ciphertext) throws InvalidCipherTextException {
+        Element decryptedMessage = engine.decryption(publicKey, secretKey, attributes, ciphertext);
+        byte[] decryptedBytes = decodeGroupToBytes(decryptedMessage);
+        String recoveredMessage = new String(decryptedBytes, StandardCharsets.UTF_8);
+    }
+
+    // Encode a byte array to a group element
+    private static Element encodeBytesToGroup(Pairing pairing, byte[] data) {
+        // Convert the byte array to a BigInteger
+        java.math.BigInteger bigInteger = new java.math.BigInteger(1, data);
+        return pairing.getGT().newElement(bigInteger).getImmutable();
+    }
+
+    // Decode a group element back to a byte array
+    private static byte[] decodeGroupToBytes(Element element) {
+        // Convert the group element to a BigInteger
+        java.math.BigInteger bigInteger = element.toBigInteger();
+        // Convert the BigInteger to a byte array
+        return bigInteger.toByteArray();
     }
 }

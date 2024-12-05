@@ -9,6 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Security;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -52,6 +53,10 @@ import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 import it.unisa.dia.gas.plaf.jpbc.pairing.a.TypeACurveGenerator;
 import it.unisa.dia.gas.jpbc.PairingParametersGenerator;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+
 import psd.group4.handlers.*;
 
 import cn.edu.buaa.crypto.algebra.*;
@@ -83,20 +88,22 @@ public class User {
             PairingKeySerParameter publicKey = keyPair.getPublic();
             PairingKeySerParameter masterKey = keyPair.getPrivate();
 
-            String policy = "0 and 1 and (2 or 3)";
+            String policy = "49 or (10 and 2) and 12 or 29";
             int[][] accessPolicy = ParserUtils.GenerateAccessPolicy(policy);
             String[] rhos = ParserUtils.GenerateRhos(policy);
             PairingKeySerParameter secretKey = engine.keyGen(publicKey, masterKey, accessPolicy, rhos);
 
             // Encryption - done by Alice
-            String[] attributes = new String[]{"0", "1", "2"};
-            String originalMessage = "ola";
+            String[] attributes = new String[]{"49", "1", "2"};
+            String originalMessage = "ola tudo bem? como vais?";
             byte[] messageBytes = originalMessage.getBytes(StandardCharsets.UTF_8);
             Element message = encodeBytesToGroup(pairing, messageBytes);
             PairingCipherSerParameter ciphertext = engine.encryption(publicKey, attributes, message);
 
             // Decryption - done by Bob
-            String[] attributes2 = new String[]{"0", "2"};
+
+            
+
             Element decryptedMessage = engine.decryption(publicKey, secretKey, attributes, ciphertext);
             byte[] decryptedBytes = decodeGroupToBytes(decryptedMessage);
             String recoveredMessage = new String(decryptedBytes, StandardCharsets.UTF_8);
@@ -118,13 +125,18 @@ public class User {
         }
 
 
-
-
-
-
+        for (int i = 0; i < 10; i++) {
+            String policy = generateRandomPolicy();
+            String[] attributes = generateAttributesForPolicy(policy);
+            System.out.println("Policy: " + policy);
+            System.out.println("Attributes: " + Arrays.toString(attributes));
+        }
+                        
+                        
+                        
         interfaceHandler = new InterfaceHandler();
         interfaceHandler.startUp();
-     
+        
         String name = interfaceHandler.getUserName();
         String password = interfaceHandler.getPassword();
 
@@ -177,7 +189,7 @@ public class User {
         interfaceHandler.help();
         while (true) {
             String option = interfaceHandler.getInput();
-               switch (option) {
+                switch (option) {
                 case "1":
                 case "ne":
                     System.out.println(node.neighborsStatus());
@@ -288,23 +300,6 @@ public class User {
         return accessTree.toArray(new int[0][]);
     }
 
-
-	public static String encrypt (String algorithm, SecretKey key, IvParameterSpec iv, String message) throws NoSuchPaddingException,
-	NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-		Cipher cipher = Cipher.getInstance(algorithm);
-		cipher.init(Cipher.ENCRYPT_MODE, key, iv);
-		byte[] cipherText = cipher.doFinal(message.getBytes());
-		return Base64.getEncoder().encodeToString(cipherText);
-	}
-
-	public static String decrypt (String algorithm, SecretKey key, IvParameterSpec iv, String ciphertext) throws NoSuchPaddingException, NoSuchAlgorithmException,
-	InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-		Cipher cipher = Cipher.getInstance(algorithm);
-		cipher.init(Cipher.DECRYPT_MODE, key, iv);
-		byte[] plainText = cipher.doFinal(Base64.getDecoder().decode(ciphertext));
-		return new String(plainText);
-	}
-
     // Encode a byte array to a group element
     public static Element encodeBytesToGroup(Pairing pairing, byte[] data) {
         // Convert the byte array to a BigInteger
@@ -318,5 +313,41 @@ public class User {
         java.math.BigInteger bigInteger = element.toBigInteger();
         // Convert the BigInteger to a byte array
         return bigInteger.toByteArray();
+    }
+                        
+    private static String generateRandomPolicy() {
+        Random random = new Random();
+        int numClauses = random.nextInt(3) + 1; // Number of clauses in the policy
+        StringBuilder policy = new StringBuilder();
+    
+        for (int i = 0; i < numClauses; i++) {
+            if (i > 0) {
+                policy.append(" and ");
+            }
+            int numTerms = random.nextInt(2) + 1; // Number of terms in the clause
+            if (numTerms == 1) {
+                policy.append(random.nextInt(50));
+            } else {
+                policy.append("(");
+                for (int j = 0; j < numTerms; j++) {
+                    if (j > 0) {
+                        policy.append(" or ");
+                    }
+                    policy.append(random.nextInt(50));
+                }
+                policy.append(")");
+            }
+        }
+    
+        return policy.toString();
+    }
+            
+    private static String[] generateAttributesForPolicy(String policy) {
+        // Extract numbers from the policy
+        String[] tokens = policy.split("[^0-9]+");
+        return Arrays.stream(tokens)
+                .filter(token -> !token.isEmpty())
+                .distinct()
+                .toArray(String[]::new);
     }
 }

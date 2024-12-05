@@ -204,6 +204,10 @@ public class UserService implements UserServiceInterface {
         }
     }
 
+    public void createGroup(String groupName) {
+        eventHandler.createGroup(groupName);
+    }
+
     /**
      * Makes the changes needed to mantain the network correct when a node exits
      * @throws InterruptedException 
@@ -257,6 +261,12 @@ public class UserService implements UserServiceInterface {
             eventHandler.handleNotify((NotifyEvent) e);
         } else if (e instanceof RemoveSharedKeyEvent) {
             eventHandler.removeSharedKey((RemoveSharedKeyEvent) e);
+        } else if (e instanceof NodeSendGroupMessageEvent) {
+            try {
+                eventHandler.sendGroupMessage((NodeSendGroupMessageEvent) e);
+            } catch (Exception e1) {
+                e1.printStackTrace();
+            }
         } else {
             System.out.println("Exception class: " + e.getClass().getName());
             System.out.println("Exception instance: " + e.toString());
