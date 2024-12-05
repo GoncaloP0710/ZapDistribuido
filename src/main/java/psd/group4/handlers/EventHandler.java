@@ -567,19 +567,21 @@ public class EventHandler {
         }
     }
 
-    public void sendGroupMessage(NodeSendGroupMessageEvent event) {
+    public void sendGroupMessage(NodeSendGroupMessageEvent event) throws NoSuchAlgorithmException {
         
         if (groupAtributes.get(event.getGroupName()) == null) {
             InterfaceHandler.internalInfo("Arrived a group message that the user does not belong to");
         } else {
-            
+            // Decrypt the message
+            String msg = decryptGroupMessage(); // TODO: Add the parameters and more secure layers
+            InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + msg);
         }
 
-        //if (!event.getInitializer().equals(currentNodeDTO)) { // foward to the next node
-        //    NodeDTO nextNodeDTO = currentNode.getNextNode();
-        //    ((ChordInternalMessage) event.getMessage()).setSenderDto(currentNodeDTO);
-        //    clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), event.getMessage(), false, nextNodeDTO.getUsername());
-        //}
+        if (!event.getSenderDTO().equals(currentNodeDTO)) { // foward to the next node
+            NodeDTO nextNodeDTO = currentNode.getNextNode();
+            ((ChordInternalMessage) event.getMessage()).setSenderDto(currentNodeDTO);
+            clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), event.getMessage(), false, nextNodeDTO.getUsername());
+        }
     }
 
 
@@ -608,18 +610,18 @@ public class EventHandler {
         int[][] accessPolicy = ParserUtils.GenerateAccessPolicy(policy);
         String[] rhos = ParserUtils.GenerateRhos(policy);
         PairingKeySerParameter secretKey = engine.keyGen(publicKey, masterKey, accessPolicy, rhos);
+
+        // TODO: Create new global variables for the variables needed
     }
 
     public void addMemberToGroup() {
-        // TODO
+        // TODO:
         // send the pubK
         // send the accessPolicy
         // send the rhos
         // create unique master key
         // create unique secret key
     }
-
-
 
 
     // -------------- To be moved to another class --------------
@@ -668,10 +670,11 @@ public class EventHandler {
         PairingCipherSerParameter ciphertext = engine.encryption(publicKey, attributes, message);
     }
 
-    private void decryptGroupMessage(PairingKeySerParameter publicKey, PairingKeySerParameter secretKey, String[] attributes, PairingCipherSerParameter ciphertext) throws InvalidCipherTextException {
+    private String decryptGroupMessage(PairingKeySerParameter publicKey, PairingKeySerParameter secretKey, String[] attributes, PairingCipherSerParameter ciphertext) throws InvalidCipherTextException {
         Element decryptedMessage = engine.decryption(publicKey, secretKey, attributes, ciphertext);
         byte[] decryptedBytes = decodeGroupToBytes(decryptedMessage);
         String recoveredMessage = new String(decryptedBytes, StandardCharsets.UTF_8);
+        return recoveredMessage;
     }
 
     // Encode a byte array to a group element
