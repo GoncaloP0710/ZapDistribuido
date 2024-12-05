@@ -60,10 +60,7 @@ public class UserService implements UserServiceInterface {
         initializeCurrentNodeDTO(username, currentNode, keyHandler.getCertificate(username));
         this.clientHandler = new NodeClientHandler(this);
         this.serverHandler = new NodeServerHandler(this);
-        this.eventHandler = new Event            <groupId>org.bouncycastle</groupId>
-        <artifactId>bcprov-jdk18on</artifactId>
-        <version>1.79</version>
-    </dependency>Handler(this);
+        this.eventHandler = new EventHandler(this);
 
         // ------------------ Start servers ------------------
         serverHandler.startServerInThread(currentNode, false);

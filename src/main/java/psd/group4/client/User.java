@@ -3,13 +3,48 @@ package psd.group4.client;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Security;
+import java.util.HashMap;
 import java.util.logging.Level;
 
 import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import java.security.Security;
+import cn.edu.buaa.crypto.encryption.abe.kpabe.KPABEEngine;
+import cn.edu.buaa.crypto.encryption.abe.kpabe.gpsw06a.KPABEGPSW06aEngine;
+import cn.edu.buaa.crypto.encryption.abe.kpabe.*;
+
+
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
+import cn.edu.buaa.crypto.access.parser.ParserUtils;
+import cn.edu.buaa.crypto.access.parser.PolicySyntaxException;
+import cn.edu.buaa.crypto.algebra.serparams.PairingCipherSerParameter;
+import cn.edu.buaa.crypto.algebra.serparams.PairingKeyEncapsulationSerPair;
+import cn.edu.buaa.crypto.algebra.serparams.PairingKeySerPair;
+import cn.edu.buaa.crypto.algebra.serparams.PairingKeySerParameter;
+import cn.edu.buaa.crypto.encryption.abe.kpabe.KPABEEngine;
+import cn.edu.buaa.crypto.encryption.abe.kpabe.gpsw06a.KPABEGPSW06aEngine;
+import cn.edu.buaa.crypto.encryption.ibe.IBEEngine;
+import cn.edu.buaa.crypto.encryption.ibe.bf01a.IBEBF01aEngine;
+import cn.edu.buaa.crypto.utils.PairingUtils;
+
+
 
 import psd.group4.handlers.*;
+
+import cn.edu.buaa.crypto.algebra.*;
+import cn.edu.buaa.crypto.algebra.genparams.PairingParametersGenerationParameter.PairingType;
+
 
 public class User {
 
@@ -19,6 +54,25 @@ public class User {
     private static InterfaceHandler interfaceHandler;
 
     public static void main(String[] args) throws Exception {
+
+        try {
+            // Step 1: Add BouncyCastle as a security provider
+            Security.addProvider(new BouncyCastleProvider());
+            System.out.println("BouncyCastle provider added.");
+
+            // Step 2: Initialize the KP-ABE engine
+            KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
+            System.out.println("KPABE engine initialized.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+
+
+
+
         interfaceHandler = new InterfaceHandler();
         interfaceHandler.startUp();
      

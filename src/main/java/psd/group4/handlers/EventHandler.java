@@ -25,7 +25,6 @@ import java.security.Signature;
 
 // ----------------- Bouncy Castle -----------------
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -33,8 +32,6 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.Security;
-import java.util.Base64;
 
 public class EventHandler { 
 
@@ -68,7 +65,6 @@ public class EventHandler {
 
  
     public EventHandler(UserService userService) {
-        Security.addProvider(new BouncyCastleProvider());
         this.userService = userService;
         ipDefault = userService.getIpDefault();
         portDefault = userService.getPortDefault();
