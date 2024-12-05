@@ -2,13 +2,17 @@ package psd.group4.client;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Security;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Stack;
 import java.util.logging.Level;
 
 import javax.crypto.BadPaddingException;
@@ -64,10 +68,8 @@ public class User {
     public static void main(String[] args) throws Exception {
 
         try {
-            // Step 1: Add BouncyCastle as a security provider
-            Security.addProvider(new BouncyCastleProvider());
-            System.out.println("BouncyCastle provider added.");
-
+            // Setup
+            KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
             // Step 2: Generate pairing parameters using TypeACurveGenerator
             int rBits = 160; // Number of bits for the order of the curve
             int qBits = 512; // Number of bits for the field size
@@ -76,43 +78,40 @@ public class User {
             Pairing pairing = PairingFactory.getPairing(pairingParameters);
             System.out.println("Pairing parameters generated and pairing instance created.");
 
-            // Step 3: Initialize the KP-ABE engine
-            KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
-            System.out.println("KPABE engine initialized.");
-
-            // Step 4: Generate a key pair (public key and master secret key)
-            PairingKeySerPair keyPair = engine.setup(pairingParameters, 50); // Example: 50 attributes
+            // Key generation - done by the PKG
+            PairingKeySerPair keyPair = engine.setup(pairingParameters, 50); // Setup with 50 attributes
             PairingKeySerParameter publicKey = keyPair.getPublic();
             PairingKeySerParameter masterKey = keyPair.getPrivate();
-            System.out.println("Key pair generated.");
 
-            // Step 5: Define an access policy
             String policy = "0 and 1 and (2 or 3)";
-            int[][] accessPolicy = parsePolicy(policy); // Parse policy into access tree
-            String[] rhos = {"0", "1", "2", "3"}; // Attribute names corresponding to nodes
-            System.out.println("Access policy defined: " + policy);
-
-            // Step 6: Generate a secret key based on the access policy
+            int[][] accessPolicy = ParserUtils.GenerateAccessPolicy(policy);
+            String[] rhos = ParserUtils.GenerateRhos(policy);
             PairingKeySerParameter secretKey = engine.keyGen(publicKey, masterKey, accessPolicy, rhos);
-            System.out.println("Secret key generated for the policy.");
 
-            // Step 7: Encrypt a message under a set of attributes
-            String message = "This is a secret message.";
-            String[] attributes = {"0", "1", "2"};
-            Element plaintext = PairingUtils.MapStringToGroup(pairing, message, PairingUtils.PairingGroupType.GT);
-            PairingCipherSerParameter ciphertext = engine.encryption(publicKey, attributes, plaintext);
-            System.out.println("Message encrypted with attributes: " + attributes);
+            // Encryption - done by Alice
+            String[] attributes = new String[]{"0", "1", "2"};
+            String originalMessage = "ola";
+            byte[] messageBytes = originalMessage.getBytes(StandardCharsets.UTF_8);
+            Element message = encodeBytesToGroup(pairing, messageBytes);
+            PairingCipherSerParameter ciphertext = engine.encryption(publicKey, attributes, message);
 
-            // Step 8: Decrypt the ciphertext
+            // Decryption - done by Bob
+            String[] attributes2 = new String[]{"0", "2"};
             Element decryptedMessage = engine.decryption(publicKey, secretKey, attributes, ciphertext);
-            String decryptedText = new String(decryptedMessage.toBytes());
-            System.out.println("Decrypted message: " + decryptedText);
+            byte[] decryptedBytes = decodeGroupToBytes(decryptedMessage);
+            String recoveredMessage = new String(decryptedBytes, StandardCharsets.UTF_8);
 
-            // Step 9: Verify the decryption
-            if (message.equals(decryptedText)) {
-                System.out.println("Decryption successful: The message matches.");
+            // Output results
+            System.out.println("Original message: " + originalMessage);
+            System.out.println("Hashed message in G: " + message.toString());
+            System.out.println("Decrypted message in G: " + decryptedMessage.toString());
+            System.out.println("Recovered original message: " + recoveredMessage);
+
+            // Verify correctness
+            if (originalMessage.equals(recoveredMessage)) {
+                System.out.println("Decryption successful: Messages match.");
             } else {
-                System.out.println("Decryption failed: The message does not match.");
+                System.out.println("Decryption failed: Messages do not match.");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -259,14 +258,34 @@ public class User {
      * @return the access tree as a 2D array
      */
     public static int[][] parsePolicy(String policy) {
-        // Example implementation: parse the policy string into an access tree
-        // This is a simple example and may need to be adapted for your specific use case
+        // Tokenize the policy string
         String[] tokens = policy.split(" ");
-        int[][] accessTree = new int[tokens.length][];
-        for (int i = 0; i < tokens.length; i++) {
-            accessTree[i] = new int[]{Integer.parseInt(tokens[i])};
+        List<int[]> accessTree = new ArrayList<>();
+        Stack<Integer> stack = new Stack<>();
+
+        for (String token : tokens) {
+            if (token.equalsIgnoreCase("and")) {
+                accessTree.add(new int[]{-1}); // Represent "and" with -1
+            } else if (token.equalsIgnoreCase("or")) {
+                accessTree.add(new int[]{-2}); // Represent "or" with -2
+            } else if (token.startsWith("(")) {
+                // Handle opening parenthesis
+                stack.push(accessTree.size());
+                token = token.replace("(", "");
+                accessTree.add(new int[]{Integer.parseInt(token)});
+            } else if (token.endsWith(")")) {
+                // Handle closing parenthesis
+                token = token.replace(")", "");
+                accessTree.add(new int[]{Integer.parseInt(token)});
+                int start = stack.pop();
+                int end = accessTree.size() - 1;
+                accessTree.add(new int[]{start, end});
+            } else {
+                accessTree.add(new int[]{Integer.parseInt(token)});
+            }
         }
-        return accessTree;
+
+        return accessTree.toArray(new int[0][]);
     }
 
 
@@ -285,4 +304,19 @@ public class User {
 		byte[] plainText = cipher.doFinal(Base64.getDecoder().decode(ciphertext));
 		return new String(plainText);
 	}
+
+    // Encode a byte array to a group element
+    public static Element encodeBytesToGroup(Pairing pairing, byte[] data) {
+        // Convert the byte array to a BigInteger
+        java.math.BigInteger bigInteger = new java.math.BigInteger(1, data);
+        return pairing.getGT().newElement(bigInteger).getImmutable();
+    }
+
+    // Decode a group element back to a byte array
+    public static byte[] decodeGroupToBytes(Element element) {
+        // Convert the group element to a BigInteger
+        java.math.BigInteger bigInteger = element.toBigInteger();
+        // Convert the BigInteger to a byte array
+        return bigInteger.toByteArray();
+    }
 }
