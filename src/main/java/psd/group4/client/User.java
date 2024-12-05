@@ -2,10 +2,12 @@ package psd.group4.client;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Security;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.logging.Level;
 
@@ -14,6 +16,7 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -38,7 +41,12 @@ import cn.edu.buaa.crypto.encryption.ibe.IBEEngine;
 import cn.edu.buaa.crypto.encryption.ibe.bf01a.IBEBF01aEngine;
 import cn.edu.buaa.crypto.utils.PairingUtils;
 
-
+import it.unisa.dia.gas.jpbc.Element;
+import it.unisa.dia.gas.jpbc.Pairing;
+import it.unisa.dia.gas.jpbc.PairingParameters;
+import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
+import it.unisa.dia.gas.plaf.jpbc.pairing.a.TypeACurveGenerator;
+import it.unisa.dia.gas.jpbc.PairingParametersGenerator;
 
 import psd.group4.handlers.*;
 
@@ -60,10 +68,52 @@ public class User {
             Security.addProvider(new BouncyCastleProvider());
             System.out.println("BouncyCastle provider added.");
 
-            // Step 2: Initialize the KP-ABE engine
+            // Step 2: Generate pairing parameters using TypeACurveGenerator
+            int rBits = 160; // Number of bits for the order of the curve
+            int qBits = 512; // Number of bits for the field size
+            TypeACurveGenerator curveGenerator = new TypeACurveGenerator(rBits, qBits);
+            PairingParameters pairingParameters = curveGenerator.generate();
+            Pairing pairing = PairingFactory.getPairing(pairingParameters);
+            System.out.println("Pairing parameters generated and pairing instance created.");
+
+            // Step 3: Initialize the KP-ABE engine
             KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
             System.out.println("KPABE engine initialized.");
 
+            // Step 4: Generate a key pair (public key and master secret key)
+            PairingKeySerPair keyPair = engine.setup(pairingParameters, 50); // Example: 50 attributes
+            PairingKeySerParameter publicKey = keyPair.getPublic();
+            PairingKeySerParameter masterKey = keyPair.getPrivate();
+            System.out.println("Key pair generated.");
+
+            // Step 5: Define an access policy
+            String policy = "0 and 1 and (2 or 3)";
+            int[][] accessPolicy = parsePolicy(policy); // Parse policy into access tree
+            String[] rhos = {"0", "1", "2", "3"}; // Attribute names corresponding to nodes
+            System.out.println("Access policy defined: " + policy);
+
+            // Step 6: Generate a secret key based on the access policy
+            PairingKeySerParameter secretKey = engine.keyGen(publicKey, masterKey, accessPolicy, rhos);
+            System.out.println("Secret key generated for the policy.");
+
+            // Step 7: Encrypt a message under a set of attributes
+            String message = "This is a secret message.";
+            String[] attributes = {"0", "1", "2"};
+            Element plaintext = PairingUtils.MapStringToGroup(pairing, message, PairingUtils.PairingGroupType.GT);
+            PairingCipherSerParameter ciphertext = engine.encryption(publicKey, attributes, plaintext);
+            System.out.println("Message encrypted with attributes: " + attributes);
+
+            // Step 8: Decrypt the ciphertext
+            Element decryptedMessage = engine.decryption(publicKey, secretKey, attributes, ciphertext);
+            String decryptedText = new String(decryptedMessage.toBytes());
+            System.out.println("Decrypted message: " + decryptedText);
+
+            // Step 9: Verify the decryption
+            if (message.equals(decryptedText)) {
+                System.out.println("Decryption successful: The message matches.");
+            } else {
+                System.out.println("Decryption failed: The message does not match.");
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -201,4 +251,38 @@ public class User {
         User user = (User) obj;
         return user.getUserName().equals(user_name);
     }
+
+    /**
+     * Parses a policy string into an access tree.
+     *
+     * @param policy the policy string
+     * @return the access tree as a 2D array
+     */
+    public static int[][] parsePolicy(String policy) {
+        // Example implementation: parse the policy string into an access tree
+        // This is a simple example and may need to be adapted for your specific use case
+        String[] tokens = policy.split(" ");
+        int[][] accessTree = new int[tokens.length][];
+        for (int i = 0; i < tokens.length; i++) {
+            accessTree[i] = new int[]{Integer.parseInt(tokens[i])};
+        }
+        return accessTree;
+    }
+
+
+	public static String encrypt (String algorithm, SecretKey key, IvParameterSpec iv, String message) throws NoSuchPaddingException,
+	NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+		Cipher cipher = Cipher.getInstance(algorithm);
+		cipher.init(Cipher.ENCRYPT_MODE, key, iv);
+		byte[] cipherText = cipher.doFinal(message.getBytes());
+		return Base64.getEncoder().encodeToString(cipherText);
+	}
+
+	public static String decrypt (String algorithm, SecretKey key, IvParameterSpec iv, String ciphertext) throws NoSuchPaddingException, NoSuchAlgorithmException,
+	InvalidAlgorithmParameterException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+		Cipher cipher = Cipher.getInstance(algorithm);
+		cipher.init(Cipher.DECRYPT_MODE, key, iv);
+		byte[] plainText = cipher.doFinal(Base64.getDecoder().decode(ciphertext));
+		return new String(plainText);
+	}
 }
