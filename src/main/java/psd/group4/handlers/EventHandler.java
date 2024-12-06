@@ -597,7 +597,6 @@ public class EventHandler {
 
         if (!event.getSenderDTO().equals(currentNodeDTO)) { // foward to the next node
             NodeDTO nextNodeDTO = currentNode.getNextNode();
-            ((ChordInternalMessage) event.getMessage()).setSenderDto(currentNodeDTO);
             clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), event.getMessage(), false, nextNodeDTO.getUsername());
         }
     }
@@ -624,7 +623,9 @@ public class EventHandler {
         String[] rhos = ParserUtils.GenerateRhos(policy);
         PairingKeySerParameter secretKey = engine.keyGen(publicKey, masterKey, accessPolicy, rhos);
 
+        System.out.println(attributes);
         groupAtributes.put(groupName, attributes);
+        System.out.println("added the atributes to the grupup: " + groupName);
         groupAccessPolicy.put(groupName, accessPolicy);
         groupMasterKeys.put(groupName, masterKey);
         groupPublicKeys.put(groupName, publicKey);
@@ -637,26 +638,18 @@ public class EventHandler {
     public void addMemberToGroup(AddUserToGroupEvent event) {
 
         if (currentNodeDTO.getHash().equals(event.getReceiverHash())) { // Reached the target
-            KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
-            PairingParameters pairingParameters = event.getPairingParameters();
 
-            // Key generation - done by the PKG
-            PairingKeySerPair keyPair = engine.setup(pairingParameters, 50); // Setup with 50 attributes (0 to 49)
-            PairingKeySerParameter masterKey = keyPair.getPrivate();
-
-            int[][] accessPolicy = event.getAccessPolicy();
-            PairingKeySerParameter publicKey = groupPublicKeys.get(event.getGroupName());
-            String[] rhos = groupRhos.get(event.getGroupName());
-
-            PairingKeySerParameter secretKey = engine.keyGen(publicKey, masterKey, accessPolicy, rhos);
-
+            groupAtributes.put(event.getGroupName(), event.getAttributes());
             groupRhos.put(event.getGroupName(), event.getRhos());
             groupPublicKeys.put(event.getGroupName(), event.getPublicKey());
-            groupMasterKeys.put(event.getGroupName(), masterKey);
+            groupMasterKeys.put(event.getGroupName(), event.getMasterKey());
+            groupAccessPolicy.put(event.getGroupName(), event.getAccessPolicy());
+            groupPairingParameters.put(event.getGroupName(), event.getPairingParameters());
+
+            KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
+            PairingKeySerParameter secretKey = engine.keyGen(event.getPublicKey(), 
+                event.getMasterKey(), event.getAccessPolicy(), event.getRhos());
             groupSecretKeys.put(event.getGroupName(), secretKey);
-            groupAccessPolicy.put(event.getGroupName(), accessPolicy);
-            groupAtributes.put(event.getGroupName(), event.getAttributes());
-            groupPairingParameters.put(event.getGroupName(), pairingParameters);
             InterfaceHandler.success("User added to group successfully");
 
         } else {
@@ -726,6 +719,7 @@ public class EventHandler {
         Element decryptedMessage = engine.decryption(publicKey, secretKey, attributes, ciphertext);
         byte[] decryptedBytes = decodeGroupToBytes(decryptedMessage);
         String recoveredMessage = new String(decryptedBytes, StandardCharsets.UTF_8);
+        System.out.println("Recovered message: " + recoveredMessage);
         return recoveredMessage;
     }
 
@@ -742,5 +736,33 @@ public class EventHandler {
         java.math.BigInteger bigInteger = element.toBigInteger();
         // Convert the BigInteger to a byte array
         return bigInteger.toByteArray();
+    }
+
+    public String[] getGroupAttributes(String groupName) {
+        return groupAtributes.get(groupName);
+    }
+
+    public int[][] getGroupAccessPolicy(String groupName) {
+        return groupAccessPolicy.get(groupName);
+    }
+
+    public PairingKeySerParameter getGroupMasterKey(String groupName) {
+        return groupMasterKeys.get(groupName);
+    }
+
+    public PairingKeySerParameter getGroupPublicKey(String groupName) {
+        return groupPublicKeys.get(groupName);
+    }
+
+    public PairingKeySerParameter getGroupSecretKey(String groupName) {
+        return groupSecretKeys.get(groupName);
+    }
+
+    public String[] getGroupRhos(String groupName) {
+        return groupRhos.get(groupName);
+    }
+
+    public PairingParameters getGroupPairingParameters(String groupName) {
+        return groupPairingParameters.get(groupName);
     }
 }

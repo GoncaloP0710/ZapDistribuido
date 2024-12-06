@@ -14,4 +14,5 @@ public enum MessageType {
     Notify,
     RemoveSharedKey,
     SendGroupMsg,
+    AddUserToGroup,
 }

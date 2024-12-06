@@ -217,14 +217,23 @@ public class UserService implements UserServiceInterface {
         }
     }
 
-    public void addUserToGroup(InterfaceHandler interfaceHandler) {
+    public void addUserToGroup(InterfaceHandler interfaceHandler) throws NoSuchAlgorithmException {
         nodeSendMessageLock.lock();
         try {
             System.out.println("Select the group you want to add the user to: ");
             String groupName = interfaceHandler.getInput();
             System.out.println("Write the user name: ");
             String userName = interfaceHandler.getInput();
-            
+            BigInteger reciverHash = currentNode.calculateHash(userName);
+
+            System.out.println(eventHandler.getGroupAttributes(groupName));
+
+            ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.AddUserToGroup, eventHandler.getGroupPublicKey(groupName), 
+                eventHandler.getGroupAccessPolicy(groupName), eventHandler.getGroupRhos(groupName), reciverHash, groupName, 
+                eventHandler.getGroupPairingParameters(groupName), eventHandler.getGroupAttributes(groupName), eventHandler.getGroupMasterKey(groupName));
+
+            AddUserToGroupEvent event = new AddUserToGroupEvent(messageToSend);
+            eventHandler.addMemberToGroup(event);
         } finally {
             nodeSendMessageLock.unlock();
         }
@@ -286,6 +295,12 @@ public class UserService implements UserServiceInterface {
         } else if (e instanceof NodeSendGroupMessageEvent) {
             try {
                 eventHandler.sendGroupMessage((NodeSendGroupMessageEvent) e);
+            } catch (Exception e1) {
+                e1.printStackTrace();
+            }
+        } else if (e instanceof AddUserToGroupEvent) {
+            try {
+                eventHandler.addMemberToGroup((AddUserToGroupEvent) e);
             } catch (Exception e1) {
                 e1.printStackTrace();
             }

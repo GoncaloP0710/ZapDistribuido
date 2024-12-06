@@ -39,6 +39,7 @@ public class ChordInternalMessage extends Message {
     private String groupName; // AddUserToGroupEvent
     private PairingParameters pairingParameters; // AddUserToGroupEvent
     private String[] attributes; // AddUserToGroupEvent
+    private PairingKeySerParameter masterKey; // AddUserToGroupEvent
 
     // UpdateNeighboringNodesEvent
     public ChordInternalMessage(MessageType messageType, NodeDTO nextNode, NodeDTO previousNode, NodeDTO initializer) {
@@ -114,7 +115,7 @@ public class ChordInternalMessage extends Message {
     }
 
     // AddUserToGroupEvent
-    public ChordInternalMessage(MessageType messageType, PairingKeySerParameter publicKey, int[][] accessPolicy, String[] rhos, BigInteger receiverHash, String groupName, PairingParameters pairingParameters, String[] attributes) {
+    public ChordInternalMessage(MessageType messageType, PairingKeySerParameter publicKey, int[][] accessPolicy, String[] rhos, BigInteger receiverHash, String groupName, PairingParameters pairingParameters, String[] attributes, PairingKeySerParameter masterKey) {
         super(messageType);
         this.publicKey = publicKey;
         this.accessPolicy = accessPolicy;
@@ -123,6 +124,7 @@ public class ChordInternalMessage extends Message {
         this.groupName = groupName;
         this.pairingParameters = pairingParameters;
         this.attributes = attributes;
+        this.masterKey = masterKey;
     }
 
     public NodeDTO getNextNode(){
@@ -263,5 +265,9 @@ public class ChordInternalMessage extends Message {
 
     public String[] getAttributes(){
         return this.attributes;
+    }
+
+    public PairingKeySerParameter getMasterKey(){
+        return this.masterKey;
     }
 }

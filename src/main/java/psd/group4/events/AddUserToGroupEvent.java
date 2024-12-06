@@ -14,6 +14,7 @@ public class AddUserToGroupEvent extends NodeEvent {
     private BigInteger receiverHash;
     private String groupName;
     private String[] attributes;
+    private PairingKeySerParameter masterKey;
 
     public AddUserToGroupEvent(ChordInternalMessage msg) {
         super(msg);
@@ -23,6 +24,8 @@ public class AddUserToGroupEvent extends NodeEvent {
         this.receiverHash = msg.getReceiverHash();
         this.groupName = msg.getGroupName();
         this.pairingParameters = msg.getPairing();
+        this.attributes = msg.getAttributes();
+        this.masterKey = msg.getMasterKey();
     }
 
     public PairingKeySerParameter getPublicKey() {
@@ -51,6 +54,10 @@ public class AddUserToGroupEvent extends NodeEvent {
 
     public String[] getAttributes() {
         return attributes;
+    }
+
+    public PairingKeySerParameter getMasterKey() {
+        return masterKey;
     }
     
 }

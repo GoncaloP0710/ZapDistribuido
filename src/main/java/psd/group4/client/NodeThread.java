@@ -182,6 +182,9 @@ public class NodeThread extends Thread implements Subject<NodeEvent> {
             case SendGroupMsg:
                 emitEvent(new NodeSendGroupMessageEvent((UserMessage) messageToProcess));
                 break;
+            case AddUserToGroup:
+                emitEvent(new AddUserToGroupEvent((ChordInternalMessage) messageToProcess));
+                break;
             default:
                 break;
         }

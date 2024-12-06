@@ -100,8 +100,23 @@ public class User {
             Element message = encodeBytesToGroup(pairing, messageBytes);
             PairingCipherSerParameter ciphertext = engine.encryption(publicKey, attributes, message);
 
+
+            // ---------------------------------------------------------------------
+
+            KPABEEngine engine2 = KPABEGPSW06aEngine.getInstance();
+
+            PairingKeySerParameter secretKey2 = engine2.keyGen(publicKey, masterKey, accessPolicy, rhos);
+
+            if (secretKey.equals(secretKey2)) {
+                System.out.println("Secret keys match.");
+            } else {
+                System.out.println("Secret keys do not match.");
+            }
+
+            // ---------------------------------------------------------------------
+
             // Decryption - done by Bob
-            Element decryptedMessage = engine.decryption(publicKey, secretKey, attributes, ciphertext);
+            Element decryptedMessage = engine.decryption(publicKey, secretKey2, attributes, ciphertext);
             byte[] decryptedBytes = decodeGroupToBytes(decryptedMessage);
             String recoveredMessage = new String(decryptedBytes, StandardCharsets.UTF_8);
 
