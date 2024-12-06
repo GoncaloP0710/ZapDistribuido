@@ -13,6 +13,15 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>17</java.version>
+        <maven-compiler-plugin.source>21</maven-compiler-plugin.source>
+        <maven-compiler-plugin.target>21</maven-compiler-plugin.target>
+        <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
+        <mongodb-driver-sync.version>5.0.0</mongodb-driver-sync.version>
+        <mongodb-crypt.version>1.8.0</mongodb-crypt.version>
+        <!-- Keeping 1.2.13 until mongodb-crypt makes slf4j-api an optional dependency -->
+        <!-- https://jira.mongodb.org/browse/MONGOCRYPT-602 -->
+        <logback-classic.version>1.2.13</logback-classic.version>
+        <exec-maven-plugin.version>3.1.1</exec-maven-plugin.version>
     </properties>
 
     <repositories>
@@ -67,6 +76,24 @@
                 <version>2.0.0</version>
             </dependency>
 
+             <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>mongodb-driver-sync</artifactId>
+                <version>${mongodb-driver-sync.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>mongodb-crypt</artifactId>
+                <version>${mongodb-crypt.version}</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback-classic.version}</version>
+            </dependency>
+
     </dependencies>
 
     <build>
@@ -90,6 +117,16 @@
                     <mainClass>psd.group4.client.User</mainClass>
                     </manifest>
                 </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <!-- Adding this plugin, so we don't need to add -Dexec.cleanupDaemonThreads=false in the mvn cmd line -->
+                <!-- to avoid the IllegalThreadStateException when running with Maven -->
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${exec-maven-plugin.version}</version>
+                <configuration>
+                    <cleanupDaemonThreads>false</cleanupDaemonThreads>
                 </configuration>
             </plugin>
             <plugin>
