@@ -2,6 +2,7 @@
 /home/goncalop0710/Desktop/Mestrado/Data-Privacy-and-Security/Data-Privacy-and-Security-Project/src/main/java/psd/group4/interfaces/UserServiceInterface.java
 /home/goncalop0710/Desktop/Mestrado/Data-Privacy-and-Security/Data-Privacy-and-Security-Project/src/main/java/psd/group4/handlers/KeyHandler.java
 /home/goncalop0710/Desktop/Mestrado/Data-Privacy-and-Security/Data-Privacy-and-Security-Project/src/main/java/psd/group4/events/BroadcastUpdateFingerTableEvent.java
+/home/goncalop0710/Desktop/Mestrado/Data-Privacy-and-Security/Data-Privacy-and-Security-Project/src/main/java/psd/group4/events/AddUserToGroupEvent.java
 /home/goncalop0710/Desktop/Mestrado/Data-Privacy-and-Security/Data-Privacy-and-Security-Project/src/main/java/psd/group4/message/UserMessage.java
 /home/goncalop0710/Desktop/Mestrado/Data-Privacy-and-Security/Data-Privacy-and-Security-Project/src/main/java/psd/group4/client/UserService.java
 /home/goncalop0710/Desktop/Mestrado/Data-Privacy-and-Security/Data-Privacy-and-Security-Project/src/main/java/psd/group4/events/NotifyEvent.java

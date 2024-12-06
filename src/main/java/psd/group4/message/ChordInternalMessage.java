@@ -2,6 +2,9 @@ package psd.group4.message;
 
 import java.util.ArrayList;
 
+import cn.edu.buaa.crypto.algebra.serparams.PairingKeySerParameter;
+import it.unisa.dia.gas.jpbc.Pairing;
+import it.unisa.dia.gas.jpbc.PairingParameters;
 import psd.group4.dtos.NodeDTO;
 
 import java.security.PublicKey;
@@ -27,8 +30,15 @@ public class ChordInternalMessage extends Message {
     private PublicKey initializerPublicKey; // DiffHellmanEvent
     private PublicKey targetPublicKey; // DiffHellmanEvent
 
+    private NodeDTO targetDTO; // TODO: Check if it can be removed
 
-    private NodeDTO targetDTO; // 
+    private PairingKeySerParameter publicKey; // AddUserToGroupEvent
+    private int[][] accessPolicy; // AddUserToGroupEvent
+    private String[] rhos; // AddUserToGroupEvent
+    private BigInteger receiverHash; // AddUserToGroupEvent
+    private String groupName; // AddUserToGroupEvent
+    private PairingParameters pairingParameters; // AddUserToGroupEvent
+    private String[] attributes; // AddUserToGroupEvent
 
     // UpdateNeighboringNodesEvent
     public ChordInternalMessage(MessageType messageType, NodeDTO nextNode, NodeDTO previousNode, NodeDTO initializer) {
@@ -101,6 +111,18 @@ public class ChordInternalMessage extends Message {
         super(messageType);
         this.target = target;
         this.initializer = initializer;
+    }
+
+    // AddUserToGroupEvent
+    public ChordInternalMessage(MessageType messageType, PairingKeySerParameter publicKey, int[][] accessPolicy, String[] rhos, BigInteger receiverHash, String groupName, PairingParameters pairingParameters, String[] attributes) {
+        super(messageType);
+        this.publicKey = publicKey;
+        this.accessPolicy = accessPolicy;
+        this.rhos = rhos;
+        this.receiverHash = receiverHash;
+        this.groupName = groupName;
+        this.pairingParameters = pairingParameters;
+        this.attributes = attributes;
     }
 
     public NodeDTO getNextNode(){
@@ -213,5 +235,33 @@ public class ChordInternalMessage extends Message {
 
     public boolean getIsExiting(){
         return this.isExiting;
+    }
+
+    public PairingKeySerParameter getPublicKey(){
+        return this.publicKey;
+    }
+
+    public int[][] getAccessPolicy(){
+        return this.accessPolicy;
+    }
+
+    public String[] getRhos(){
+        return this.rhos;
+    }
+
+    public BigInteger getReceiverHash(){
+        return this.receiverHash;
+    }
+
+    public String getGroupName(){
+        return this.groupName;
+    }
+
+    public PairingParameters getPairing(){
+        return this.pairingParameters;
+    }
+
+    public String[] getAttributes(){
+        return this.attributes;
     }
 }

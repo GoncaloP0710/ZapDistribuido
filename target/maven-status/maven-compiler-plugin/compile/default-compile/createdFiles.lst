@@ -24,6 +24,7 @@ psd/group4/events/RemoveSharedKeyEvent.class
 psd/group4/events/NodeEvent.class
 psd/group4/client/Node.class
 psd/group4/client/UserService.class
+psd/group4/events/AddUserToGroupEvent.class
 psd/group4/events/AddCertificateToTrustStoreEvent.class
 psd/group4/utils/observer/Event.class
 psd/group4/events/EnterNodeEvent.class

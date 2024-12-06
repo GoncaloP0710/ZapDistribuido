@@ -3,6 +3,7 @@ package psd.group4.message;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
 
+import cn.edu.buaa.crypto.algebra.serparams.PairingCipherSerParameter;
 import psd.group4.dtos.NodeDTO;
 
 public class UserMessage extends Message {
@@ -17,6 +18,7 @@ public class UserMessage extends Message {
     private boolean directMessage; // If the message is a direct message, it is double encrypted. Use only the ssl/tls encryption
 
     private String groupName;
+    private PairingCipherSerParameter messageEncrypGroup;
 
     /**
      * Normal message
@@ -35,11 +37,11 @@ public class UserMessage extends Message {
     /**
      * Group Message
      */
-    public UserMessage(MessageType messageType, NodeDTO senderDTO, byte[] messageEncryp, byte[] messageHash, String groupName) {
+    public UserMessage(MessageType messageType, NodeDTO senderDTO, PairingCipherSerParameter messageEncrypGroup, byte[] messageHash, String groupName) {
         super(messageType);
         this.senderDTO = senderDTO;
         this.time = LocalDateTime.now();
-        this.messageEncryp = messageEncryp;
+        this.messageEncrypGroup = messageEncrypGroup;
         this.messageHash = messageHash;
         this.groupName = groupName;
     }
@@ -62,6 +64,10 @@ public class UserMessage extends Message {
 
     public byte[] getMessageEncryp(){
         return this.messageEncryp;
+    }
+
+    public PairingCipherSerParameter getMessageEncrypGroup(){
+        return this.messageEncrypGroup;
     }
 
     public BigInteger getreceiverHash(){

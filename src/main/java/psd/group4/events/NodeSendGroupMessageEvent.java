@@ -1,11 +1,12 @@
 package psd.group4.events;
 
+import cn.edu.buaa.crypto.algebra.serparams.PairingCipherSerParameter;
 import cn.edu.buaa.crypto.algebra.serparams.PairingKeySerParameter;
 import psd.group4.dtos.NodeDTO;
 import psd.group4.message.UserMessage;
 
 public class NodeSendGroupMessageEvent extends NodeEvent {
-    private byte[] messageEncryp;
+    private PairingCipherSerParameter messageEncryp;
     private NodeDTO senderDTO;
     private byte[] messageHash;
     private String groupName;
@@ -15,15 +16,13 @@ public class NodeSendGroupMessageEvent extends NodeEvent {
 
     public NodeSendGroupMessageEvent(UserMessage msg) {
         super(msg);
-        this.messageEncryp = msg.getMessageEncryp();
+        this.messageEncryp = msg.getMessageEncrypGroup();
         this.senderDTO = msg.getSenderDTO();
         this.messageHash = msg.getMessageHash();
         this.groupName = msg.getGroupName();
-        // this.publicKey = msg.getPublicKey();
-        // this.secretKey = msg.getSecretKey();
     }
 
-    public byte[] getMessageEncryp() {
+    public PairingCipherSerParameter getMessageEncryp() {
         return this.messageEncryp;
     }
 

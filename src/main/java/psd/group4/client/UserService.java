@@ -10,6 +10,8 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
+import cn.edu.buaa.crypto.access.parser.PolicySyntaxException;
+import cn.edu.buaa.crypto.algebra.serparams.PairingCipherSerParameter;
 import psd.group4.handlers.*;
 import psd.group4.interfaces.UserServiceInterface;
 import psd.group4.utils.*;
@@ -193,19 +195,39 @@ public class UserService implements UserServiceInterface {
         nodeSendMessageLock.lock();
         try {
             System.out.println("Select the group you want to send a message to: ");
-            String reciver = interfaceHandler.getInput();
+            String groupName = interfaceHandler.getInput();
             System.out.println("Write the message: ");
-            byte[] message = interfaceHandler.getInput().getBytes();
-        
-            NodeSendGroupMessageEvent event = new NodeSendGroupMessageEvent(new UserMessage(MessageType.SendGroupMsg, currentNodeDTO, message, (byte[]) null, reciver));
-            eventHandler.sendGroupMessage(event);
+            String message = interfaceHandler.getInput();
+            PairingCipherSerParameter messageEncryp = eventHandler.encryptGroupMessage(groupName, message);
+
+            UserMessage msg = new UserMessage(MessageType.SendGroupMsg, currentNodeDTO, messageEncryp, (byte[]) null, groupName);
+            clientHandler.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), msg, false, currentNode.getNextNode().getUsername());
         } finally {
             nodeSendMessageLock.unlock();
         }
     }
 
-    public void createGroup(String groupName) {
-        eventHandler.createGroup(groupName);
+    public void createGroup(InterfaceHandler interfaceHandler) {
+        try {
+            System.out.println("Select the group name you want to create: ");
+            String groupName = interfaceHandler.getInput();
+            eventHandler.createGroup(groupName);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void addUserToGroup(InterfaceHandler interfaceHandler) {
+        nodeSendMessageLock.lock();
+        try {
+            System.out.println("Select the group you want to add the user to: ");
+            String groupName = interfaceHandler.getInput();
+            System.out.println("Write the user name: ");
+            String userName = interfaceHandler.getInput();
+            
+        } finally {
+            nodeSendMessageLock.unlock();
+        }
     }
 
     /**

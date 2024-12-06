@@ -101,9 +101,6 @@ public class User {
             PairingCipherSerParameter ciphertext = engine.encryption(publicKey, attributes, message);
 
             // Decryption - done by Bob
-
-            
-
             Element decryptedMessage = engine.decryption(publicKey, secretKey, attributes, ciphertext);
             byte[] decryptedBytes = decodeGroupToBytes(decryptedMessage);
             String recoveredMessage = new String(decryptedBytes, StandardCharsets.UTF_8);
@@ -231,6 +228,14 @@ public class User {
                 case "10":
                 case "sg":
                     userService.sendGroupMessage(interfaceHandler);
+                    break;
+                case "11":
+                case "ag":
+                    userService.addUserToGroup(interfaceHandler);
+                    break;
+                case "12":
+                case "cg":
+                    userService.createGroup(interfaceHandler);
                     break;
                 default:
                     InterfaceHandler.erro("Opção inválida!");

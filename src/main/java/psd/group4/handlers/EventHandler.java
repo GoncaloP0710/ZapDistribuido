@@ -27,7 +27,6 @@ import java.security.Signature;
 
 // ----------------- Bouncy Castle -----------------
 
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -83,7 +82,22 @@ public class EventHandler {
     private ConcurrentHashMap<String, String[]> groupAtributes = new ConcurrentHashMap<>();
 
     // ConcurrentHashMap to store the group attributes
-    private ConcurrentHashMap<String, String> groupPolicy = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, int[][]> groupAccessPolicy = new ConcurrentHashMap<>();
+
+    // ConcurrentHashMap to store the group master keys
+    private ConcurrentHashMap<String, PairingKeySerParameter> groupMasterKeys = new ConcurrentHashMap<>();
+
+    // ConcurrentHashMap to store the group public keys
+    private ConcurrentHashMap<String, PairingKeySerParameter> groupPublicKeys = new ConcurrentHashMap<>();
+
+    // ConcurrentHashMap to store the group secret keys
+    private ConcurrentHashMap<String, PairingKeySerParameter> groupSecretKeys = new ConcurrentHashMap<>();
+
+    // ConcurrentHashMap to store the group rhos
+    private ConcurrentHashMap<String, String[]> groupRhos = new ConcurrentHashMap<>();
+
+    // ConcurrentHashMap to store the group pairing
+    private ConcurrentHashMap<String, PairingParameters> groupPairingParameters = new ConcurrentHashMap<>();
  
     public EventHandler(UserService userService) {
         this.userService = userService;
@@ -567,13 +581,17 @@ public class EventHandler {
         }
     }
 
-    public void sendGroupMessage(NodeSendGroupMessageEvent event) throws NoSuchAlgorithmException {
+    public void sendGroupMessage(NodeSendGroupMessageEvent event) throws NoSuchAlgorithmException, InvalidCipherTextException {
         
         if (groupAtributes.get(event.getGroupName()) == null) {
             InterfaceHandler.internalInfo("Arrived a group message that the user does not belong to");
         } else {
             // Decrypt the message
-            String msg = decryptGroupMessage(); // TODO: Add the parameters and more secure layers
+            PairingKeySerParameter publicKey = groupPublicKeys.get(event.getGroupName());
+            PairingKeySerParameter secretKey = groupSecretKeys.get(event.getGroupName());
+            String[] attributes = groupAtributes.get(event.getGroupName());
+            PairingCipherSerParameter ciphertext = event.getMessageEncryp();
+            String msg = decryptGroupMessage(publicKey, secretKey, attributes, ciphertext);
             InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + msg);
         }
 
@@ -584,12 +602,9 @@ public class EventHandler {
         }
     }
 
-
     public void createGroup(String groupName) throws PolicySyntaxException {
         String policy = generateRandomPolicy();
         String[] attributes = generateAttributesForPolicy(policy);
-        groupAtributes.put(groupName, attributes);
-        groupPolicy.put(groupName, policy);
 
         // Setup
         KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
@@ -599,8 +614,6 @@ public class EventHandler {
         int qBits = 512; // Number of bits for the field size
         TypeACurveGenerator curveGenerator = new TypeACurveGenerator(rBits, qBits);
         PairingParameters pairingParameters = curveGenerator.generate();
-        Pairing pairing = PairingFactory.getPairing(pairingParameters);
-        System.out.println("Pairing parameters generated and pairing instance created.");
 
         // Key generation - done by the PKG
         PairingKeySerPair keyPair = engine.setup(pairingParameters, 50); // Setup with 50 attributes (0 to 49)
@@ -611,21 +624,55 @@ public class EventHandler {
         String[] rhos = ParserUtils.GenerateRhos(policy);
         PairingKeySerParameter secretKey = engine.keyGen(publicKey, masterKey, accessPolicy, rhos);
 
-        // TODO: Create new global variables for the variables needed
+        groupAtributes.put(groupName, attributes);
+        groupAccessPolicy.put(groupName, accessPolicy);
+        groupMasterKeys.put(groupName, masterKey);
+        groupPublicKeys.put(groupName, publicKey);
+        groupSecretKeys.put(groupName, secretKey);
+        groupRhos.put(groupName, rhos);
+        groupPairingParameters.put(groupName, pairingParameters);
+        InterfaceHandler.success("Group created successfully");
     }
 
-    public void addMemberToGroup() {
-        // TODO:
-        // send the pubK
-        // send the accessPolicy
-        // send the rhos
-        // create unique master key
-        // create unique secret key
+    public void addMemberToGroup(AddUserToGroupEvent event) {
+
+        if (currentNodeDTO.getHash().equals(event.getReceiverHash())) { // Reached the target
+            KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
+            PairingParameters pairingParameters = event.getPairingParameters();
+
+            // Key generation - done by the PKG
+            PairingKeySerPair keyPair = engine.setup(pairingParameters, 50); // Setup with 50 attributes (0 to 49)
+            PairingKeySerParameter masterKey = keyPair.getPrivate();
+
+            int[][] accessPolicy = event.getAccessPolicy();
+            PairingKeySerParameter publicKey = groupPublicKeys.get(event.getGroupName());
+            String[] rhos = groupRhos.get(event.getGroupName());
+
+            PairingKeySerParameter secretKey = engine.keyGen(publicKey, masterKey, accessPolicy, rhos);
+
+            groupRhos.put(event.getGroupName(), event.getRhos());
+            groupPublicKeys.put(event.getGroupName(), event.getPublicKey());
+            groupMasterKeys.put(event.getGroupName(), masterKey);
+            groupSecretKeys.put(event.getGroupName(), secretKey);
+            groupAccessPolicy.put(event.getGroupName(), accessPolicy);
+            groupAtributes.put(event.getGroupName(), event.getAttributes());
+            groupPairingParameters.put(event.getGroupName(), pairingParameters);
+            InterfaceHandler.success("User added to group successfully");
+
+        } else {
+            NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getReceiverHash());
+            if (nodeWithHashDTO != null) {
+                try {
+                    clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false, nodeWithHashDTO.getUsername());
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                // TODO: Send message back to the sender saying that the target node was not found
+                return;
+            }
+        }
     }
-
-
-    // -------------- To be moved to another class --------------
-
 
     private static String generateRandomPolicy() {
         Random random = new Random();
@@ -663,14 +710,19 @@ public class EventHandler {
                 .toArray(String[]::new);
     }
 
-    private void encryptGroupMessage(String groupName, String originalMessage) throws PolicySyntaxException {
+    public PairingCipherSerParameter encryptGroupMessage(String groupName, String originalMessage) throws PolicySyntaxException {
+        KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
+        Pairing pairing = PairingFactory.getPairing(groupPairingParameters.get(groupName));
+        PairingKeySerParameter publicKey = groupPublicKeys.get(groupName);
         String[] attributes = groupAtributes.get(groupName);
         byte[] messageBytes = originalMessage.getBytes(StandardCharsets.UTF_8);
         Element message = encodeBytesToGroup(pairing, messageBytes);
         PairingCipherSerParameter ciphertext = engine.encryption(publicKey, attributes, message);
+        return ciphertext;
     }
 
-    private String decryptGroupMessage(PairingKeySerParameter publicKey, PairingKeySerParameter secretKey, String[] attributes, PairingCipherSerParameter ciphertext) throws InvalidCipherTextException {
+    public String decryptGroupMessage(PairingKeySerParameter publicKey, PairingKeySerParameter secretKey, String[] attributes, PairingCipherSerParameter ciphertext) throws InvalidCipherTextException {
+        KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
         Element decryptedMessage = engine.decryption(publicKey, secretKey, attributes, ciphertext);
         byte[] decryptedBytes = decodeGroupToBytes(decryptedMessage);
         String recoveredMessage = new String(decryptedBytes, StandardCharsets.UTF_8);
