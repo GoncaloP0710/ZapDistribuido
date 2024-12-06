@@ -274,6 +274,10 @@ public class InterfaceHandler {
         System.out.println(ANSI_GREEN + "7 - (iinfo 1)  " + ANSI_UNDERLINE + "Enable internal info logging" + ANSI_RESET + ANSI_PURPLE + " - Enable internal info logging on the terminal" + ANSI_RESET);
         System.out.println(ANSI_GREEN + "8 -  (info 0)  " + ANSI_UNDERLINE + "Disable info logging" + ANSI_RESET + ANSI_PURPLE + " - Disable info logging on the terminal" + ANSI_RESET);
         System.out.println(ANSI_GREEN + "9 -  (info 1)  " + ANSI_UNDERLINE + "Enable info logging" + ANSI_RESET + ANSI_PURPLE + " - Enable info logging on the terminal" + ANSI_RESET);
+    
+        System.out.println(ANSI_GREEN + "10 - (sg)  "+  ANSI_UNDERLINE + "Send group message" + ANSI_RESET + ANSI_PURPLE + " - Sends a message to all members of a group"+ ANSI_RESET);
+        System.out.println(ANSI_GREEN + "11 - (ag)  "+  ANSI_UNDERLINE + "Add a new member to a group" + ANSI_RESET + ANSI_PURPLE + " - A new user is added to a group"+ ANSI_RESET);
+        System.out.println(ANSI_GREEN + "12 - (cg)  "+  ANSI_UNDERLINE + "Create a new group" + ANSI_RESET + ANSI_PURPLE + " - Creates a new group"+ ANSI_RESET);
     }
 
     /**

@@ -10,7 +10,6 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
-import cn.edu.buaa.crypto.access.parser.PolicySyntaxException;
 import cn.edu.buaa.crypto.algebra.serparams.PairingCipherSerParameter;
 import psd.group4.handlers.*;
 import psd.group4.interfaces.UserServiceInterface;
@@ -25,7 +24,7 @@ import psd.group4.message.*;
 public class UserService implements UserServiceInterface {
 
    // ---------------------- Default Node ----------------------
-    private String ipDefault = "192.168.43.234";
+    private String ipDefault = "192.168.1.9";
     private int portDefault = 8080;
     private String usernameDefault = "Wang";
     // ----------------------------------------------------------
@@ -196,11 +195,23 @@ public class UserService implements UserServiceInterface {
         try {
             System.out.println("Select the group you want to send a message to: ");
             String groupName = interfaceHandler.getInput();
+
+            if (eventHandler.getGroupPublicKey(groupName) == null) {
+                InterfaceHandler.erro("You are not a member of the group. Or the group does not exist.");
+                InterfaceHandler.info("Select the group you want to add the user to: ");
+                groupName = interfaceHandler.getInput();
+                while (eventHandler.getGroupPublicKey(groupName) == null) {
+                    InterfaceHandler.erro("You are not a member of the group. Or the group does not exist.");
+                    InterfaceHandler.info("Select the group you want to add the user to: ");
+                    groupName = interfaceHandler.getInput();
+                }
+            }
+
             System.out.println("Write the message: ");
             String message = interfaceHandler.getInput();
             PairingCipherSerParameter messageEncryp = eventHandler.encryptGroupMessage(groupName, message);
 
-            UserMessage msg = new UserMessage(MessageType.SendGroupMsg, currentNodeDTO, messageEncryp, (byte[]) null, groupName);
+            UserMessage msg = new UserMessage(MessageType.SendGroupMsg, currentNodeDTO, messageEncryp, EncryptionHandler.createMessageHash(message.getBytes()), groupName);
             clientHandler.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), msg, false, currentNode.getNextNode().getUsername());
         } finally {
             nodeSendMessageLock.unlock();
@@ -213,7 +224,7 @@ public class UserService implements UserServiceInterface {
             String groupName = interfaceHandler.getInput();
             eventHandler.createGroup(groupName);
         } catch (Exception e) {
-            e.printStackTrace();
+            InterfaceHandler.erro("Error creating group: " + e.getMessage());
         }
     }
 
@@ -222,6 +233,18 @@ public class UserService implements UserServiceInterface {
         try {
             System.out.println("Select the group you want to add the user to: ");
             String groupName = interfaceHandler.getInput();
+
+            if (eventHandler.getGroupPublicKey(groupName) == null) {
+                InterfaceHandler.erro("You are not a member of the group. Or the group does not exist.");
+                InterfaceHandler.info("Select the group you want to add the user to: ");
+                groupName = interfaceHandler.getInput();
+                while (eventHandler.getGroupPublicKey(groupName) == null) {
+                    InterfaceHandler.erro("You are not a member of the group. Or the group does not exist.");
+                    InterfaceHandler.info("Select the group you want to add the user to: ");
+                    groupName = interfaceHandler.getInput();
+                }
+            }
+
             System.out.println("Write the user name: ");
             String userName = interfaceHandler.getInput();
             BigInteger reciverHash = currentNode.calculateHash(userName);

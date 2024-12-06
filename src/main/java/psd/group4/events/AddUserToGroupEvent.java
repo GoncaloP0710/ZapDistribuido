@@ -8,14 +8,16 @@ import psd.group4.dtos.NodeDTO;
 import psd.group4.message.ChordInternalMessage;
 
 public class AddUserToGroupEvent extends NodeEvent {
-    private final PairingKeySerParameter publicKey;
+
     private final int[][] accessPolicy;
     private final String[] rhos;
     private PairingParameters pairingParameters;
-    private BigInteger receiverHash;
     private String groupName;
     private String[] attributes;
     private PairingKeySerParameter masterKey;
+
+    private BigInteger receiverHash;
+    private final PairingKeySerParameter publicKey;
     private NodeDTO senderDTO;
 
     public AddUserToGroupEvent(ChordInternalMessage msg) {

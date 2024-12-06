@@ -578,6 +578,13 @@ public class EventHandler {
             String[] attributes = groupAtributes.get(event.getGroupName());
             PairingCipherSerParameter ciphertext = event.getMessageEncryp();
             String msg = decryptGroupMessage(publicKey, secretKey, attributes, ciphertext);
+            byte[] msgHash = EncryptionHandler.createMessageHash(msg.getBytes());
+
+            if (event.getMessageHash() == msgHash) {
+                InterfaceHandler.erro("Message hash does not match");
+                return;
+            }
+
             InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + msg);
         }
 
