@@ -652,7 +652,17 @@ public class EventHandler {
                     e.printStackTrace();
                 }
             } else {
-                // TODO: Send message back to the sender saying that the target node was not found
+                if (getSharedKey(event.getReceiverHash()) == null) { // If the shared key does not exist
+                    InterfaceHandler.internalInfo("The shared key does not exist, creating a new one to be able to send message.");
+                    ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.diffHellman, currentNodeDTO, event.getReceiverHash(), (PublicKey) null, (PublicKey) null);
+                    DiffHellmanEvent diffHellmanEvent = new DiffHellmanEvent(messageToSend);
+                    diffieHellman(diffHellmanEvent);
+                }
+
+                String recivedMessage = "Node does not exist";
+                UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), recivedMessage.getBytes(), false, (byte[]) null, false);
+                NodeSendMessageEvent e = new NodeSendMessageEvent(userMessage);
+                sendUserMessage(e);
                 return;
             }
         }
