@@ -4,6 +4,7 @@ import java.math.BigInteger;
 
 import cn.edu.buaa.crypto.algebra.serparams.PairingKeySerParameter;
 import it.unisa.dia.gas.jpbc.PairingParameters;
+import psd.group4.dtos.NodeDTO;
 import psd.group4.message.ChordInternalMessage;
 
 public class AddUserToGroupEvent extends NodeEvent {
@@ -15,6 +16,7 @@ public class AddUserToGroupEvent extends NodeEvent {
     private String groupName;
     private String[] attributes;
     private PairingKeySerParameter masterKey;
+    private NodeDTO senderDTO;
 
     public AddUserToGroupEvent(ChordInternalMessage msg) {
         super(msg);
@@ -26,6 +28,7 @@ public class AddUserToGroupEvent extends NodeEvent {
         this.pairingParameters = msg.getPairing();
         this.attributes = msg.getAttributes();
         this.masterKey = msg.getMasterKey();
+        this.senderDTO = msg.getSenderDto();
     }
 
     public PairingKeySerParameter getPublicKey() {
@@ -58,6 +61,10 @@ public class AddUserToGroupEvent extends NodeEvent {
 
     public PairingKeySerParameter getMasterKey() {
         return masterKey;
+    }
+
+    public NodeDTO getSenderDTO() {
+        return senderDTO;
     }
     
 }

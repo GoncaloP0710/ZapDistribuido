@@ -77,26 +77,12 @@ public class EventHandler {
     private ConcurrentHashMap<BigInteger, byte[]> sharedKeys = new ConcurrentHashMap<>();
 
     // Fase 2 - Grupos --------------------------------------------
-
-    // ConcurrentHashMap to store the group attributes
     private ConcurrentHashMap<String, String[]> groupAtributes = new ConcurrentHashMap<>();
-
-    // ConcurrentHashMap to store the group attributes
     private ConcurrentHashMap<String, int[][]> groupAccessPolicy = new ConcurrentHashMap<>();
-
-    // ConcurrentHashMap to store the group master keys
     private ConcurrentHashMap<String, PairingKeySerParameter> groupMasterKeys = new ConcurrentHashMap<>();
-
-    // ConcurrentHashMap to store the group public keys
     private ConcurrentHashMap<String, PairingKeySerParameter> groupPublicKeys = new ConcurrentHashMap<>();
-
-    // ConcurrentHashMap to store the group secret keys
     private ConcurrentHashMap<String, PairingKeySerParameter> groupSecretKeys = new ConcurrentHashMap<>();
-
-    // ConcurrentHashMap to store the group rhos
     private ConcurrentHashMap<String, String[]> groupRhos = new ConcurrentHashMap<>();
-
-    // ConcurrentHashMap to store the group pairing
     private ConcurrentHashMap<String, PairingParameters> groupPairingParameters = new ConcurrentHashMap<>();
  
     public EventHandler(UserService userService) {
@@ -635,7 +621,7 @@ public class EventHandler {
         InterfaceHandler.success("Group created successfully");
     }
 
-    public void addMemberToGroup(AddUserToGroupEvent event) {
+    public void addMemberToGroup(AddUserToGroupEvent event) throws Exception {
 
         if (currentNodeDTO.getHash().equals(event.getReceiverHash())) { // Reached the target
 
@@ -652,6 +638,11 @@ public class EventHandler {
             groupSecretKeys.put(event.getGroupName(), secretKey);
             InterfaceHandler.success("User added to group successfully");
 
+            String recivedMessage = currentNodeDTO.getUsername() + " entered the group";
+            UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), recivedMessage.getBytes(), false, (byte[]) null, false);
+            NodeSendMessageEvent e = new NodeSendMessageEvent(userMessage);
+            sendUserMessage(e);
+            
         } else {
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getReceiverHash());
             if (nodeWithHashDTO != null) {

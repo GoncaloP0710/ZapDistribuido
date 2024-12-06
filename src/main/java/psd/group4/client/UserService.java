@@ -217,7 +217,7 @@ public class UserService implements UserServiceInterface {
         }
     }
 
-    public void addUserToGroup(InterfaceHandler interfaceHandler) throws NoSuchAlgorithmException {
+    public void addUserToGroup(InterfaceHandler interfaceHandler) throws Exception {
         nodeSendMessageLock.lock();
         try {
             System.out.println("Select the group you want to add the user to: ");
@@ -226,11 +226,18 @@ public class UserService implements UserServiceInterface {
             String userName = interfaceHandler.getInput();
             BigInteger reciverHash = currentNode.calculateHash(userName);
 
+            if (eventHandler.getSharedKey(reciverHash) == null) { // If the shared key does not exist
+                InterfaceHandler.internalInfo("The shared key does not exist, creating a new one to be able to send message.");
+                ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.diffHellman, currentNodeDTO, reciverHash, (PublicKey) null, (PublicKey) null);
+                DiffHellmanEvent diffHellmanEvent = new DiffHellmanEvent(messageToSend);
+                eventHandler.diffieHellman(diffHellmanEvent);
+            }
+
             System.out.println(eventHandler.getGroupAttributes(groupName));
 
             ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.AddUserToGroup, eventHandler.getGroupPublicKey(groupName), 
                 eventHandler.getGroupAccessPolicy(groupName), eventHandler.getGroupRhos(groupName), reciverHash, groupName, 
-                eventHandler.getGroupPairingParameters(groupName), eventHandler.getGroupAttributes(groupName), eventHandler.getGroupMasterKey(groupName));
+                eventHandler.getGroupPairingParameters(groupName), eventHandler.getGroupAttributes(groupName), eventHandler.getGroupMasterKey(groupName), currentNodeDTO);
 
             AddUserToGroupEvent event = new AddUserToGroupEvent(messageToSend);
             eventHandler.addMemberToGroup(event);
