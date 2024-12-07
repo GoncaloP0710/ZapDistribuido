@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 import javax.crypto.KeyAgreement;
+import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
@@ -28,6 +29,10 @@ import java.security.KeyPairGenerator;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.MessageDigest;
+import java.nio.charset.StandardCharsets;
+import java.security.SignatureException;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 public final class Utils {
 
@@ -229,6 +234,32 @@ public final class Utils {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
              ObjectInputStream in = new ObjectInputStream(bis)) {
             return clazz.cast(in.readObject());
+        }
+    }
+
+    /**
+     * Generates an HMAC for a given message using the specified secret key and algorithm.
+     *
+     * @param algorithm the HMAC algorithm (e.g., HmacSHA256, HmacSHA1)
+     * @param key       the secret key as a byte array
+     * @param message   the message as a byte array
+     * @return the computed HMAC as a hexadecimal string
+     * @throws Exception if any error occurs during HMAC computation
+     */
+    public static byte[] generateHMAC(String algorithm, byte[] key, byte[] message) throws Exception {
+        try {
+            // Create a secret key specification based on the provided key
+            SecretKeySpec secretKeySpec = new SecretKeySpec(key, algorithm);
+
+            // Initialize the Mac instance with the specified algorithm
+            Mac mac = Mac.getInstance(algorithm);
+            mac.init(secretKeySpec);
+
+            // Compute the HMAC
+            byte[] hmacBytes = mac.doFinal(message);
+            return hmacBytes;
+        } catch (Exception e) {
+            throw new Exception("Error while generating HMAC", e);
         }
     }
 }

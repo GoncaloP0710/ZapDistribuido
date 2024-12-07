@@ -311,7 +311,7 @@ public class EventHandler {
             PublicKey senderPubKey = event.getSenderDTO().getPubK();
             boolean isRightSignature = verifySignature(senderPubKey, message, hashSigned);
             if (!isRightSignature) {
-                InterfaceHandler.erro("Message signature does not match!");
+                InterfaceHandler.erro("Message signature does not match! Or the hash was altered");
                 return;
             }
             String messageString = new String(decryptedBytes, StandardCharsets.UTF_8);
@@ -657,7 +657,7 @@ public class EventHandler {
             PublicKey senderPubKey = event.getSenderDTO().getPubK();
             boolean isRightSignature = verifySignature(senderPubKey, groupAtributesDTOBytesEncrypted, hashSigned);
             if (!isRightSignature) {
-                InterfaceHandler.erro("Message signature does not match!");
+                InterfaceHandler.erro("Message signature does not match! Or the hash was altered");
                 return;
             }
 
