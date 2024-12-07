@@ -120,9 +120,15 @@ public class InterfaceHandler {
      * Print the startup message
      */
     public void startUp() {
-        System.out.println(ANSI_GREEN + "----------------------------------" + ANSI_RESET);
-        System.out.println(ANSI_GREEN + "-------" + ANSI_UNDERLINE + "WHATSAPP DISTRIBUIDO" + ANSI_RESET + ANSI_GREEN + "-------" + ANSI_RESET);
-        System.out.println(ANSI_GREEN + "----------------------------------" + ANSI_RESET);
+        System.out.println(ANSI_GREEN + "         ______           _____  _     _        _ _           _     _       \n" +
+        "        |___  /          |  __ \\(_)   | |      (_) |         (_)   | |      \n" +
+        "           / / __ _ _ __ | |  | |_ ___| |_ _ __ _| |__  _   _ _  __| | ___  \n" +
+        "          / / / _` | '_ \\| |  | | / __| __| '__| | '_ \\| | | | |/ _` |/ _ \\ \n" +
+        "         / /_| (_| | |_) | |__| | \\__ \\ |_| |  | | |_) | |_| | | (_| | (_) |\n" +
+        "        /_____\\__,_| .__/|_____/|_|___/\\__|_|  |_|_.__/ \\__,_|_|\\__,_|\\___/ \n" +
+        "                   | |                                                      \n" +
+        "                   |_| " + ANSI_RESET);  
+        System.out.println();                                             
     }
 
     /**

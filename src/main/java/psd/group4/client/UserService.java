@@ -278,8 +278,12 @@ public class UserService implements UserServiceInterface {
      * @throws InterruptedException 
      * @throws NoSuchAlgorithmException 
      */
-    public void exitNode() throws NoSuchAlgorithmException, InterruptedException {
-        eventHandler.exitNode();
+    public void exitNode() {
+        try {
+            eventHandler.exitNode();
+        } catch (Exception e) {
+            InterfaceHandler.erro("Error exiting node: " + e.getMessage());
+        }
     }
 
     public void printGroups() {

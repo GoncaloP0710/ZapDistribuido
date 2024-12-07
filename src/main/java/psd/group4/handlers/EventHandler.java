@@ -143,7 +143,7 @@ public class EventHandler {
      * @throws NoSuchAlgorithmException
      * @throws InterruptedException
      */
-    public synchronized void exitNode() throws NoSuchAlgorithmException, InterruptedException {
+    public synchronized void exitNode() throws Exception {
         NodeDTO prevNodeDTO = currentNode.getPreviousNode();
         NodeDTO nextNodeDTO = currentNode.getNextNode();
 
@@ -171,11 +171,37 @@ public class EventHandler {
 
         for (BigInteger key : sharedKeys.keySet()) {
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(key);
-            clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), new ChordInternalMessage(MessageType.RemoveSharedKey, key, currentNodeDTO), false, nodeWithHashDTO.getUsername());
+            try {
+                clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), new ChordInternalMessage(MessageType.RemoveSharedKey, key, currentNodeDTO), false, nodeWithHashDTO.getUsername());
+            } catch (Exception e) {
+                InterfaceHandler.erro("Error removing shared key: " + e.getMessage());
+                System.out.println(key);
+                System.out.println("-----------------------------------------------------------------");
+                System.out.println(sharedKeys.keySet());
+            }
         }
 
         Thread.sleep(2000); // TODO: Reduce the value of the sleep
         InterfaceHandler.success("Node exited the network successfully");
+    }
+
+    /**
+     * Handles the remove shared key event
+     * 
+     * @param e
+     */
+    public synchronized void removeSharedKey(RemoveSharedKeyEvent e) {
+        if (currentNodeDTO.getHash().equals(e.getTarget())) {
+            sharedKeys.remove(e.getInitializer().getHash());
+            InterfaceHandler.info("Shared key removed successfully, " + e.getInitializer().getUsername());
+        } else {
+            NodeDTO nodeWithHashDTO = userService.getNodeWithHash(e.getTarget());
+            try {
+                clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), e.getMessage(), false, nodeWithHashDTO.getUsername());
+            } catch (Exception e1) {
+                InterfaceHandler.erro("Error removing shared key: " + e1.getMessage());
+            }
+        }
     }
 
     /**
@@ -247,36 +273,19 @@ public class EventHandler {
      */
     public synchronized void sendUserMessage(NodeSendMessageEvent event) throws Exception {
         if (currentNodeDTO.getHash().equals(event.getReciver()) || currentNodeDTO.getHash().equals(event.getSenderDTO().getHash())) { // Arrived at a node that needs the shared key
-            long startTime = System.currentTimeMillis();
-            while (sharedKeys.get(event.getReciver()) == null && sharedKeys.get(event.getSenderDTO().getHash()) == null) {
-               try {
-                    wait(2000); // Wait for 1 second intervals
-                    long elapsedTime = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime);
-                    if (elapsedTime >= TIMEOUT) {
-                        InterfaceHandler.erro("Connection timeout! - Shared key not found");
-                        return;
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    InterfaceHandler.erro("Thread interrupted: " + e.getMessage());
-                    return;
-                }
-            }
+            waitForSharedK(event.getReciver(), event.getSenderDTO().getHash());
         } else { // Foward to the target
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getReciver());
             clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false, nodeWithHashDTO.getUsername());
             return;
         }   
-        if (event.getSenderDTO().getHash().equals(currentNodeDTO.getHash())) { // Start of the process (initializer)
-            byte[] message = event.getMessageEncryp(); // In this step the message hasnt been encrypted yet
-            byte[] encryptedBytesAut = EncryptionHandler.encryptWithKey(message, sharedKeys.get(event.getReciver()));
-            byte[] hash = EncryptionHandler.createMessageHash(encryptedBytesAut);
-            byte[] hashSigned = getSignature(hash, userService.getKeyHandler().getPrivateKey());
+        if (event.getSenderDTO().getHash().equals(currentNodeDTO.getHash())) { // Start of the process (initializer) - In this step the message hasnt been encrypted yet
+            byte[] encryptedBytesAut = EncryptionHandler.encryptWithKey(event.getMessageEncryp(), sharedKeys.get(event.getReciver()));
+            byte[] hashSigned = getSignature(EncryptionHandler.createMessageHash(encryptedBytesAut), userService.getKeyHandler().getPrivateKey());
 
             UserMessage internalMsg = (UserMessage) event.getMessage();
             internalMsg.setMessageEncryp(encryptedBytesAut);
             internalMsg.setMessageHash(hashSigned);
-            
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getReciver());
             clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), internalMsg, false, nodeWithHashDTO.getUsername());
 
@@ -630,24 +639,6 @@ public class EventHandler {
                 clientHandler.startClient(e.getTarget().getIp(), e.getTarget().getPort(), e.getMessage(), false, e.getTarget().getUsername());
             } catch (NoSuchAlgorithmException e1) {
                 e1.printStackTrace();
-            }
-        }
-    }
-
-    /**
-     * Handles the remove shared key event
-     * 
-     * @param e
-     */
-    public void removeSharedKey(RemoveSharedKeyEvent e) {
-        if (currentNodeDTO.getHash().equals(e.getTarget())) {
-            sharedKeys.remove(e.getInitializer().getHash());
-        } else {
-            NodeDTO nodeWithHashDTO = userService.getNodeWithHash(e.getTarget());
-            try {
-                clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), e.getMessage(), false, nodeWithHashDTO.getUsername());
-            } catch (Exception e1) {
-                InterfaceHandler.erro("Error removing shared key: " + e1.getMessage());
             }
         }
     }
