@@ -218,8 +218,11 @@ public class UserService implements UserServiceInterface {
             System.out.println("Write the message: ");
             String message = interfaceHandler.getInput();
             PairingCipherSerParameter messageEncryp = eventHandler.encryptGroupMessage(groupName, message);
+            byte[] messageEncrypBytes = Utils.serialize(messageEncryp);
+            byte[] hash = EncryptionHandler.createMessageHash(messageEncrypBytes);
+            byte[] hashSigned = eventHandler.getSignature(hash, getKeyHandler().getPrivateKey());
 
-            UserMessage msg = new UserMessage(MessageType.SendGroupMsg, currentNodeDTO, messageEncryp, EncryptionHandler.createMessageHash(message.getBytes()), groupName);
+            UserMessage msg = new UserMessage(MessageType.SendGroupMsg, currentNodeDTO, messageEncrypBytes, hashSigned, groupName);
             clientHandler.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), msg, false, currentNode.getNextNode().getUsername());
         } finally {
             nodeSendMessageLock.unlock();

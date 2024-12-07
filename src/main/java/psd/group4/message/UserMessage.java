@@ -18,7 +18,7 @@ public class UserMessage extends Message {
     private boolean directMessage; // If the message is a direct message, it is double encrypted. Use only the ssl/tls encryption
 
     private String groupName;
-    private PairingCipherSerParameter messageEncrypGroup;
+    private byte[] messageEncrypGroup;
 
     /**
      * Normal message
@@ -37,7 +37,7 @@ public class UserMessage extends Message {
     /**
      * Group Message
      */
-    public UserMessage(MessageType messageType, NodeDTO senderDTO, PairingCipherSerParameter messageEncrypGroup, byte[] messageHash, String groupName) {
+    public UserMessage(MessageType messageType, NodeDTO senderDTO, byte[] messageEncrypGroup, byte[] messageHash, String groupName) {
         super(messageType);
         this.senderDTO = senderDTO;
         this.time = LocalDateTime.now();
@@ -66,7 +66,7 @@ public class UserMessage extends Message {
         return this.messageEncryp;
     }
 
-    public PairingCipherSerParameter getMessageEncrypGroup(){
+    public byte[] getMessageEncrypGroup(){
         return this.messageEncrypGroup;
     }
 

@@ -307,8 +307,14 @@ public class EventHandler {
             byte[] decryptedBytes = EncryptionHandler.decryptWithKey(message, sharedKeys.get(event.getSenderDTO().getHash()));
             byte[] hashSigned = event.getMessageHash();
 
+            NodeDTO Sender = event.getSenderDTO();
+            if (!userService.getKeyHandler().getTruStore().containsAlias(Sender.getUsername())) {// If the certificate of the other node is not in the truststore
+                userService.getClientHandler().shareCertificateClient(Sender.getIp(), Sender.getPort(), new ChordInternalMessage(MessageType.addCertificateToTrustStore, (byte[]) null, (byte[]) null, currentNodeDTO.getUsername(), Sender.getUsername(), currentNodeDTO, (PublicKey) null, (PublicKey) null), Sender.getUsername());
+                Thread.sleep(500);
+            }
+
             // Verify the signature
-            PublicKey senderPubKey = event.getSenderDTO().getPubK();
+            PublicKey senderPubKey = userService.getKeyHandler().getTruStore().getCertificate(Sender.getUsername()).getPublicKey();
             boolean isRightSignature = verifySignature(senderPubKey, message, hashSigned);
             if (!isRightSignature) {
                 InterfaceHandler.erro("Message signature does not match! Or the hash was altered");
@@ -334,7 +340,7 @@ public class EventHandler {
      * @return
      * @throws Exception
      */
-    private byte[] getSignature(byte[] hash, PrivateKey privK) throws Exception {
+    public byte[] getSignature(byte[] hash, PrivateKey privK) throws Exception {
         Signature signature = Signature.getInstance("SHA256withRSA");
         signature.initSign(privK);
         signature.update(hash);
@@ -567,23 +573,32 @@ public class EventHandler {
         }
     }
 
-    public void sendGroupMessage(NodeSendGroupMessageEvent event) throws NoSuchAlgorithmException, InvalidCipherTextException {
+    public void sendGroupMessage(NodeSendGroupMessageEvent event) throws Exception {
         
         if (groupAtributes.get(event.getGroupName()) == null) {
             InterfaceHandler.internalInfo("Arrived a group message that the user does not belong to");
         } else {
+
+            NodeDTO Sender = event.getSenderDTO();
+            if (!userService.getKeyHandler().getTruStore().containsAlias(Sender.getUsername())) {// If the certificate of the other node is not in the truststore
+                userService.getClientHandler().shareCertificateClient(Sender.getIp(), Sender.getPort(), new ChordInternalMessage(MessageType.addCertificateToTrustStore, (byte[]) null, (byte[]) null, currentNodeDTO.getUsername(), Sender.getUsername(), currentNodeDTO, (PublicKey) null, (PublicKey) null), Sender.getUsername());
+                Thread.sleep(500);
+            }
+
+            // Verify the signature
+            PublicKey senderPubKey = userService.getKeyHandler().getTruStore().getCertificate(Sender.getUsername()).getPublicKey();
+            boolean isRightSignature = verifySignature(senderPubKey, event.getMessageEncryp(), event.getMessageHash());
+            if (!isRightSignature) {
+                InterfaceHandler.erro("Message signature does not match! Or the hash was altered");
+                return;
+            }
+
             // Decrypt the message
             PairingKeySerParameter publicKey = groupPublicKeys.get(event.getGroupName());
             PairingKeySerParameter secretKey = groupSecretKeys.get(event.getGroupName());
             String[] attributes = groupAtributes.get(event.getGroupName());
-            PairingCipherSerParameter ciphertext = event.getMessageEncryp();
+            PairingCipherSerParameter ciphertext = Utils.deserialize(event.getMessageEncryp(), PairingCipherSerParameter.class);
             String msg = decryptGroupMessage(publicKey, secretKey, attributes, ciphertext);
-            byte[] msgHash = EncryptionHandler.createMessageHash(msg.getBytes());
-
-            if (event.getMessageHash() == msgHash) {
-                InterfaceHandler.erro("Message hash does not match");
-                return;
-            }
 
             InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + msg);
         }
@@ -653,8 +668,14 @@ public class EventHandler {
             byte[] hashSigned = event.getInfoHash();
             byte[] decryptedBytes = EncryptionHandler.decryptWithKey(groupAtributesDTOBytesEncrypted, sharedKeys.get(event.getSenderDTO().getHash()));
 
+            NodeDTO Sender = event.getSenderDTO();
+            if (!userService.getKeyHandler().getTruStore().containsAlias(Sender.getUsername())) {// If the certificate of the other node is not in the truststore
+                userService.getClientHandler().shareCertificateClient(Sender.getIp(), Sender.getPort(), new ChordInternalMessage(MessageType.addCertificateToTrustStore, (byte[]) null, (byte[]) null, currentNodeDTO.getUsername(), Sender.getUsername(), currentNodeDTO, (PublicKey) null, (PublicKey) null), Sender.getUsername());
+                Thread.sleep(500);
+            }
+
             // Verify the signature
-            PublicKey senderPubKey = event.getSenderDTO().getPubK();
+            PublicKey senderPubKey = userService.getKeyHandler().getTruStore().getCertificate(Sender.getUsername()).getPublicKey();
             boolean isRightSignature = verifySignature(senderPubKey, groupAtributesDTOBytesEncrypted, hashSigned);
             if (!isRightSignature) {
                 InterfaceHandler.erro("Message signature does not match! Or the hash was altered");
@@ -707,16 +728,15 @@ public class EventHandler {
                     } catch (NoSuchAlgorithmException e) {
                         e.printStackTrace();
                     }
-                } 
-
-            } else {
-                if (getSharedKey(event.getReceiverHash()) == null) { // If the shared key does not exist
-                    InterfaceHandler.internalInfo("The shared key does not exist, creating a new one to be able to send message.");
-                    ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.diffHellman, currentNodeDTO, event.getReceiverHash(), (PublicKey) null, (PublicKey) null);
-                    DiffHellmanEvent diffHellmanEvent = new DiffHellmanEvent(messageToSend);
-                    diffieHellman(diffHellmanEvent);
+                } else {
+                    try {
+                        clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false, nodeWithHashDTO.getUsername());
+                    } catch (NoSuchAlgorithmException e) {
+                        e.printStackTrace();
+                    }
                 }
 
+            } else {
                 String recivedMessage = "Node does not exist";
                 UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), recivedMessage.getBytes(), false, (byte[]) null, false);
                 NodeSendMessageEvent e = new NodeSendMessageEvent(userMessage);
