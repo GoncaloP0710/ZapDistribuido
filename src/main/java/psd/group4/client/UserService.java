@@ -1,6 +1,12 @@
 package psd.group4.client;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.cert.Certificate;
 import java.security.*;
@@ -76,6 +82,8 @@ public class UserService implements UserServiceInterface {
             this.clientHandler.startClient(ipDefault, portDefault, message, true, usernameDefault);
         }
     }
+
+
 
     public void initializeCurrentNodeDTO(String username, Node currentNode, Certificate cer) {
         this.currentNodeDTO = new NodeDTO(username, currentNode.getIp(), currentNode.getPort(), currentNode.getHashNumber(), cer);
@@ -256,12 +264,9 @@ public class UserService implements UserServiceInterface {
                 eventHandler.diffieHellman(diffHellmanEvent);
             }
 
-            System.out.println(eventHandler.getGroupAttributes(groupName));
-
-            ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.AddUserToGroup, eventHandler.getGroupPublicKey(groupName), 
-                eventHandler.getGroupAccessPolicy(groupName), eventHandler.getGroupRhos(groupName), reciverHash, groupName, 
-                eventHandler.getGroupPairingParameters(groupName), eventHandler.getGroupAttributes(groupName), eventHandler.getGroupMasterKey(groupName), currentNodeDTO);
-
+            GroupAtributesDTO groupAtributesDTO = new GroupAtributesDTO(eventHandler.getGroupAccessPolicy(groupName), eventHandler.getGroupRhos(groupName), eventHandler.getGroupPairingParameters(groupName), groupName, eventHandler.getGroupAttributes(groupName), eventHandler.getGroupMasterKey(groupName));
+            byte[] groupAtributesDTOBytes = Utils.serialize(groupAtributesDTO);
+            ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.AddUserToGroup, currentNodeDTO, reciverHash, eventHandler.getGroupPublicKey(groupName), groupAtributesDTOBytes, (byte[]) null);
             AddUserToGroupEvent event = new AddUserToGroupEvent(messageToSend);
             eventHandler.addMemberToGroup(event);
         } finally {

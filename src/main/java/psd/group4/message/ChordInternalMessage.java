@@ -1,12 +1,8 @@
 package psd.group4.message;
 
 import java.util.ArrayList;
-
 import cn.edu.buaa.crypto.algebra.serparams.PairingKeySerParameter;
-import it.unisa.dia.gas.jpbc.Pairing;
-import it.unisa.dia.gas.jpbc.PairingParameters;
 import psd.group4.dtos.NodeDTO;
-
 import java.security.PublicKey;
 import java.math.BigInteger;
 
@@ -33,13 +29,9 @@ public class ChordInternalMessage extends Message {
     private NodeDTO targetDTO; // TODO: Check if it can be removed
 
     private PairingKeySerParameter publicKey; // AddUserToGroupEvent
-    private int[][] accessPolicy; // AddUserToGroupEvent
-    private String[] rhos; // AddUserToGroupEvent
     private BigInteger receiverHash; // AddUserToGroupEvent
-    private String groupName; // AddUserToGroupEvent
-    private PairingParameters pairingParameters; // AddUserToGroupEvent
-    private String[] attributes; // AddUserToGroupEvent
-    private PairingKeySerParameter masterKey; // AddUserToGroupEvent
+    private byte[] groupAtributesDTOBytes; // AddUserToGroupEvent
+    private byte[] infoHash; // AddUserToGroupEvent
 
     // UpdateNeighboringNodesEvent
     public ChordInternalMessage(MessageType messageType, NodeDTO nextNode, NodeDTO previousNode, NodeDTO initializer) {
@@ -115,17 +107,13 @@ public class ChordInternalMessage extends Message {
     }
 
     // AddUserToGroupEvent
-    public ChordInternalMessage(MessageType messageType, PairingKeySerParameter publicKey, int[][] accessPolicy, String[] rhos, BigInteger receiverHash, String groupName, PairingParameters pairingParameters, String[] attributes, PairingKeySerParameter masterKey, NodeDTO senderDto) {
+    public ChordInternalMessage(MessageType messageType, NodeDTO senderDto, BigInteger receiverHash, PairingKeySerParameter publicKey, byte[] groupAtributesDTOBytes, byte[] infoHash) {
         super(messageType);
         this.publicKey = publicKey;
-        this.accessPolicy = accessPolicy;
-        this.rhos = rhos;
         this.receiverHash = receiverHash;
-        this.groupName = groupName;
-        this.pairingParameters = pairingParameters;
-        this.attributes = attributes;
-        this.masterKey = masterKey;
         this.senderDto = senderDto;
+        this.groupAtributesDTOBytes = groupAtributesDTOBytes;
+        this.infoHash = infoHash;
     }
 
     public NodeDTO getNextNode(){
@@ -244,31 +232,23 @@ public class ChordInternalMessage extends Message {
         return this.publicKey;
     }
 
-    public int[][] getAccessPolicy(){
-        return this.accessPolicy;
-    }
-
-    public String[] getRhos(){
-        return this.rhos;
-    }
-
     public BigInteger getReceiverHash(){
         return this.receiverHash;
     }
 
-    public String getGroupName(){
-        return this.groupName;
+    public byte[] getGroupAtributesDTOBytes(){
+        return this.groupAtributesDTOBytes;
     }
 
-    public PairingParameters getPairing(){
-        return this.pairingParameters;
+    public void setGroupAtributesDTOBytes(byte[] groupAtributesDTOBytes){
+        this.groupAtributesDTOBytes = groupAtributesDTOBytes;
     }
 
-    public String[] getAttributes(){
-        return this.attributes;
+    public byte[] getInfoHash(){
+        return this.infoHash;
     }
 
-    public PairingKeySerParameter getMasterKey(){
-        return this.masterKey;
+    public void setInfoHash(byte[] infoHash){
+        this.infoHash = infoHash;
     }
 }

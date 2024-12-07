@@ -3,6 +3,8 @@ package psd.group4.utils;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.io.FileInputStream;
+import java.io.IOException;
+
 import javax.crypto.KeyAgreement;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -15,8 +17,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.cert.Certificate;
@@ -209,5 +215,20 @@ public final class Utils {
         byte[] randomBytes = new byte[length];
         secureRandom.nextBytes(randomBytes);
         return randomBytes;
+    }
+
+    public static <T extends Serializable> byte[] serialize(T object) throws IOException {
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+             ObjectOutputStream out = new ObjectOutputStream(bos)) {
+            out.writeObject(object);
+            return bos.toByteArray();
+        }
+    }
+
+    public static <T extends Serializable> T deserialize(byte[] bytes, Class<T> clazz) throws IOException, ClassNotFoundException {
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+             ObjectInputStream in = new ObjectInputStream(bis)) {
+            return clazz.cast(in.readObject());
+        }
     }
 }
