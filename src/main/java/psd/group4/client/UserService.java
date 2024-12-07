@@ -1,12 +1,6 @@
 package psd.group4.client;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.cert.Certificate;
 import java.security.*;
@@ -17,6 +11,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
 import cn.edu.buaa.crypto.algebra.serparams.PairingCipherSerParameter;
+import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 import psd.group4.handlers.*;
 import psd.group4.interfaces.UserServiceInterface;
 import psd.group4.utils.*;
@@ -82,8 +77,6 @@ public class UserService implements UserServiceInterface {
             this.clientHandler.startClient(ipDefault, portDefault, message, true, usernameDefault);
         }
     }
-
-
 
     public void initializeCurrentNodeDTO(String username, Node currentNode, Certificate cer) {
         this.currentNodeDTO = new NodeDTO(username, currentNode.getIp(), currentNode.getPort(), currentNode.getHashNumber(), cer);
@@ -184,7 +177,7 @@ public class UserService implements UserServiceInterface {
             byte[] message = interfaceHandler.getInput().getBytes();
         
             BigInteger reciverHash = currentNode.calculateHash(reciver);
-            if (eventHandler.getSharedKey(reciverHash) == null) { // If the shared key does not exist
+            if (eventHandler.getSharedKey(reciverHash) == null) { // If the shared key does not exist - create a new one
                 InterfaceHandler.internalInfo("The shared key does not exist, creating a new one to be able to send message.");
                 ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.diffHellman, currentNodeDTO, reciverHash, (PublicKey) null, (PublicKey) null);
                 DiffHellmanEvent diffHellmanEvent = new DiffHellmanEvent(messageToSend);
@@ -204,7 +197,7 @@ public class UserService implements UserServiceInterface {
             System.out.println("Select the group you want to send a message to: ");
             String groupName = interfaceHandler.getInput();
 
-            if (eventHandler.getGroupPublicKey(groupName) == null) {
+            if (eventHandler.getGroupPublicKey(groupName) == null) { // Check if the group exists
                 InterfaceHandler.erro("You are not a member of the group. Or the group does not exist.");
                 InterfaceHandler.info("Select the group you want to add the user to: ");
                 groupName = interfaceHandler.getInput();
@@ -217,8 +210,10 @@ public class UserService implements UserServiceInterface {
 
             System.out.println("Write the message: ");
             String message = interfaceHandler.getInput();
-            PairingCipherSerParameter messageEncryp = eventHandler.encryptGroupMessage(groupName, message);
-            byte[] messageEncrypBytes = Utils.serialize(messageEncryp);
+            PairingCipherSerParameter messageEncryp = EncryptionHandler.encryptGroupMessage(groupName, message, 
+                PairingFactory.getPairing(eventHandler.getGroupPairingParameters(groupName)), 
+                eventHandler.getGroupPublicKey(groupName), eventHandler.getGroupAttributes(groupName));
+            byte[] messageEncrypBytes = Utils.serialize(messageEncryp); // Serialize the message to be able to encrypt
             byte[] hash = EncryptionHandler.createMessageHash(messageEncrypBytes);
             byte[] hashSigned = eventHandler.getSignature(hash, getKeyHandler().getPrivateKey());
 
@@ -245,7 +240,7 @@ public class UserService implements UserServiceInterface {
             System.out.println("Select the group you want to add the user to: ");
             String groupName = interfaceHandler.getInput();
 
-            if (eventHandler.getGroupPublicKey(groupName) == null) {
+            if (eventHandler.getGroupPublicKey(groupName) == null) { // Check if the group exists
                 InterfaceHandler.erro("You are not a member of the group. Or the group does not exist.");
                 InterfaceHandler.info("Select the group you want to add the user to: ");
                 groupName = interfaceHandler.getInput();
@@ -260,7 +255,7 @@ public class UserService implements UserServiceInterface {
             String userName = interfaceHandler.getInput();
             BigInteger reciverHash = currentNode.calculateHash(userName);
 
-            if (eventHandler.getSharedKey(reciverHash) == null) { // If the shared key does not exist
+            if (eventHandler.getSharedKey(reciverHash) == null) { // If the shared key does not exist - create a new one
                 InterfaceHandler.internalInfo("The shared key does not exist, creating a new one to be able to send message.");
                 ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.diffHellman, currentNodeDTO, reciverHash, (PublicKey) null, (PublicKey) null);
                 DiffHellmanEvent diffHellmanEvent = new DiffHellmanEvent(messageToSend);
@@ -288,64 +283,36 @@ public class UserService implements UserServiceInterface {
 
     @Override
     public void processEvent(NodeEvent e) { // Forwards the event to the event handler
-        if (e instanceof EnterNodeEvent) {
-            try {
+        try {
+            if (e instanceof EnterNodeEvent) {
                 eventHandler.enterNode((EnterNodeEvent) e);
-            } catch (NoSuchAlgorithmException | InterruptedException e1) {
-                e1.printStackTrace();
-            }
-        } else if (e instanceof UpdateNeighboringNodesEvent) {
-            eventHandler.updateNeighbors((UpdateNeighboringNodesEvent) e);
-        } else if (e instanceof UpdateNodeFingerTableEvent) {
-            try {
+            } else if (e instanceof UpdateNeighboringNodesEvent) {
+                eventHandler.updateNeighbors((UpdateNeighboringNodesEvent) e);
+            } else if (e instanceof UpdateNodeFingerTableEvent) {
                 eventHandler.updateFingerTable((UpdateNodeFingerTableEvent) e);
-            } catch (NoSuchAlgorithmException e1) {
-                e1.printStackTrace();
-            }
-        } else if (e instanceof BroadcastUpdateFingerTableEvent) {
-            try {
+            } else if (e instanceof BroadcastUpdateFingerTableEvent) {
                 eventHandler.broadcastMessage(((BroadcastUpdateFingerTableEvent) e));
-            } catch (NoSuchAlgorithmException e1) {
-                e1.printStackTrace();
-            }
-        } else if (e instanceof NodeSendMessageEvent) {
-            try {
+            } else if (e instanceof NodeSendMessageEvent) {
                 eventHandler.sendUserMessage(((NodeSendMessageEvent) e));
-            } catch (Exception e1) {
-                e1.printStackTrace();
-            }
-        } else if (e instanceof AddCertificateToTrustStoreEvent) {
-            try {
+            } else if (e instanceof AddCertificateToTrustStoreEvent) {
                 eventHandler.addCertificateToTrustStore((AddCertificateToTrustStoreEvent) e);
-            } catch (Exception e1) {
-                e1.printStackTrace();
-            }
-        } else if (e instanceof DiffHellmanEvent) {
-            try {
+            } else if (e instanceof DiffHellmanEvent) {
                 eventHandler.diffieHellman((DiffHellmanEvent) e);
-            } catch (InvalidKeyException | NoSuchAlgorithmException e1) {
-                e1.printStackTrace();
-            }
-        } else if (e instanceof NotifyEvent){
-            eventHandler.handleNotify((NotifyEvent) e);
-        } else if (e instanceof RemoveSharedKeyEvent) {
-            eventHandler.removeSharedKey((RemoveSharedKeyEvent) e);
-        } else if (e instanceof NodeSendGroupMessageEvent) {
-            try {
+            } else if (e instanceof NotifyEvent){
+                eventHandler.handleNotify((NotifyEvent) e);
+            } else if (e instanceof RemoveSharedKeyEvent) {
+                eventHandler.removeSharedKey((RemoveSharedKeyEvent) e);
+            } else if (e instanceof NodeSendGroupMessageEvent) {
                 eventHandler.sendGroupMessage((NodeSendGroupMessageEvent) e);
-            } catch (Exception e1) {
-                e1.printStackTrace();
-            }
-        } else if (e instanceof AddUserToGroupEvent) {
-            try {
+            } else if (e instanceof AddUserToGroupEvent) {
                 eventHandler.addMemberToGroup((AddUserToGroupEvent) e);
-            } catch (Exception e1) {
-                e1.printStackTrace();
+            } else {
+                System.out.println("Exception class: " + e.getClass().getName());
+                System.out.println("Exception instance: " + e.toString());
+                throw new UnsupportedOperationException("Unhandled event type");
             }
-        } else {
-            System.out.println("Exception class: " + e.getClass().getName());
-            System.out.println("Exception instance: " + e.toString());
-            throw new UnsupportedOperationException("Unhandled event type");
+        } catch (Exception exception) {
+            exception.printStackTrace();
         }
     }
 }

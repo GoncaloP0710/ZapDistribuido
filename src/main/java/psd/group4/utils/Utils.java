@@ -2,6 +2,7 @@ package psd.group4.utils;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.security.Signature;
 import java.io.FileInputStream;
 import java.io.IOException;
 
@@ -10,6 +11,9 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
+import it.unisa.dia.gas.jpbc.Element;
+import it.unisa.dia.gas.jpbc.Pairing;
+import psd.group4.handlers.EncryptionHandler;
 import psd.group4.handlers.InterfaceHandler;
 
 import java.security.InvalidKeyException;
@@ -28,11 +32,10 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.util.Arrays;
+import java.util.Random;
 import java.security.MessageDigest;
-import java.nio.charset.StandardCharsets;
-import java.security.SignatureException;
 import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 
 public final class Utils {
 
@@ -261,5 +264,72 @@ public final class Utils {
         } catch (Exception e) {
             throw new Exception("Error while generating HMAC", e);
         }
+    }
+
+    // Encode a byte array to a group element
+    public static Element encodeBytesToGroup(Pairing pairing, byte[] data) {
+        // Convert the byte array to a BigInteger
+        java.math.BigInteger bigInteger = new java.math.BigInteger(1, data);
+        return pairing.getGT().newElement(bigInteger).getImmutable();
+    }
+
+    // Decode a group element back to a byte array
+    public static byte[] decodeGroupToBytes(Element element) {
+        // Convert the group element to a BigInteger
+        java.math.BigInteger bigInteger = element.toBigInteger();
+        // Convert the BigInteger to a byte array
+        return bigInteger.toByteArray();
+    }
+
+    public static String[] generateAttributesForPolicy(String policy) {
+        // Extract numbers from the policy
+        String[] tokens = policy.split("[^0-9]+");
+        return Arrays.stream(tokens)
+                .filter(token -> !token.isEmpty())
+                .distinct()
+                .toArray(String[]::new);
+    }
+
+    public static String generateRandomPolicy() {
+        Random random = new Random();
+        int numClauses = random.nextInt(3) + 1; // Number of clauses in the policy
+        StringBuilder policy = new StringBuilder();
+    
+        for (int i = 0; i < numClauses; i++) {
+            if (i > 0) {
+                policy.append(" and ");
+            }
+            int numTerms = random.nextInt(2) + 1; // Number of terms in the clause
+            if (numTerms == 1) {
+                policy.append(random.nextInt(50));
+            } else {
+                policy.append("(");
+                for (int j = 0; j < numTerms; j++) {
+                    if (j > 0) {
+                        policy.append(" or ");
+                    }
+                    policy.append(random.nextInt(50));
+                }
+                policy.append(")");
+            }
+        }
+    
+        return policy.toString();
+    }
+
+    /**
+     * Verifies the signature of the message with the public key of the sender
+     * 
+     * @param senderPubKey
+     * @param messageEncrypted
+     * @param hashSigned
+     * @return
+     * @throws Exception
+     */
+    public static boolean verifySignature(PublicKey senderPubKey, byte[] messageEncrypted, byte[] hashSigned) throws Exception {
+        Signature signature = Signature.getInstance("SHA256withRSA");
+        signature.initVerify(senderPubKey);
+        signature.update(EncryptionHandler.createMessageHash(messageEncrypted));
+        return signature.verify(hashSigned);
     }
 }

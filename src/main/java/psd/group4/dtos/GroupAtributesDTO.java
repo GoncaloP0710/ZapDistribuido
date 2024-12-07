@@ -5,7 +5,7 @@ import java.io.Serializable;
 import cn.edu.buaa.crypto.algebra.serparams.PairingKeySerParameter;
 import it.unisa.dia.gas.jpbc.PairingParameters;
 
-public class GroupAtributesDTO implements Serializable {
+public class GroupAtributesDTO implements Serializable { // Facilitates the serialization of the object to be able to be encrypted
 
     // Critical data
     private int[][] accessPolicy;

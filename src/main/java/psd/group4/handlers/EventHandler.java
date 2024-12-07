@@ -15,26 +15,12 @@ import psd.group4.message.*;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Arrays;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.security.cert.Certificate;
 import java.security.Signature;
-
-// ----------------- Bouncy Castle -----------------
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.bouncycastle.crypto.InvalidCipherTextException;
 
 import cn.edu.buaa.crypto.access.parser.ParserUtils;
 import cn.edu.buaa.crypto.access.parser.PolicySyntaxException;
@@ -43,10 +29,8 @@ import cn.edu.buaa.crypto.algebra.serparams.PairingKeySerPair;
 import cn.edu.buaa.crypto.algebra.serparams.PairingKeySerParameter;
 import cn.edu.buaa.crypto.encryption.abe.kpabe.KPABEEngine;
 import cn.edu.buaa.crypto.encryption.abe.kpabe.gpsw06a.KPABEGPSW06aEngine;
-import it.unisa.dia.gas.jpbc.Element;
-import it.unisa.dia.gas.jpbc.Pairing;
+
 import it.unisa.dia.gas.jpbc.PairingParameters;
-import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 import it.unisa.dia.gas.plaf.jpbc.pairing.a.TypeACurveGenerator;
 
 public class EventHandler { 
@@ -142,11 +126,8 @@ public class EventHandler {
                 synchronized (locker) {
                     locker.wait(); // Wait for notification
                 }
-
                 // Update all the finger tables
                 clientHandler.startClient(nodeToEnterDTO.getIp(), nodeToEnterDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, currentNodeDTO, currentNodeDTO, false), true, nodeToEnterDTO.getUsername());
- 
-
             } else { // foward to the closest node in the finger table of the current node to the new node
                 clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), true, nodeWithHashDTO.getUsername());
             }
@@ -192,7 +173,7 @@ public class EventHandler {
             clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), new ChordInternalMessage(MessageType.RemoveSharedKey, key, currentNodeDTO), false, nodeWithHashDTO.getUsername());
         }
 
-        Thread.sleep(2000);
+        Thread.sleep(2000); // TODO: Reduce the value of the sleep
         InterfaceHandler.success("Node exited the network successfully");
     }
 
@@ -208,13 +189,11 @@ public class EventHandler {
         NodeDTO nodeToUpdateDTO = event.getNodeToUpdate(); // Node that started the event
     
         if (currentNodeDTO.equals(nodeToUpdateDTO)) { // Update the finger table of the current node
-
             for (NodeDTO node : userService.getCurrentNode().getFingerTable()) {
                 if (!message.getFingerTable().contains(node)) {
                     clientHandler.endConection(node);
                 }
             }
-
             userService.getCurrentNode().setFingerTable(message.getFingerTable());
             InterfaceHandler.info("Finger table updated successfully");
             return;
@@ -229,7 +208,6 @@ public class EventHandler {
     
         if (distance.compareTo(twoPowerCounter) >= 0) {
             message.addNodeToFingerTable(currentNodeDTO);
-    
             // Skip the next counters if 2^counter is lower than the distance between this and the next node to try
             while (twoPowerCounter.compareTo(distance) <= 0) {
                 counter++;
@@ -237,28 +215,8 @@ public class EventHandler {
                 message.incCounter();
             }
         }
-        
         NodeDTO nextNode = currentNode.getNextNode();
         clientHandler.startClient(nextNode.getIp(), nextNode.getPort(), message, false, nextNode.getUsername());
-    }
-    
-    /**
-     * Recives the message and fowards it to all network eventually
-     * 
-     * @param event
-     * @throws NoSuchAlgorithmException
-     */
-    public synchronized void broadcastMessage(BroadcastUpdateFingerTableEvent event) throws NoSuchAlgorithmException {
-        ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateFingerTable, event.getSenderDto(), 0);
-        updateFingerTable(new UpdateNodeFingerTableEvent(message)); 
-        if (event.getIsExiting() && sharedKeys.remove(event.getInitializer().getHash()) != null)
-            InterfaceHandler.info("Node exited the network successfully");
-
-        if (!event.getInitializer().equals(currentNodeDTO)) { // foward to the next node
-            NodeDTO nextNodeDTO = currentNode.getNextNode();
-            ((ChordInternalMessage) event.getMessage()).setSenderDto(currentNodeDTO);
-            clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), event.getMessage(), false, nextNodeDTO.getUsername());
-        }
     }
 
     /**
@@ -315,7 +273,7 @@ public class EventHandler {
 
             // Verify the signature
             PublicKey senderPubKey = userService.getKeyHandler().getTruStore().getCertificate(Sender.getUsername()).getPublicKey();
-            boolean isRightSignature = verifySignature(senderPubKey, message, hashSigned);
+            boolean isRightSignature = Utils.verifySignature(senderPubKey, message, hashSigned);
             if (!isRightSignature) {
                 InterfaceHandler.erro("Message signature does not match! Or the hash was altered");
                 return;
@@ -330,39 +288,6 @@ public class EventHandler {
                 sendUserMessage(e);
             }
         }
-    }
-
-    /**
-     * Makes the signature of the bytes received (hash)
-     * 
-     * @param hash
-     * @param privK
-     * @return
-     * @throws Exception
-     */
-    public byte[] getSignature(byte[] hash, PrivateKey privK) throws Exception {
-        Signature signature = Signature.getInstance("SHA256withRSA");
-        signature.initSign(privK);
-        signature.update(hash);
-        byte[] digitalSignature = signature.sign();
-        return digitalSignature;
-    }
-
-    /**
-     * Verifies the signature of the message with the public key of the sender
-     * 
-     * @param senderPubKey
-     * @param messageEncrypted
-     * @param hashSigned
-     * @return
-     * @throws Exception
-     */
-    private boolean verifySignature(PublicKey senderPubKey, byte[] messageEncrypted, byte[] hashSigned) throws Exception {
-        Signature signature = Signature.getInstance("SHA256withRSA");
-        signature.initVerify(senderPubKey);
-        signature.update(EncryptionHandler.createMessageHash(messageEncrypted));
-
-         return signature.verify(hashSigned);
     }
 
     /**
@@ -517,6 +442,159 @@ public class EventHandler {
         clientHandler.startClient(closestNodeToTarget.getIp(), closestNodeToTarget.getPort(), e.getMessage(), false, closestNodeToTarget.getUsername());
     }
 
+    public void sendGroupMessage(NodeSendGroupMessageEvent event) throws Exception {
+        if (groupAtributes.get(event.getGroupName()) == null) {
+            InterfaceHandler.internalInfo("Arrived a group message that the user does not belong to");
+        } else {
+            NodeDTO sender = event.getSenderDTO();
+            checkCertificate(sender);
+
+            // Verify the signature
+            boolean isRightSignature = Utils.verifySignature(userService.getKeyHandler().getTruStore().getCertificate(sender.getUsername()).getPublicKey(), event.getMessageEncryp(), event.getMessageHash());
+            if (!isRightSignature) {
+                InterfaceHandler.erro("Message signature does not match! Or the hash was altered");
+                return;
+            }
+
+            // Decrypt the message
+            PairingKeySerParameter publicKey = groupPublicKeys.get(event.getGroupName());
+            PairingKeySerParameter secretKey = groupSecretKeys.get(event.getGroupName());
+            String[] attributes = groupAtributes.get(event.getGroupName());
+            PairingCipherSerParameter ciphertext = Utils.deserialize(event.getMessageEncryp(), PairingCipherSerParameter.class);
+            String msg = EncryptionHandler.decryptGroupMessage(publicKey, secretKey, attributes, ciphertext);
+            InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + msg);
+        }
+        if (!event.getSenderDTO().equals(currentNodeDTO)) { // foward to the next node
+            NodeDTO nextNodeDTO = currentNode.getNextNode();
+            clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), event.getMessage(), false, nextNodeDTO.getUsername());
+        }
+    }
+
+    public void createGroup(String groupName) throws PolicySyntaxException {
+        String policy = Utils.generateRandomPolicy();
+        String[] attributes = Utils.generateAttributesForPolicy(policy);
+
+        // Setup
+        KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
+
+        // Step 2: Generate pairing parameters using TypeACurveGenerator
+        int rBits = 160; // Number of bits for the order of the curve
+        int qBits = 512; // Number of bits for the field size
+        TypeACurveGenerator curveGenerator = new TypeACurveGenerator(rBits, qBits);
+        PairingParameters pairingParameters = curveGenerator.generate();
+
+        // Key generation - done by the PKG
+        PairingKeySerPair keyPair = engine.setup(pairingParameters, 50); // Setup with 50 attributes (0 to 49)
+        PairingKeySerParameter publicKey = keyPair.getPublic();
+        PairingKeySerParameter masterKey = keyPair.getPrivate();
+        int[][] accessPolicy = ParserUtils.GenerateAccessPolicy(policy);
+        String[] rhos = ParserUtils.GenerateRhos(policy);
+        PairingKeySerParameter secretKey = engine.keyGen(publicKey, masterKey, accessPolicy, rhos);
+
+        groupAtributes.put(groupName, attributes);
+        groupAccessPolicy.put(groupName, accessPolicy);
+        groupMasterKeys.put(groupName, masterKey);
+        groupPublicKeys.put(groupName, publicKey);
+        groupSecretKeys.put(groupName, secretKey);
+        groupRhos.put(groupName, rhos);
+        groupPairingParameters.put(groupName, pairingParameters);
+        InterfaceHandler.success("Group created successfully");
+    }
+
+    public synchronized void addMemberToGroup(AddUserToGroupEvent event) throws Exception {
+        if (currentNodeDTO.getHash().equals(event.getReceiverHash()) || currentNodeDTO.getHash().equals(event.getSenderDTO().getHash())) { // Arrived at a node that needs the shared key
+            waitForSharedK(event.getReceiverHash(), event.getSenderDTO().getHash());
+        }
+        if (currentNodeDTO.getHash().equals(event.getReceiverHash())) { // Reached the target
+            byte[] groupAtributesDTOBytesEncrypted = event.getGroupAtributesDTOBytesEncrypted();
+            byte[] hashSigned = event.getInfoHash();
+            byte[] decryptedBytes = EncryptionHandler.decryptWithKey(groupAtributesDTOBytesEncrypted, sharedKeys.get(event.getSenderDTO().getHash()));
+            NodeDTO sender = event.getSenderDTO();
+            checkCertificate(sender);
+            
+            boolean isRightSignature = Utils.verifySignature(userService.getKeyHandler().getTruStore().getCertificate(sender.getUsername()).getPublicKey(), groupAtributesDTOBytesEncrypted, hashSigned);
+            if (!isRightSignature) { // Verify the signature
+                InterfaceHandler.erro("Message signature does not match! Or the hash was altered");
+                return;
+            }
+
+            handleNewUserToGroupParams(decryptedBytes, event.getPublicKey());
+            InterfaceHandler.success("User added to group successfully");
+
+            String recivedMessage = currentNodeDTO.getUsername() + " entered the group";
+            UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), recivedMessage.getBytes(), false, (byte[]) null, false);
+            NodeSendMessageEvent e = new NodeSendMessageEvent(userMessage);
+            sendUserMessage(e);
+        } else {
+            NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getReceiverHash());
+            if (nodeWithHashDTO != null) { // Node exists
+                if (currentNodeDTO == event.getSenderDTO()) { // Start of the process - Encrypt the critical information
+                    byte[] groupAtributesDTOBytesEncrypted = event.getGroupAtributesDTOBytesEncrypted();
+                    byte[] encryptedBytesAut = EncryptionHandler.encryptWithKey(groupAtributesDTOBytesEncrypted, sharedKeys.get(event.getReceiverHash()));
+                    byte[] hash = EncryptionHandler.createMessageHash(encryptedBytesAut);
+                    byte[] hashSigned = getSignature(hash, userService.getKeyHandler().getPrivateKey());
+        
+                    event.setGroupAtributesDTOBytesEncrypted(encryptedBytesAut);
+                    event.setInfoHash(hashSigned);
+                    ChordInternalMessage msg = (ChordInternalMessage) event.getMessage();
+                    msg.setGroupAtributesDTOBytes(encryptedBytesAut);
+                    msg.setInfoHash(hashSigned);
+
+                    clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), msg, false, nodeWithHashDTO.getUsername());
+                } else {
+                    clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false, nodeWithHashDTO.getUsername());
+                }
+            } else { // Node does not exist - Send a message to the sender saying that the node does not exist
+                String recivedMessage = "Node does not exist";
+                UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), recivedMessage.getBytes(), false, (byte[]) null, false);
+                NodeSendMessageEvent e = new NodeSendMessageEvent(userMessage);
+                sendUserMessage(e);
+                return;
+            }
+        }
+    }
+
+    // ======================================================================================================
+    //
+    //                                          Auxiliary methods
+    //
+    // ======================================================================================================
+
+    /**
+     * Recives the message and fowards it to all network eventually
+     * 
+     * @param event
+     * @throws NoSuchAlgorithmException
+     */
+    public synchronized void broadcastMessage(BroadcastUpdateFingerTableEvent event) throws NoSuchAlgorithmException {
+        ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateFingerTable, event.getSenderDto(), 0);
+        updateFingerTable(new UpdateNodeFingerTableEvent(message)); 
+        if (event.getIsExiting() && sharedKeys.remove(event.getInitializer().getHash()) != null)
+            InterfaceHandler.info("Node exited the network successfully");
+
+        if (!event.getInitializer().equals(currentNodeDTO)) { // foward to the next node
+            NodeDTO nextNodeDTO = currentNode.getNextNode();
+            ((ChordInternalMessage) event.getMessage()).setSenderDto(currentNodeDTO);
+            clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), event.getMessage(), false, nextNodeDTO.getUsername());
+        }
+    }
+
+    /**
+     * Makes the signature of the bytes received (hash)
+     * 
+     * @param hash
+     * @param privK
+     * @return
+     * @throws Exception
+     */
+    public byte[] getSignature(byte[] hash, PrivateKey privK) throws Exception {
+        Signature signature = Signature.getInstance("SHA256withRSA");
+        signature.initSign(privK);
+        signature.update(hash);
+        byte[] digitalSignature = signature.sign();
+        return digitalSignature;
+    }
+
     /**
      * Add a message to the ConcurrentHashMap messages
      * 
@@ -573,249 +651,54 @@ public class EventHandler {
         }
     }
 
-    public void sendGroupMessage(NodeSendGroupMessageEvent event) throws Exception {
-        
-        if (groupAtributes.get(event.getGroupName()) == null) {
-            InterfaceHandler.internalInfo("Arrived a group message that the user does not belong to");
-        } else {
-
-            NodeDTO Sender = event.getSenderDTO();
-            if (!userService.getKeyHandler().getTruStore().containsAlias(Sender.getUsername())) {// If the certificate of the other node is not in the truststore
-                userService.getClientHandler().shareCertificateClient(Sender.getIp(), Sender.getPort(), new ChordInternalMessage(MessageType.addCertificateToTrustStore, (byte[]) null, (byte[]) null, currentNodeDTO.getUsername(), Sender.getUsername(), currentNodeDTO, (PublicKey) null, (PublicKey) null), Sender.getUsername());
-                Thread.sleep(500);
+    private boolean waitForSharedK(BigInteger reciverHash, BigInteger senderHash) {
+        long startTime = System.currentTimeMillis();
+        while (sharedKeys.get(reciverHash) == null && sharedKeys.get(senderHash) == null) {
+           try {
+                wait(2000); // Wait for 1 second intervals
+                long elapsedTime = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime);
+                if (elapsedTime >= TIMEOUT) {
+                    InterfaceHandler.erro("Connection timeout! - Shared key not found");
+                    return false;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                InterfaceHandler.erro("Thread interrupted: " + e.getMessage());
+                return false;
             }
-
-            // Verify the signature
-            PublicKey senderPubKey = userService.getKeyHandler().getTruStore().getCertificate(Sender.getUsername()).getPublicKey();
-            boolean isRightSignature = verifySignature(senderPubKey, event.getMessageEncryp(), event.getMessageHash());
-            if (!isRightSignature) {
-                InterfaceHandler.erro("Message signature does not match! Or the hash was altered");
-                return;
-            }
-
-            // Decrypt the message
-            PairingKeySerParameter publicKey = groupPublicKeys.get(event.getGroupName());
-            PairingKeySerParameter secretKey = groupSecretKeys.get(event.getGroupName());
-            String[] attributes = groupAtributes.get(event.getGroupName());
-            PairingCipherSerParameter ciphertext = Utils.deserialize(event.getMessageEncryp(), PairingCipherSerParameter.class);
-            String msg = decryptGroupMessage(publicKey, secretKey, attributes, ciphertext);
-
-            InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + msg);
         }
+        return true;
+    }
 
-        if (!event.getSenderDTO().equals(currentNodeDTO)) { // foward to the next node
-            NodeDTO nextNodeDTO = currentNode.getNextNode();
-            clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), event.getMessage(), false, nextNodeDTO.getUsername());
+    private void checkCertificate(NodeDTO nodeDTO) throws Exception {
+        if (!userService.getKeyHandler().getTruStore().containsAlias(nodeDTO.getUsername())) {// If the certificate of the other node is not in the truststore
+            userService.getClientHandler().shareCertificateClient(nodeDTO.getIp(), nodeDTO.getPort(), new ChordInternalMessage(MessageType.addCertificateToTrustStore, (byte[]) null, (byte[]) null, currentNodeDTO.getUsername(), nodeDTO.getUsername(), currentNodeDTO, (PublicKey) null, (PublicKey) null), nodeDTO.getUsername());
+            Thread.sleep(500);
         }
     }
 
-    public void createGroup(String groupName) throws PolicySyntaxException {
-        String policy = generateRandomPolicy();
-        String[] attributes = generateAttributesForPolicy(policy);
-
-        // Setup
-        KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
-
-        // Step 2: Generate pairing parameters using TypeACurveGenerator
-        int rBits = 160; // Number of bits for the order of the curve
-        int qBits = 512; // Number of bits for the field size
-        TypeACurveGenerator curveGenerator = new TypeACurveGenerator(rBits, qBits);
-        PairingParameters pairingParameters = curveGenerator.generate();
-
-        // Key generation - done by the PKG
-        PairingKeySerPair keyPair = engine.setup(pairingParameters, 50); // Setup with 50 attributes (0 to 49)
-        PairingKeySerParameter publicKey = keyPair.getPublic();
-        PairingKeySerParameter masterKey = keyPair.getPrivate();
-
-        int[][] accessPolicy = ParserUtils.GenerateAccessPolicy(policy);
-        String[] rhos = ParserUtils.GenerateRhos(policy);
-        PairingKeySerParameter secretKey = engine.keyGen(publicKey, masterKey, accessPolicy, rhos);
+    private void handleNewUserToGroupParams(byte[] decryptedBytes, PairingKeySerParameter publicKey) throws Exception {
+        GroupAtributesDTO groupAtributesDTO = Utils.deserialize(decryptedBytes, GroupAtributesDTO.class);
+        String groupName = groupAtributesDTO.getGroupName();
+        String[] attributes = groupAtributesDTO.getAttributes();
+        int[][] accessPolicy = groupAtributesDTO.getAccessPolicy();
+        PairingKeySerParameter masterKey = groupAtributesDTO.getMasterKey();
+        String[] rhos = groupAtributesDTO.getRhos();
+        PairingParameters pairingParameters = groupAtributesDTO.getPairingParameters();
 
         groupAtributes.put(groupName, attributes);
-        groupAccessPolicy.put(groupName, accessPolicy);
-        groupMasterKeys.put(groupName, masterKey);
-        groupPublicKeys.put(groupName, publicKey);
-        groupSecretKeys.put(groupName, secretKey);
         groupRhos.put(groupName, rhos);
+        groupPublicKeys.put(groupName, publicKey);
+        groupMasterKeys.put(groupName, masterKey);
+        groupAccessPolicy.put(groupName, accessPolicy);
         groupPairingParameters.put(groupName, pairingParameters);
-        InterfaceHandler.success("Group created successfully");
-    }
 
-    public synchronized void addMemberToGroup(AddUserToGroupEvent event) throws Exception {
-
-        // TODO: Make that a different function
-        if (currentNodeDTO.getHash().equals(event.getReceiverHash()) || currentNodeDTO.getHash().equals(event.getSenderDTO().getHash())) { // Arrived at a node that needs the shared key
-            long startTime = System.currentTimeMillis();
-            while (sharedKeys.get(event.getReceiverHash()) == null && sharedKeys.get(event.getSenderDTO().getHash()) == null) {
-               try {
-                    wait(2000); // Wait for 1 second intervals
-                    long elapsedTime = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime);
-                    if (elapsedTime >= TIMEOUT) {
-                        InterfaceHandler.erro("Connection timeout! - Shared key not found");
-                        return;
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    InterfaceHandler.erro("Thread interrupted: " + e.getMessage());
-                    return;
-                }
-            }
-        }
-
-        if (currentNodeDTO.getHash().equals(event.getReceiverHash())) { // Reached the target
-
-            byte[] groupAtributesDTOBytesEncrypted = event.getGroupAtributesDTOBytesEncrypted();
-            byte[] hashSigned = event.getInfoHash();
-            byte[] decryptedBytes = EncryptionHandler.decryptWithKey(groupAtributesDTOBytesEncrypted, sharedKeys.get(event.getSenderDTO().getHash()));
-
-            NodeDTO Sender = event.getSenderDTO();
-            if (!userService.getKeyHandler().getTruStore().containsAlias(Sender.getUsername())) {// If the certificate of the other node is not in the truststore
-                userService.getClientHandler().shareCertificateClient(Sender.getIp(), Sender.getPort(), new ChordInternalMessage(MessageType.addCertificateToTrustStore, (byte[]) null, (byte[]) null, currentNodeDTO.getUsername(), Sender.getUsername(), currentNodeDTO, (PublicKey) null, (PublicKey) null), Sender.getUsername());
-                Thread.sleep(500);
-            }
-
-            // Verify the signature
-            PublicKey senderPubKey = userService.getKeyHandler().getTruStore().getCertificate(Sender.getUsername()).getPublicKey();
-            boolean isRightSignature = verifySignature(senderPubKey, groupAtributesDTOBytesEncrypted, hashSigned);
-            if (!isRightSignature) {
-                InterfaceHandler.erro("Message signature does not match! Or the hash was altered");
-                return;
-            }
-
-            GroupAtributesDTO groupAtributesDTO = Utils.deserialize(decryptedBytes, GroupAtributesDTO.class);
-            String groupName = groupAtributesDTO.getGroupName();
-            String[] attributes = groupAtributesDTO.getAttributes();
-            int[][] accessPolicy = groupAtributesDTO.getAccessPolicy();
-            PairingKeySerParameter masterKey = groupAtributesDTO.getMasterKey();
-            String[] rhos = groupAtributesDTO.getRhos();
-            PairingParameters pairingParameters = groupAtributesDTO.getPairingParameters();
-
-            groupAtributes.put(groupName, attributes);
-            groupRhos.put(groupName, rhos);
-            groupPublicKeys.put(groupName, event.getPublicKey());
-            groupMasterKeys.put(groupName, masterKey);
-            groupAccessPolicy.put(groupName, accessPolicy);
-            groupPairingParameters.put(groupName, pairingParameters);
-
-            KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
-            PairingKeySerParameter secretKey = engine.keyGen(event.getPublicKey(), masterKey, accessPolicy, rhos);
-            groupSecretKeys.put(groupName, secretKey);
-            InterfaceHandler.success("User added to group successfully");
-
-            String recivedMessage = currentNodeDTO.getUsername() + " entered the group";
-            UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), recivedMessage.getBytes(), false, (byte[]) null, false);
-            NodeSendMessageEvent e = new NodeSendMessageEvent(userMessage);
-            sendUserMessage(e);
-            
-        } else {
-            NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getReceiverHash());
-            if (nodeWithHashDTO != null) {
-
-                if (currentNodeDTO == event.getSenderDTO()) { // Encrypt the critical information
-                    byte[] groupAtributesDTOBytesEncrypted = event.getGroupAtributesDTOBytesEncrypted();
-                    byte[] encryptedBytesAut = EncryptionHandler.encryptWithKey(groupAtributesDTOBytesEncrypted, sharedKeys.get(event.getReceiverHash()));
-                    byte[] hash = EncryptionHandler.createMessageHash(encryptedBytesAut);
-                    byte[] hashSigned = getSignature(hash, userService.getKeyHandler().getPrivateKey());
-        
-                    event.setGroupAtributesDTOBytesEncrypted(encryptedBytesAut);
-                    event.setInfoHash(hashSigned);
-                    ChordInternalMessage msg = (ChordInternalMessage) event.getMessage();
-                    msg.setGroupAtributesDTOBytes(encryptedBytesAut);
-                    msg.setInfoHash(hashSigned);
-
-                    try {
-                        clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), msg, false, nodeWithHashDTO.getUsername());
-                    } catch (NoSuchAlgorithmException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    try {
-                        clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false, nodeWithHashDTO.getUsername());
-                    } catch (NoSuchAlgorithmException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-            } else {
-                String recivedMessage = "Node does not exist";
-                UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), recivedMessage.getBytes(), false, (byte[]) null, false);
-                NodeSendMessageEvent e = new NodeSendMessageEvent(userMessage);
-                sendUserMessage(e);
-                return;
-            }
-        }
-    }
-
-    private static String generateRandomPolicy() {
-        Random random = new Random();
-        int numClauses = random.nextInt(3) + 1; // Number of clauses in the policy
-        StringBuilder policy = new StringBuilder();
-    
-        for (int i = 0; i < numClauses; i++) {
-            if (i > 0) {
-                policy.append(" and ");
-            }
-            int numTerms = random.nextInt(2) + 1; // Number of terms in the clause
-            if (numTerms == 1) {
-                policy.append(random.nextInt(50));
-            } else {
-                policy.append("(");
-                for (int j = 0; j < numTerms; j++) {
-                    if (j > 0) {
-                        policy.append(" or ");
-                    }
-                    policy.append(random.nextInt(50));
-                }
-                policy.append(")");
-            }
-        }
-    
-        return policy.toString();
+        KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
+        PairingKeySerParameter secretKey = engine.keyGen(publicKey, masterKey, accessPolicy, rhos);
+        groupSecretKeys.put(groupName, secretKey);
     }
             
-    private static String[] generateAttributesForPolicy(String policy) {
-        // Extract numbers from the policy
-        String[] tokens = policy.split("[^0-9]+");
-        return Arrays.stream(tokens)
-                .filter(token -> !token.isEmpty())
-                .distinct()
-                .toArray(String[]::new);
-    }
-
-    public PairingCipherSerParameter encryptGroupMessage(String groupName, String originalMessage) throws PolicySyntaxException {
-        KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
-        Pairing pairing = PairingFactory.getPairing(groupPairingParameters.get(groupName));
-        PairingKeySerParameter publicKey = groupPublicKeys.get(groupName);
-        String[] attributes = groupAtributes.get(groupName);
-        byte[] messageBytes = originalMessage.getBytes(StandardCharsets.UTF_8);
-        Element message = encodeBytesToGroup(pairing, messageBytes);
-        PairingCipherSerParameter ciphertext = engine.encryption(publicKey, attributes, message);
-        return ciphertext;
-    }
-
-    public String decryptGroupMessage(PairingKeySerParameter publicKey, PairingKeySerParameter secretKey, String[] attributes, PairingCipherSerParameter ciphertext) throws InvalidCipherTextException {
-        KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
-        Element decryptedMessage = engine.decryption(publicKey, secretKey, attributes, ciphertext);
-        byte[] decryptedBytes = decodeGroupToBytes(decryptedMessage);
-        String recoveredMessage = new String(decryptedBytes, StandardCharsets.UTF_8);
-        System.out.println("Recovered message: " + recoveredMessage);
-        return recoveredMessage;
-    }
-
-    // Encode a byte array to a group element
-    private static Element encodeBytesToGroup(Pairing pairing, byte[] data) {
-        // Convert the byte array to a BigInteger
-        java.math.BigInteger bigInteger = new java.math.BigInteger(1, data);
-        return pairing.getGT().newElement(bigInteger).getImmutable();
-    }
-
-    // Decode a group element back to a byte array
-    private static byte[] decodeGroupToBytes(Element element) {
-        // Convert the group element to a BigInteger
-        java.math.BigInteger bigInteger = element.toBigInteger();
-        // Convert the BigInteger to a byte array
-        return bigInteger.toByteArray();
-    }
+    // TODO: Try protected
 
     public String[] getGroupAttributes(String groupName) {
         return groupAtributes.get(groupName);

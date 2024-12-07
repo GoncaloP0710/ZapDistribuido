@@ -1,5 +1,6 @@
 package psd.group4.handlers;
 
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.MessageDigest;
@@ -12,6 +13,17 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.BadPaddingException;
 import javax.crypto.spec.SecretKeySpec;
+
+import org.bouncycastle.crypto.InvalidCipherTextException;
+
+import cn.edu.buaa.crypto.access.parser.PolicySyntaxException;
+import cn.edu.buaa.crypto.algebra.serparams.PairingCipherSerParameter;
+import cn.edu.buaa.crypto.algebra.serparams.PairingKeySerParameter;
+import cn.edu.buaa.crypto.encryption.abe.kpabe.KPABEEngine;
+import cn.edu.buaa.crypto.encryption.abe.kpabe.gpsw06a.KPABEGPSW06aEngine;
+import it.unisa.dia.gas.jpbc.Element;
+import it.unisa.dia.gas.jpbc.Pairing;
+import psd.group4.utils.Utils;
 
 public class EncryptionHandler{
 
@@ -168,5 +180,22 @@ public class EncryptionHandler{
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 algorithm not found", e);
         }
+    }
+
+    public static PairingCipherSerParameter encryptGroupMessage(String groupName, String originalMessage, Pairing pairing, PairingKeySerParameter publicKey, String[] attributes) throws PolicySyntaxException {
+        KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
+        byte[] messageBytes = originalMessage.getBytes(StandardCharsets.UTF_8);
+        Element message = Utils.encodeBytesToGroup(pairing, messageBytes);
+        PairingCipherSerParameter ciphertext = engine.encryption(publicKey, attributes, message);
+        return ciphertext;
+    }
+
+    public static String decryptGroupMessage(PairingKeySerParameter publicKey, PairingKeySerParameter secretKey, String[] attributes, PairingCipherSerParameter ciphertext) throws InvalidCipherTextException {
+        KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
+        Element decryptedMessage = engine.decryption(publicKey, secretKey, attributes, ciphertext);
+        byte[] decryptedBytes = Utils.decodeGroupToBytes(decryptedMessage);
+        String recoveredMessage = new String(decryptedBytes, StandardCharsets.UTF_8);
+        System.out.println("Recovered message: " + recoveredMessage);
+        return recoveredMessage;
     }
 }
