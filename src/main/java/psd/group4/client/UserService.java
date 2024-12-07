@@ -4,6 +4,7 @@ import java.io.File;
 import java.math.BigInteger;
 import java.security.cert.Certificate;
 import java.security.*;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.crypto.BadPaddingException;
@@ -279,6 +280,17 @@ public class UserService implements UserServiceInterface {
      */
     public void exitNode() throws NoSuchAlgorithmException, InterruptedException {
         eventHandler.exitNode();
+    }
+
+    public void printGroups() {
+        Set<String> groupNames = eventHandler.getAllGroupNames();
+        if (groupNames.isEmpty()) {
+            InterfaceHandler.info("There are no groups.");
+            return;
+        }
+        for (String groupName : groupNames) {
+            InterfaceHandler.info(groupName);
+        }
     }
 
     @Override

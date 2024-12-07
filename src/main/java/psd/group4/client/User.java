@@ -127,6 +127,10 @@ public class User {
                 case "cg":
                     userService.createGroup(interfaceHandler);
                     break;
+                case "13":
+                case "ls":
+                    userService.printGroups();
+                    break;
                 default:
                     InterfaceHandler.erro("Opção inválida!");
                     break;

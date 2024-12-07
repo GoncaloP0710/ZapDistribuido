@@ -17,6 +17,7 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.security.cert.Certificate;
@@ -217,6 +218,25 @@ public class EventHandler {
         }
         NodeDTO nextNode = currentNode.getNextNode();
         clientHandler.startClient(nextNode.getIp(), nextNode.getPort(), message, false, nextNode.getUsername());
+    }
+
+    /**
+     * Recives the message and fowards it to all network eventually
+     * 
+     * @param event
+     * @throws NoSuchAlgorithmException
+     */
+    public synchronized void broadcastMessage(BroadcastUpdateFingerTableEvent event) throws NoSuchAlgorithmException {
+        ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateFingerTable, event.getSenderDto(), 0);
+        updateFingerTable(new UpdateNodeFingerTableEvent(message)); 
+        if (event.getIsExiting() && sharedKeys.remove(event.getInitializer().getHash()) != null)
+            InterfaceHandler.info("Node exited the network successfully");
+
+        if (!event.getInitializer().equals(currentNodeDTO)) { // foward to the next node
+            NodeDTO nextNodeDTO = currentNode.getNextNode();
+            ((ChordInternalMessage) event.getMessage()).setSenderDto(currentNodeDTO);
+            clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), event.getMessage(), false, nextNodeDTO.getUsername());
+        }
     }
 
     /**
@@ -561,25 +581,6 @@ public class EventHandler {
     // ======================================================================================================
 
     /**
-     * Recives the message and fowards it to all network eventually
-     * 
-     * @param event
-     * @throws NoSuchAlgorithmException
-     */
-    public synchronized void broadcastMessage(BroadcastUpdateFingerTableEvent event) throws NoSuchAlgorithmException {
-        ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateFingerTable, event.getSenderDto(), 0);
-        updateFingerTable(new UpdateNodeFingerTableEvent(message)); 
-        if (event.getIsExiting() && sharedKeys.remove(event.getInitializer().getHash()) != null)
-            InterfaceHandler.info("Node exited the network successfully");
-
-        if (!event.getInitializer().equals(currentNodeDTO)) { // foward to the next node
-            NodeDTO nextNodeDTO = currentNode.getNextNode();
-            ((ChordInternalMessage) event.getMessage()).setSenderDto(currentNodeDTO);
-            clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), event.getMessage(), false, nextNodeDTO.getUsername());
-        }
-    }
-
-    /**
      * Makes the signature of the bytes received (hash)
      * 
      * @param hash
@@ -645,8 +646,8 @@ public class EventHandler {
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(e.getTarget());
             try {
                 clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), e.getMessage(), false, nodeWithHashDTO.getUsername());
-            } catch (NoSuchAlgorithmException e1) {
-                e1.printStackTrace();
+            } catch (Exception e1) {
+                InterfaceHandler.erro("Error removing shared key: " + e1.getMessage());
             }
         }
     }
@@ -726,5 +727,9 @@ public class EventHandler {
 
     public PairingParameters getGroupPairingParameters(String groupName) {
         return groupPairingParameters.get(groupName);
+    }
+
+    public Set<String> getAllGroupNames() {
+        return groupPublicKeys.keySet();
     }
 }
