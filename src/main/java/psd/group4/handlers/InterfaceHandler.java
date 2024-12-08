@@ -276,6 +276,12 @@ public class InterfaceHandler {
         System.out.println(ANSI_GREEN + "9 -  (info 1)  " + ANSI_UNDERLINE + "Enable info logging" + ANSI_RESET + ANSI_PURPLE + " - Enable info logging on the terminal" + ANSI_RESET);
     }
 
+    public void printConversation(String[] conversation){
+        for(String s : conversation){
+            System.out.println(s);
+        }
+    }
+
     /**
      * Get the user input
      */

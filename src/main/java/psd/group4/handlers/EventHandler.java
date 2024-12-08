@@ -6,6 +6,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import psd.group4.utils.Utils;
+import psd.group4.client.MessageEntry;
 import psd.group4.client.Node;
 import psd.group4.client.UserService;
 import psd.group4.dtos.*;
@@ -19,6 +20,7 @@ import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -316,6 +318,17 @@ public class EventHandler {
             }
             String messageString = new String(decryptedBytes, StandardCharsets.UTF_8);
             InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + messageString);
+
+            // ADICIONAR A DATABASE
+            byte[] sender = event.getSenderDTO().getUsername().getBytes(StandardCharsets.UTF_8);
+            byte[] receiver = userService.getNodeWithHash(event.getReciver()).getUsername().getBytes(StandardCharsets.UTF_8);
+            byte[] messageDB = messageString.getBytes(StandardCharsets.UTF_8);
+
+            MessageEntry messageEntry = new MessageEntry(sender, receiver, messageDB, new Date(), Utils.nonceGenarator(), portDefault, null); // REFAZER
+            MongoDBHandler mongoDBHandler = new MongoDBHandler();
+            mongoDBHandler.storeMessage(messageEntry);
+            mongoDBHandler.closeConnection();        
+            // FIM ADICIONAR A DATABASE
             
             String recivedMessage = "recived by " + currentNodeDTO.getUsername();
             if (event.getNeedConfirmation()) { // Send a reciving message to the sender
@@ -737,6 +750,10 @@ public class EventHandler {
         java.math.BigInteger bigInteger = element.toBigInteger();
         // Convert the BigInteger to a byte array
         return bigInteger.toByteArray();
+    }
+
+    public void printChat() {
+        
     }
 
     public String[] getGroupAttributes(String groupName) {

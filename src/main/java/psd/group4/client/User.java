@@ -252,6 +252,10 @@ public class User {
                 case "cg":
                     userService.createGroup(interfaceHandler);
                     break;
+                case "13":
+                case "pc":
+                    userService.printChat(interfaceHandler);
+                    break;
                 default:
                     InterfaceHandler.erro("Opção inválida!");
                     break;

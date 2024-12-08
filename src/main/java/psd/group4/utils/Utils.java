@@ -55,6 +55,14 @@ public final class Utils {
     }
 
     /**
+     * Generates a prime number. If the same params are given it will generate the same prime
+     */
+    public static BigInteger generatePrime(int minBitLength, SecureRandom random) {
+        BigInteger prime = BigInteger.probablePrime(minBitLength, random);
+        return prime;
+    }
+
+    /**
      * Generate a random salt
      * 
      * @return salt

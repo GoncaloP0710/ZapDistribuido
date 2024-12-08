@@ -2,8 +2,11 @@ package psd.group4.client;
 
 import java.io.File;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.security.*;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.crypto.BadPaddingException;
@@ -243,6 +246,40 @@ public class UserService implements UserServiceInterface {
             eventHandler.addMemberToGroup(event);
         } finally {
             nodeSendMessageLock.unlock();
+        }
+    }
+
+    public void printChat(InterfaceHandler interfaceHandler) {
+        try {
+            System.out.println("Select the user you want to see the conversation: ");
+            String receiver = interfaceHandler.getInput();
+
+            // Obter o nome do usuário atual
+            String currentUser = this.username;
+
+            // Converter os nomes dos usuários para bytes
+            byte[] currentUserBytes = currentUser.getBytes(StandardCharsets.UTF_8);
+            byte[] receiverBytes = receiver.getBytes(StandardCharsets.UTF_8);
+
+            // Conectar ao MongoDB e obter as mensagens
+            MongoDBHandler mongoDBHandler = new MongoDBHandler();
+            ArrayList<MessageEntry> sentMessages = mongoDBHandler.findAllBySender(currentUserBytes);
+            ArrayList<MessageEntry> receivedMessages = mongoDBHandler.findAllByReceiver(receiverBytes);
+
+            // Combinar e ordenar as mensagens por data
+            ArrayList<MessageEntry> allMessages = new ArrayList<>();
+            allMessages.addAll(sentMessages);
+            allMessages.addAll(receivedMessages);
+            // allMessages.sort(Comparator.comparing(MessageEntry::getTimestamp)); // Assumindo que MessageEntry tem um campo timestamp
+
+            // Exibir as mensagens
+            for (MessageEntry message : allMessages) {
+                System.out.println(new String(message.getSender(), StandardCharsets.UTF_8) + ": " + new String(message.getMessage(), StandardCharsets.UTF_8));
+            }
+
+            mongoDBHandler.closeConnection();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
