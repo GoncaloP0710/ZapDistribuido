@@ -1,5 +1,6 @@
 package psd.group4.handlers;
 
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -7,6 +8,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -23,9 +28,12 @@ import cn.edu.buaa.crypto.encryption.abe.kpabe.KPABEEngine;
 import cn.edu.buaa.crypto.encryption.abe.kpabe.gpsw06a.KPABEGPSW06aEngine;
 import it.unisa.dia.gas.jpbc.Element;
 import it.unisa.dia.gas.jpbc.Pairing;
+import psd.group4.client.MessageEntry;
 import psd.group4.utils.Utils;
 
 public class EncryptionHandler{
+
+    private final SecureRandom random = new SecureRandom();
 
     public EncryptionHandler(){}
 
@@ -197,5 +205,55 @@ public class EncryptionHandler{
         String recoveredMessage = new String(decryptedBytes, StandardCharsets.UTF_8);
         System.out.println("Recovered message: " + recoveredMessage);
         return recoveredMessage;
+    }
+
+    public List<MessageEntry> divideShare(byte[] secret, byte[] sender, byte[] receiver, int threshold, int numShares) {
+        long id = random.nextLong();
+        BigInteger secretInt = new BigInteger(1, secret);
+        BigInteger prime = secretInt.nextProbablePrime();
+        int bitLength = prime.bitLength();
+        Date date = new Date();
+        List<BigInteger> coefficients = new ArrayList<>();
+        coefficients.add(secretInt);
+
+        for (int i = 1; i < threshold; i++) {
+            coefficients.add(new BigInteger(prime.bitLength(), random).mod(prime)); // idk se o random é o certo
+        }
+
+        List<MessageEntry> shares = new ArrayList<>();
+        for (int x = 1; x <= numShares; x++) {
+            BigInteger y = BigInteger.ZERO;
+            for (int i = 0; i < threshold; i++) {
+                y = y.add(coefficients.get(i).multiply(BigInteger.valueOf(x).pow(i))).mod(prime);
+            }
+            shares.add(new MessageEntry(sender, receiver, y.toByteArray(), date, id, bitLength, random));
+        }
+
+        return shares;
+    }
+
+    public byte[] reconstructSecret(List<MessageEntry> shares) {
+        BigInteger prime = new BigInteger(1, shares.get(0).getMessage()).nextProbablePrime();
+        BigInteger secret = BigInteger.ZERO;
+
+        for (int i = 0; i < shares.size(); i++) {
+            BigInteger xi = BigInteger.valueOf(i + 1);
+            BigInteger yi = new BigInteger(1, shares.get(i).getMessage());
+            BigInteger numerator = BigInteger.ONE;
+            BigInteger denominator = BigInteger.ONE;
+
+            for (int j = 0; j < shares.size(); j++) {
+                if (i != j) {
+                    BigInteger xj = BigInteger.valueOf(j + 1);
+                    numerator = numerator.multiply(xj.negate()).mod(prime);
+                    denominator = denominator.multiply(xi.subtract(xj)).mod(prime);
+                }
+            }
+
+            BigInteger lagrange = numerator.multiply(denominator.modInverse(prime)).mod(prime);
+            secret = secret.add(yi.multiply(lagrange)).mod(prime);
+        }
+
+        return secret.toByteArray();
     }
 }

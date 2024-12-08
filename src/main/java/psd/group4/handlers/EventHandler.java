@@ -6,6 +6,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import psd.group4.utils.Utils;
+import psd.group4.client.MessageEntry;
 import psd.group4.client.Node;
 import psd.group4.client.UserService;
 import psd.group4.dtos.*;
@@ -305,6 +306,28 @@ public class EventHandler {
 
             String messageString = new String(decryptedBytes, StandardCharsets.UTF_8);
             InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + messageString);
+
+            // ADICIONAR A DATABASE
+            byte[] sender = event.getSenderDTO().getUsername().getBytes(StandardCharsets.UTF_8);
+            byte[] receiver = userService.getNodeWithHash(event.getReciver()).getUsername().getBytes(StandardCharsets.UTF_8);
+            byte[] messageDB = messageString.getBytes(StandardCharsets.UTF_8);
+
+            // Encrypt the message using secret sharing
+            EncryptionHandler encryptionHandler = new EncryptionHandler();
+            List<MessageEntry> shares = encryptionHandler.divideShare(messageDB, sender, receiver, 3, 5);    
+            
+            MongoDBHandler mongoDBHandler = new MongoDBHandler();
+            try {
+                for (MessageEntry share : shares) {
+                    mongoDBHandler.storeMessage(share);
+                }
+                mongoDBHandler.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            } 
+            // FIM ADICIONAR A DATABASE
+
+
             String recivedMessage = "recived by " + currentNodeDTO.getUsername();
             if (event.getNeedConfirmation()) { // Send a reciving message to the sender
                 UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), recivedMessage.getBytes(), false, (byte[]) null, false);

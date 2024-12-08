@@ -1,43 +1,110 @@
 package psd.group4.client;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.security.SecureRandom;
+import java.util.*;
 
 public class MessageEntry {
-    String title; //titulo do manga ex. Overgueared
-    String type; //manhwa, manga ou manhua
-    HashMap<String, Integer> score; //par pessoa que deu score e o score ex. Martim - 10. Score de 0 a 10
-    ArrayList<String> tags; //ex. nsfw, martial arts, swords
+    private byte[] sender; 
+    private byte[] receiver; 
+    private byte[] message; 
+    private Date date;
+    private long id;
+    private int bitLength;
+    private SecureRandom random;
 
     public MessageEntry(){}
 
-    public MessageEntry(String title, String type, HashMap<String, Integer> score, ArrayList<String> tags){
-        this.title = title;
-        this.tags = tags;
-        this.type = type;
-        this.score = score;
+    public MessageEntry(byte[] sender, byte[] receiver, byte[] message, Date date){
+        this.sender = sender;
+        this.receiver = receiver;
+        this.message = message;
+        this.date = date;
     }
 
-    public String getTitle(){
-        return this.title;
+    public MessageEntry(byte[] sender, byte[] receiver, byte[] message, Date date, long id, int bitLength, SecureRandom random){
+        this.sender = sender;
+        this.receiver = receiver;
+        this.message = message;
+        this.date = date;
+        this.id = id;
+        this.bitLength = bitLength;
+        this.random = random;
     }
 
-    public String getType(){
-        return this.type;
+    public MessageEntry(byte[] message, MessageEntry me){
+        this.message = message;
+
+        this.sender = me.getSender();
+        this.receiver = me.getReceiver();
+        this.date = me.getDate();
+        this.id = me.getId();
+        this.bitLength = me.getBitLength();
+        this.random = me.getRandom();
     }
 
-    public HashMap<String, Integer> getScores(){
-        return this.score;
+    public byte[] getSender() {
+        return sender;
     }
 
-    public ArrayList<String> getTags(){
-        return this.tags;
+    public byte[] getReceiver() {
+        return receiver;
     }
 
-    public int getScore(String name){
-        if(score.containsKey(name)){
-            return score.get(name);
-        }
-        return -1;
+    public byte[] getMessage() {
+        return message;
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public int getBitLength() {
+        return bitLength;
+    }
+
+    public SecureRandom getRandom() {
+        return random;
+    }
+    
+    public void setDate(Date date) {
+        this.date = date;
+    }
+    
+    public void setBitLength(int bitLength) {
+        this.bitLength = bitLength;
+    }
+    
+    public void setRandom(SecureRandom random) {
+        this.random = random;
+    }
+    
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public void setSender(byte[] sender) {
+        this.sender = sender;
+    }
+
+    public void setReceiver(byte[] receiver) {
+        this.receiver = receiver;
+    }
+
+    public void setMessage(byte[] message) {
+        this.message = message;
+    }
+
+    @Override
+    public String toString(){
+        StringBuilder s = new StringBuilder("Id: "+ id + "\n");
+        s.append("Sender: "+ sender + "\n");
+        s.append("Receiver: "+ receiver + "\n");
+        s.append("Message: "+ message + "\n");
+        s.append("Date: "+ date.toString() + "\n");
+        return s.toString();
     }
 }
