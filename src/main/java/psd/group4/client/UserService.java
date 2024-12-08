@@ -238,22 +238,36 @@ public class UserService implements UserServiceInterface {
     public void addUserToGroup(InterfaceHandler interfaceHandler) throws Exception {
         nodeSendMessageLock.lock();
         try {
-            System.out.println("Select the group you want to add the user to: ");
+            Set<String> groupNames = eventHandler.getAllGroupNames();
+            if (groupNames.isEmpty()) {
+                InterfaceHandler.info("There are no groups.");
+                return;
+            }
+
+            System.out.println("Select the group you want to add the user to (or exit to chose another operation): ");
             String groupName = interfaceHandler.getInput();
+            if (groupName.equals("exit"))
+                return;
 
             if (eventHandler.getGroupPublicKey(groupName) == null) { // Check if the group exists
                 InterfaceHandler.erro("You are not a member of the group. Or the group does not exist.");
                 InterfaceHandler.info("Select the group you want to add the user to: ");
                 groupName = interfaceHandler.getInput();
+                if (groupName.equals("exit"))
+                    return;
                 while (eventHandler.getGroupPublicKey(groupName) == null) {
                     InterfaceHandler.erro("You are not a member of the group. Or the group does not exist.");
                     InterfaceHandler.info("Select the group you want to add the user to: ");
                     groupName = interfaceHandler.getInput();
+                    if (groupName.equals("exit"))
+                        return;
                 }
             }
 
-            System.out.println("Write the user name: ");
+            System.out.println("Write the user name (or exit to chose another operation): ");
             String userName = interfaceHandler.getInput();
+            if (userName.equals("exit"))
+                return;
             BigInteger reciverHash = currentNode.calculateHash(userName);
 
             if (eventHandler.getSharedKey(reciverHash) == null) { // If the shared key does not exist - create a new one

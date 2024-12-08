@@ -547,7 +547,7 @@ public class EventHandler {
             UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), recivedMessage.getBytes(), false, (byte[]) null, false);
             NodeSendMessageEvent e = new NodeSendMessageEvent(userMessage);
             sendUserMessage(e);
-        } else { // TODO: If user not exists... there is error of the key...
+        } else {
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getReceiverHash());
             if (nodeWithHashDTO != null) { // Node exists
                 if (currentNodeDTO == event.getSenderDTO()) { // Start of the process - Encrypt the critical information
