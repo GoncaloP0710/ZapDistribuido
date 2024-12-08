@@ -76,7 +76,7 @@ public class MongoDBHandler {
         collection.insertOne(message); 
     }
 
-    public void closeConnection() {
+    public void close() {
         monguito.close();
     }
 

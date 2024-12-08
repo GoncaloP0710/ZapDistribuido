@@ -21,6 +21,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -324,10 +325,20 @@ public class EventHandler {
             byte[] receiver = userService.getNodeWithHash(event.getReciver()).getUsername().getBytes(StandardCharsets.UTF_8);
             byte[] messageDB = messageString.getBytes(StandardCharsets.UTF_8);
 
-            MessageEntry messageEntry = new MessageEntry(sender, receiver, messageDB, new Date(), Utils.nonceGenarator(), portDefault, null); // REFAZER
+            // Encrypt the message using secret sharing
+            EncryptionHandler encryptionHandler = new EncryptionHandler();
+            List<MessageEntry> shares = encryptionHandler.divideShare(messageDB, sender, receiver, 3, 5);    
+            
             MongoDBHandler mongoDBHandler = new MongoDBHandler();
-            mongoDBHandler.storeMessage(messageEntry);
-            mongoDBHandler.closeConnection();        
+            try {
+                for (MessageEntry share : shares) {
+                    mongoDBHandler.storeMessage(share);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                mongoDBHandler.close();
+            }
             // FIM ADICIONAR A DATABASE
             
             String recivedMessage = "recived by " + currentNodeDTO.getUsername();

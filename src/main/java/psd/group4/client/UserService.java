@@ -28,7 +28,7 @@ import psd.group4.message.*;
 public class UserService implements UserServiceInterface {
 
    // ---------------------- Default Node ----------------------
-    private String ipDefault = "192.168.43.234";
+    private String ipDefault = "192.168.56.1";
     private int portDefault = 8080;
     private String usernameDefault = "Wang";
     // ----------------------------------------------------------
@@ -277,7 +277,7 @@ public class UserService implements UserServiceInterface {
                 System.out.println(new String(message.getSender(), StandardCharsets.UTF_8) + ": " + new String(message.getMessage(), StandardCharsets.UTF_8));
             }
 
-            mongoDBHandler.closeConnection();
+            mongoDBHandler.close();
         } catch (Exception e) {
             e.printStackTrace();
         }

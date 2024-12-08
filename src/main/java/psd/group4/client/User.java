@@ -72,77 +72,77 @@ public class User {
 
     public static void main(String[] args) throws Exception {
 
-        try {
-            // Setup
-            KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
-            // Step 2: Generate pairing parameters using TypeACurveGenerator
-            int rBits = 160; // Number of bits for the order of the curve
-            int qBits = 512; // Number of bits for the field size
-            TypeACurveGenerator curveGenerator = new TypeACurveGenerator(rBits, qBits);
-            PairingParameters pairingParameters = curveGenerator.generate();
-            Pairing pairing = PairingFactory.getPairing(pairingParameters);
-            System.out.println("Pairing parameters generated and pairing instance created.");
+        // try {
+        //     // Setup
+        //     KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
+        //     // Step 2: Generate pairing parameters using TypeACurveGenerator
+        //     int rBits = 160; // Number of bits for the order of the curve
+        //     int qBits = 512; // Number of bits for the field size
+        //     TypeACurveGenerator curveGenerator = new TypeACurveGenerator(rBits, qBits);
+        //     PairingParameters pairingParameters = curveGenerator.generate();
+        //     Pairing pairing = PairingFactory.getPairing(pairingParameters);
+        //     System.out.println("Pairing parameters generated and pairing instance created.");
 
-            // Key generation - done by the PKG
-            PairingKeySerPair keyPair = engine.setup(pairingParameters, 50); // Setup with 50 attributes
-            PairingKeySerParameter publicKey = keyPair.getPublic();
-            PairingKeySerParameter masterKey = keyPair.getPrivate();
+        //     // Key generation - done by the PKG
+        //     PairingKeySerPair keyPair = engine.setup(pairingParameters, 50); // Setup with 50 attributes
+        //     PairingKeySerParameter publicKey = keyPair.getPublic();
+        //     PairingKeySerParameter masterKey = keyPair.getPrivate();
 
-            String policy = "49 or (10 and 2) and 12 or 29";
-            int[][] accessPolicy = ParserUtils.GenerateAccessPolicy(policy);
-            String[] rhos = ParserUtils.GenerateRhos(policy);
-            PairingKeySerParameter secretKey = engine.keyGen(publicKey, masterKey, accessPolicy, rhos);
+        //     String policy = "49 or (10 and 2) and 12 or 29";
+        //     int[][] accessPolicy = ParserUtils.GenerateAccessPolicy(policy);
+        //     String[] rhos = ParserUtils.GenerateRhos(policy);
+        //     PairingKeySerParameter secretKey = engine.keyGen(publicKey, masterKey, accessPolicy, rhos);
 
-            // Encryption - done by Alice
-            String[] attributes = new String[]{"49", "1", "2"};
-            String originalMessage = "ola tudo bem? como vais?";
-            byte[] messageBytes = originalMessage.getBytes(StandardCharsets.UTF_8);
-            Element message = encodeBytesToGroup(pairing, messageBytes);
-            PairingCipherSerParameter ciphertext = engine.encryption(publicKey, attributes, message);
-
-
-            // ---------------------------------------------------------------------
-
-            KPABEEngine engine2 = KPABEGPSW06aEngine.getInstance();
-
-            PairingKeySerParameter secretKey2 = engine2.keyGen(publicKey, masterKey, accessPolicy, rhos);
-
-            if (secretKey.equals(secretKey2)) {
-                System.out.println("Secret keys match.");
-            } else {
-                System.out.println("Secret keys do not match.");
-            }
-
-            // ---------------------------------------------------------------------
-
-            // Decryption - done by Bob
-            Element decryptedMessage = engine.decryption(publicKey, secretKey2, attributes, ciphertext);
-            byte[] decryptedBytes = decodeGroupToBytes(decryptedMessage);
-            String recoveredMessage = new String(decryptedBytes, StandardCharsets.UTF_8);
-
-            // Output results
-            System.out.println("Original message: " + originalMessage);
-            System.out.println("Hashed message in G: " + message.toString());
-            System.out.println("Decrypted message in G: " + decryptedMessage.toString());
-            System.out.println("Recovered original message: " + recoveredMessage);
-
-            // Verify correctness
-            if (originalMessage.equals(recoveredMessage)) {
-                System.out.println("Decryption successful: Messages match.");
-            } else {
-                System.out.println("Decryption failed: Messages do not match.");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        //     // Encryption - done by Alice
+        //     String[] attributes = new String[]{"49", "1", "2"};
+        //     String originalMessage = "ola tudo bem? como vais?";
+        //     byte[] messageBytes = originalMessage.getBytes(StandardCharsets.UTF_8);
+        //     Element message = encodeBytesToGroup(pairing, messageBytes);
+        //     PairingCipherSerParameter ciphertext = engine.encryption(publicKey, attributes, message);
 
 
-        for (int i = 0; i < 10; i++) {
-            String policy = generateRandomPolicy();
-            String[] attributes = generateAttributesForPolicy(policy);
-            System.out.println("Policy: " + policy);
-            System.out.println("Attributes: " + Arrays.toString(attributes));
-        }
+        //     // ---------------------------------------------------------------------
+
+        //     KPABEEngine engine2 = KPABEGPSW06aEngine.getInstance();
+
+        //     PairingKeySerParameter secretKey2 = engine2.keyGen(publicKey, masterKey, accessPolicy, rhos);
+
+        //     if (secretKey.equals(secretKey2)) {
+        //         System.out.println("Secret keys match.");
+        //     } else {
+        //         System.out.println("Secret keys do not match.");
+        //     }
+
+        //     // ---------------------------------------------------------------------
+
+        //     // Decryption - done by Bob
+        //     Element decryptedMessage = engine.decryption(publicKey, secretKey2, attributes, ciphertext);
+        //     byte[] decryptedBytes = decodeGroupToBytes(decryptedMessage);
+        //     String recoveredMessage = new String(decryptedBytes, StandardCharsets.UTF_8);
+
+        //     // Output results
+        //     System.out.println("Original message: " + originalMessage);
+        //     System.out.println("Hashed message in G: " + message.toString());
+        //     System.out.println("Decrypted message in G: " + decryptedMessage.toString());
+        //     System.out.println("Recovered original message: " + recoveredMessage);
+
+        //     // Verify correctness
+        //     if (originalMessage.equals(recoveredMessage)) {
+        //         System.out.println("Decryption successful: Messages match.");
+        //     } else {
+        //         System.out.println("Decryption failed: Messages do not match.");
+        //     }
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
+
+
+        // for (int i = 0; i < 10; i++) {
+        //     String policy = generateRandomPolicy();
+        //     String[] attributes = generateAttributesForPolicy(policy);
+        //     System.out.println("Policy: " + policy);
+        //     System.out.println("Attributes: " + Arrays.toString(attributes));
+        // }
                         
                         
                         
