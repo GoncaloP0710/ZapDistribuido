@@ -17,15 +17,13 @@ import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 import java.util.ArrayList;
 
 import com.mongodb.*;
-
 public class MongoDBHandler {
-    private final String URI = "mongodb+srv://areis04net:OaHxZtDOKs177scf@cluster0.rwzipne.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+    private final String URI = "mongodb+srv://areis04net:OaHxZtDOKs177scf@cluster0.rwzipne.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&ssl=true&sslInvalidHostNameAllowed=true";    
     public MongoDatabase database;
     public MongoCollection<MessageEntry> collection;
     public CodecRegistry pojoCodecRegistry ;
     public CodecRegistry codecRegistry ;
     public MongoClient monguito;
-
 
 
     public MongoDBHandler() {

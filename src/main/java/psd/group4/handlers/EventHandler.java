@@ -310,7 +310,7 @@ public class EventHandler {
 
             // ADICIONAR A DATABASE
             byte[] sender = event.getSenderDTO().getUsername().getBytes(StandardCharsets.UTF_8);
-            byte[] receiver = userService.getNodeWithHash(event.getReciver()).getUsername().getBytes(StandardCharsets.UTF_8);
+            byte[] receiver = currentNodeDTO.getUsername().getBytes(StandardCharsets.UTF_8);
             byte[] messageDB = messageString.getBytes(StandardCharsets.UTF_8);
 
             // Encrypt the message using secret sharing

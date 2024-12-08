@@ -29,21 +29,21 @@ public class User {
 
         // ADICIONAR A DATABASE
 
-        String messageString = "Hello World!";
-        byte[] messageDB = messageString.getBytes(StandardCharsets.UTF_8);
+        // String messageString = "Hello World!";
+        // byte[] messageDB = messageString.getBytes(StandardCharsets.UTF_8);
 
-        // Encrypt the message using secret sharing
-        List<MessageEntry> shares = EncryptionHandler.divideShare(messageDB, messageDB, messageDB, 3, 5);    
+        // // Encrypt the message using secret sharing
+        // List<MessageEntry> shares = EncryptionHandler.divideShare(messageDB, messageDB, messageDB, 3, 5);    
         
-        MongoDBHandler mongoDBHandler = new MongoDBHandler();
-        try {
-            for (MessageEntry share : shares) {
-                mongoDBHandler.storeMessage(share);
-            }
-            mongoDBHandler.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } 
+        // MongoDBHandler mongoDBHandler = new MongoDBHandler();
+        // try {
+        //     for (MessageEntry share : shares) {
+        //         mongoDBHandler.storeMessage(share);
+        //     }
+        //     mongoDBHandler.close();
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // } 
 
         // -------------------------------------
         
