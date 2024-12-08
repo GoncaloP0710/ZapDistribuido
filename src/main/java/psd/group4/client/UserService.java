@@ -229,6 +229,13 @@ public class UserService implements UserServiceInterface {
         try {
             System.out.println("Select the group name you want to create: ");
             String groupName = interfaceHandler.getInput();
+
+            Set<String> groupNames = eventHandler.getAllGroupNames();
+            if (groupNames.contains(groupName)) {
+                InterfaceHandler.erro("The group already exists.");
+                return;
+            }
+
             eventHandler.createGroup(groupName);
         } catch (Exception e) {
             InterfaceHandler.erro("Error creating group: " + e.getMessage());
