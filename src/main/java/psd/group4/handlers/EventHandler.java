@@ -146,7 +146,7 @@ public class EventHandler {
     public synchronized void exitNode() throws Exception {
         NodeDTO prevNodeDTO = currentNode.getPreviousNode();
         NodeDTO nextNodeDTO = currentNode.getNextNode();
-
+ 
         if (prevNodeDTO.equals(currentNodeDTO) && nextNodeDTO.equals(currentNodeDTO)) { // Only one node in the network
             InterfaceHandler.success("Node exited the network successfully");
             return;
@@ -175,13 +175,9 @@ public class EventHandler {
                 clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), new ChordInternalMessage(MessageType.RemoveSharedKey, key, currentNodeDTO), false, nodeWithHashDTO.getUsername());
             } catch (Exception e) {
                 InterfaceHandler.erro("Error removing shared key: " + e.getMessage());
-                System.out.println(key);
-                System.out.println("-----------------------------------------------------------------");
-                System.out.println(sharedKeys.keySet());
             }
         }
-
-        Thread.sleep(2000); // TODO: Reduce the value of the sleep
+        Thread.sleep(2000);
         InterfaceHandler.success("Node exited the network successfully");
     }
 
@@ -255,9 +251,6 @@ public class EventHandler {
     public synchronized void broadcastMessage(BroadcastUpdateFingerTableEvent event) throws NoSuchAlgorithmException {
         ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateFingerTable, event.getSenderDto(), 0);
         updateFingerTable(new UpdateNodeFingerTableEvent(message)); 
-        if (event.getIsExiting() && sharedKeys.remove(event.getInitializer().getHash()) != null)
-            InterfaceHandler.info("Node exited the network successfully");
-
         if (!event.getInitializer().equals(currentNodeDTO)) { // foward to the next node
             NodeDTO nextNodeDTO = currentNode.getNextNode();
             ((ChordInternalMessage) event.getMessage()).setSenderDto(currentNodeDTO);
@@ -273,7 +266,9 @@ public class EventHandler {
      */
     public synchronized void sendUserMessage(NodeSendMessageEvent event) throws Exception {
         if (currentNodeDTO.getHash().equals(event.getReciver()) || currentNodeDTO.getHash().equals(event.getSenderDTO().getHash())) { // Arrived at a node that needs the shared key
-            waitForSharedK(event.getReciver(), event.getSenderDTO().getHash());
+            boolean hasK = waitForSharedK(event.getReciver(), event.getSenderDTO().getHash());
+            if (!hasK) 
+                return;
         } else { // Foward to the target
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getReciver());
             clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), event.getMessage(), false, nodeWithHashDTO.getUsername());
@@ -295,21 +290,17 @@ public class EventHandler {
             byte[] hashSigned = event.getMessageHash();
 
             NodeDTO Sender = event.getSenderDTO();
-            if (!userService.getKeyHandler().getTruStore().containsAlias(Sender.getUsername())) {// If the certificate of the other node is not in the truststore
-                userService.getClientHandler().shareCertificateClient(Sender.getIp(), Sender.getPort(), new ChordInternalMessage(MessageType.addCertificateToTrustStore, (byte[]) null, (byte[]) null, currentNodeDTO.getUsername(), Sender.getUsername(), currentNodeDTO, (PublicKey) null, (PublicKey) null), Sender.getUsername());
-                Thread.sleep(500);
-            }
+            checkCertificate(Sender);
 
             // Verify the signature
-            PublicKey senderPubKey = userService.getKeyHandler().getTruStore().getCertificate(Sender.getUsername()).getPublicKey();
-            boolean isRightSignature = Utils.verifySignature(senderPubKey, message, hashSigned);
+            boolean isRightSignature = Utils.verifySignature(userService.getKeyHandler().getTruStore().getCertificate(Sender.getUsername()).getPublicKey(), message, hashSigned);
             if (!isRightSignature) {
                 InterfaceHandler.erro("Message signature does not match! Or the hash was altered");
                 return;
             }
+
             String messageString = new String(decryptedBytes, StandardCharsets.UTF_8);
             InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + messageString);
-            
             String recivedMessage = "recived by " + currentNodeDTO.getUsername();
             if (event.getNeedConfirmation()) { // Send a reciving message to the sender
                 UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), recivedMessage.getBytes(), false, (byte[]) null, false);
@@ -532,7 +523,9 @@ public class EventHandler {
 
     public synchronized void addMemberToGroup(AddUserToGroupEvent event) throws Exception {
         if (currentNodeDTO.getHash().equals(event.getReceiverHash()) || currentNodeDTO.getHash().equals(event.getSenderDTO().getHash())) { // Arrived at a node that needs the shared key
-            waitForSharedK(event.getReceiverHash(), event.getSenderDTO().getHash());
+            boolean hasK = waitForSharedK(event.getReceiverHash(), event.getSenderDTO().getHash());
+            if (!hasK) 
+                return;
         }
         if (currentNodeDTO.getHash().equals(event.getReceiverHash())) { // Reached the target
             byte[] groupAtributesDTOBytesEncrypted = event.getGroupAtributesDTOBytesEncrypted();
@@ -554,7 +547,7 @@ public class EventHandler {
             UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), recivedMessage.getBytes(), false, (byte[]) null, false);
             NodeSendMessageEvent e = new NodeSendMessageEvent(userMessage);
             sendUserMessage(e);
-        } else {
+        } else { // TODO: If user not exists... there is error of the key...
             NodeDTO nodeWithHashDTO = userService.getNodeWithHash(event.getReceiverHash());
             if (nodeWithHashDTO != null) { // Node exists
                 if (currentNodeDTO == event.getSenderDTO()) { // Start of the process - Encrypt the critical information
