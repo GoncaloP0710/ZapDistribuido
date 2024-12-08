@@ -19,6 +19,7 @@ public class UserMessage extends Message {
 
     private String groupName;
     private byte[] messageEncrypGroup;
+    private BigInteger groupNameHash;
 
     /**
      * Normal message
@@ -37,13 +38,14 @@ public class UserMessage extends Message {
     /**
      * Group Message
      */
-    public UserMessage(MessageType messageType, NodeDTO senderDTO, byte[] messageEncrypGroup, byte[] messageHash, String groupName) {
+    public UserMessage(MessageType messageType, NodeDTO senderDTO, byte[] messageEncrypGroup, byte[] messageHash, String groupName, BigInteger groupNameHash) {
         super(messageType);
         this.senderDTO = senderDTO;
         this.time = LocalDateTime.now();
         this.messageEncrypGroup = messageEncrypGroup;
         this.messageHash = messageHash;
         this.groupName = groupName;
+        this.groupNameHash = groupNameHash;
     }
 
     public LocalDateTime getTime(){
@@ -96,5 +98,9 @@ public class UserMessage extends Message {
 
     public String getGroupName(){
         return this.groupName;
+    }
+
+    public BigInteger getGroupNameHash(){
+        return this.groupNameHash;
     }
 }

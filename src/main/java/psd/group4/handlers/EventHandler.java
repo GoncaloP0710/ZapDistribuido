@@ -17,7 +17,8 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Set;
+import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.security.cert.Certificate;
@@ -62,13 +63,14 @@ public class EventHandler {
     private ConcurrentHashMap<BigInteger, byte[]> sharedKeys = new ConcurrentHashMap<>();
 
     // Fase 2 - Grupos --------------------------------------------
-    private ConcurrentHashMap<String, String[]> groupAtributes = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, int[][]> groupAccessPolicy = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, PairingKeySerParameter> groupMasterKeys = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, PairingKeySerParameter> groupPublicKeys = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, PairingKeySerParameter> groupSecretKeys = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, String[]> groupRhos = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, PairingParameters> groupPairingParameters = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<BigInteger, String> groupNames = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<BigInteger, String[]> groupAtributes = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<BigInteger, int[][]> groupAccessPolicy = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<BigInteger, PairingKeySerParameter> groupMasterKeys = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<BigInteger, PairingKeySerParameter> groupPublicKeys = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<BigInteger, PairingKeySerParameter> groupSecretKeys = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<BigInteger, String[]> groupRhos = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<BigInteger, PairingParameters> groupPairingParameters = new ConcurrentHashMap<>();
  
     public EventHandler(UserService userService) {
         this.userService = userService;
@@ -462,8 +464,32 @@ public class EventHandler {
         clientHandler.startClient(closestNodeToTarget.getIp(), closestNodeToTarget.getPort(), e.getMessage(), false, closestNodeToTarget.getUsername());
     }
 
+    /**
+     * Handles the notify event
+     * 
+     * @param e
+     */
+    public void handleNotify(NotifyEvent e) {
+        if (currentNodeDTO.getHash().equals(e.getTarget().getHash())) {
+            synchronized (locker) {
+                locker.notify(); // Notify the waiting thread
+            }
+        } else {
+            try {
+                NodeDTO nodeWithHashDTO = userService.getNodeWithHash(e.getTarget().getHash());
+                if (nodeWithHashDTO != null) {
+                    clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), e.getMessage(), false, nodeWithHashDTO.getUsername());
+                    return;
+                }
+                clientHandler.startClient(e.getTarget().getIp(), e.getTarget().getPort(), e.getMessage(), false, e.getTarget().getUsername());
+            } catch (NoSuchAlgorithmException e1) {
+                e1.printStackTrace();
+            }
+        }
+    }
+
     public void sendGroupMessage(NodeSendGroupMessageEvent event) throws Exception {
-        if (groupAtributes.get(event.getGroupName()) == null) {
+        if (groupNames.get(event.getGroupNameHash()) == null) {
             InterfaceHandler.internalInfo("Arrived a group message that the user does not belong to");
         } else {
             NodeDTO sender = event.getSenderDTO();
@@ -477,9 +503,9 @@ public class EventHandler {
             }
 
             // Decrypt the message
-            PairingKeySerParameter publicKey = groupPublicKeys.get(event.getGroupName());
-            PairingKeySerParameter secretKey = groupSecretKeys.get(event.getGroupName());
-            String[] attributes = groupAtributes.get(event.getGroupName());
+            PairingKeySerParameter publicKey = groupPublicKeys.get(event.getGroupNameHash());
+            PairingKeySerParameter secretKey = groupSecretKeys.get(event.getGroupNameHash());
+            String[] attributes = groupAtributes.get(event.getGroupNameHash());
             PairingCipherSerParameter ciphertext = Utils.deserialize(event.getMessageEncryp(), PairingCipherSerParameter.class);
             String msg = EncryptionHandler.decryptGroupMessage(publicKey, secretKey, attributes, ciphertext);
             InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + msg);
@@ -490,7 +516,7 @@ public class EventHandler {
         }
     }
 
-    public void createGroup(String groupName) throws PolicySyntaxException {
+    public void createGroup(String groupName) throws PolicySyntaxException, NoSuchAlgorithmException {
         String policy = Utils.generateRandomPolicy();
         String[] attributes = Utils.generateAttributesForPolicy(policy);
 
@@ -511,14 +537,16 @@ public class EventHandler {
         String[] rhos = ParserUtils.GenerateRhos(policy);
         PairingKeySerParameter secretKey = engine.keyGen(publicKey, masterKey, accessPolicy, rhos);
 
-        groupAtributes.put(groupName, attributes);
-        groupAccessPolicy.put(groupName, accessPolicy);
-        groupMasterKeys.put(groupName, masterKey);
-        groupPublicKeys.put(groupName, publicKey);
-        groupSecretKeys.put(groupName, secretKey);
-        groupRhos.put(groupName, rhos);
-        groupPairingParameters.put(groupName, pairingParameters);
-        InterfaceHandler.success("Group created successfully");
+        BigInteger groupIndex = groupNameSpecialHash(groupName);
+        groupNames.put(groupIndex, groupName);
+        groupAtributes.put(groupIndex, attributes);
+        groupAccessPolicy.put(groupIndex, accessPolicy);
+        groupMasterKeys.put(groupIndex, masterKey);
+        groupPublicKeys.put(groupIndex, publicKey);
+        groupSecretKeys.put(groupIndex, secretKey);
+        groupRhos.put(groupIndex, rhos);
+        groupPairingParameters.put(groupIndex, pairingParameters);
+        InterfaceHandler.success("Group created successfully, its index is: " + groupIndex);
     }
 
     public synchronized void addMemberToGroup(AddUserToGroupEvent event) throws Exception {
@@ -540,10 +568,15 @@ public class EventHandler {
                 return;
             }
 
-            handleNewUserToGroupParams(decryptedBytes, event.getPublicKey());
-            InterfaceHandler.success("User added to group successfully");
-
+            boolean userAdded = handleNewUserToGroupParams(decryptedBytes, event.getPublicKey());
             String recivedMessage = currentNodeDTO.getUsername() + " entered the group";
+            if (!userAdded) {
+                recivedMessage = currentNodeDTO.getUsername() + " already belongs to a group with the same name";
+                InterfaceHandler.erro("User not added to group because it already belongs to a group with the same name");
+            } else {
+                InterfaceHandler.success("User added to group successfully");
+            }
+            
             UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), recivedMessage.getBytes(), false, (byte[]) null, false);
             NodeSendMessageEvent e = new NodeSendMessageEvent(userMessage);
             sendUserMessage(e);
@@ -582,6 +615,12 @@ public class EventHandler {
     //
     // ======================================================================================================
 
+    private BigInteger groupNameSpecialHash(String groupName) throws NoSuchAlgorithmException {
+        String userName = currentNodeDTO.getUsername();
+        String specialHash = groupName + userName + System.currentTimeMillis();
+        return Utils.calculateHash(specialHash);
+    }
+
     /**
      * Makes the signature of the bytes received (hash)
      * 
@@ -612,30 +651,6 @@ public class EventHandler {
         return sharedKeys.get(name); 
     }
 
-    /**
-     * Handles the notify event
-     * 
-     * @param e
-     */
-    public void handleNotify(NotifyEvent e) {
-        if (currentNodeDTO.getHash().equals(e.getTarget().getHash())) {
-            synchronized (locker) {
-                locker.notify(); // Notify the waiting thread
-            }
-        } else {
-            try {
-                NodeDTO nodeWithHashDTO = userService.getNodeWithHash(e.getTarget().getHash());
-                if (nodeWithHashDTO != null) {
-                    clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), e.getMessage(), false, nodeWithHashDTO.getUsername());
-                    return;
-                }
-                clientHandler.startClient(e.getTarget().getIp(), e.getTarget().getPort(), e.getMessage(), false, e.getTarget().getUsername());
-            } catch (NoSuchAlgorithmException e1) {
-                e1.printStackTrace();
-            }
-        }
-    }
-
     private boolean waitForSharedK(BigInteger reciverHash, BigInteger senderHash) {
         long startTime = System.currentTimeMillis();
         while (sharedKeys.get(reciverHash) == null && sharedKeys.get(senderHash) == null) {
@@ -662,58 +677,73 @@ public class EventHandler {
         }
     }
 
-    private void handleNewUserToGroupParams(byte[] decryptedBytes, PairingKeySerParameter publicKey) throws Exception {
+    private boolean handleNewUserToGroupParams(byte[] decryptedBytes, PairingKeySerParameter publicKey) throws Exception {
         GroupAtributesDTO groupAtributesDTO = Utils.deserialize(decryptedBytes, GroupAtributesDTO.class);
         String groupName = groupAtributesDTO.getGroupName();
+
+        if (groupNames.get(groupAtributesDTO.getGroupNameHash()) != null) 
+            return false;
+
         String[] attributes = groupAtributesDTO.getAttributes();
         int[][] accessPolicy = groupAtributesDTO.getAccessPolicy();
         PairingKeySerParameter masterKey = groupAtributesDTO.getMasterKey();
         String[] rhos = groupAtributesDTO.getRhos();
         PairingParameters pairingParameters = groupAtributesDTO.getPairingParameters();
 
-        groupAtributes.put(groupName, attributes);
-        groupRhos.put(groupName, rhos);
-        groupPublicKeys.put(groupName, publicKey);
-        groupMasterKeys.put(groupName, masterKey);
-        groupAccessPolicy.put(groupName, accessPolicy);
-        groupPairingParameters.put(groupName, pairingParameters);
+        groupNames.put(groupAtributesDTO.getGroupNameHash(), groupName);
+        groupAtributes.put(groupAtributesDTO.getGroupNameHash(), attributes);
+        groupRhos.put(groupAtributesDTO.getGroupNameHash(), rhos);
+        groupPublicKeys.put(groupAtributesDTO.getGroupNameHash(), publicKey);
+        groupMasterKeys.put(groupAtributesDTO.getGroupNameHash(), masterKey);
+        groupAccessPolicy.put(groupAtributesDTO.getGroupNameHash(), accessPolicy);
+        groupPairingParameters.put(groupAtributesDTO.getGroupNameHash(), pairingParameters);
 
         KPABEEngine engine = KPABEGPSW06aEngine.getInstance();
         PairingKeySerParameter secretKey = engine.keyGen(publicKey, masterKey, accessPolicy, rhos);
-        groupSecretKeys.put(groupName, secretKey);
+        groupSecretKeys.put(groupAtributesDTO.getGroupNameHash(), secretKey);
+        return true;
     }
             
     // TODO: Try protected
 
     public String[] getGroupAttributes(String groupName) {
-        return groupAtributes.get(groupName);
+        return groupAtributes.get(getKeyByValue(groupName));
     }
 
     public int[][] getGroupAccessPolicy(String groupName) {
-        return groupAccessPolicy.get(groupName);
+        return groupAccessPolicy.get(getKeyByValue(groupName));
     }
 
     public PairingKeySerParameter getGroupMasterKey(String groupName) {
-        return groupMasterKeys.get(groupName);
+        return groupMasterKeys.get(getKeyByValue(groupName));
     }
 
     public PairingKeySerParameter getGroupPublicKey(String groupName) {
-        return groupPublicKeys.get(groupName);
+        return groupPublicKeys.get(getKeyByValue(groupName));
     }
 
     public PairingKeySerParameter getGroupSecretKey(String groupName) {
-        return groupSecretKeys.get(groupName);
+        return groupSecretKeys.get(getKeyByValue(groupName));
     }
 
     public String[] getGroupRhos(String groupName) {
-        return groupRhos.get(groupName);
+        return groupRhos.get(getKeyByValue(groupName));
     }
 
     public PairingParameters getGroupPairingParameters(String groupName) {
-        return groupPairingParameters.get(groupName);
+        return groupPairingParameters.get(getKeyByValue(groupName));
     }
 
-    public Set<String> getAllGroupNames() {
-        return groupPublicKeys.keySet();
+    public Collection<String> getAllGroupNames() {
+        return groupNames.values();
+    }
+
+    public BigInteger getKeyByValue(String value) {
+        for (Map.Entry<BigInteger, String> entry : groupNames.entrySet()) {
+            if (entry.getValue().equals(value)) {
+                return entry.getKey();
+            }
+        }
+        return null; // Return null if the value is not found
     }
 }

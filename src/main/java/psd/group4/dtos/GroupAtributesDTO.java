@@ -1,6 +1,7 @@
 package psd.group4.dtos;
 
 import java.io.Serializable;
+import java.math.BigInteger;
 
 import cn.edu.buaa.crypto.algebra.serparams.PairingKeySerParameter;
 import it.unisa.dia.gas.jpbc.PairingParameters;
@@ -14,15 +15,17 @@ public class GroupAtributesDTO implements Serializable { // Facilitates the seri
     private String groupName;
     private String[] attributes;
     private PairingKeySerParameter masterKey;
+    private BigInteger groupNameHash;
 
     public GroupAtributesDTO(int[][] accessPolicy, String[] rhos, PairingParameters pairingParameters, String groupName,
-            String[] attributes, PairingKeySerParameter masterKey) {
+            String[] attributes, PairingKeySerParameter masterKey, BigInteger groupNameHash) {
         this.accessPolicy = accessPolicy;
         this.rhos = rhos;
         this.pairingParameters = pairingParameters;
         this.groupName = groupName;
         this.attributes = attributes;
         this.masterKey = masterKey;
+        this.groupNameHash = groupNameHash;
     }
 
     public int[][] getAccessPolicy() {
@@ -71,6 +74,10 @@ public class GroupAtributesDTO implements Serializable { // Facilitates the seri
 
     public void setRhos(String[] rhos) {
         this.rhos = rhos;
+    }
+
+    public BigInteger getGroupNameHash() {
+        return groupNameHash;
     }
 
 }

@@ -4,6 +4,7 @@ import java.io.File;
 import java.math.BigInteger;
 import java.security.cert.Certificate;
 import java.security.*;
+import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -218,7 +219,7 @@ public class UserService implements UserServiceInterface {
             byte[] hash = EncryptionHandler.createMessageHash(messageEncrypBytes);
             byte[] hashSigned = eventHandler.getSignature(hash, getKeyHandler().getPrivateKey());
 
-            UserMessage msg = new UserMessage(MessageType.SendGroupMsg, currentNodeDTO, messageEncrypBytes, hashSigned, groupName);
+            UserMessage msg = new UserMessage(MessageType.SendGroupMsg, currentNodeDTO, messageEncrypBytes, hashSigned, groupName, eventHandler.getKeyByValue(groupName));
             clientHandler.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), msg, false, currentNode.getNextNode().getUsername());
         } finally {
             nodeSendMessageLock.unlock();
@@ -229,13 +230,6 @@ public class UserService implements UserServiceInterface {
         try {
             System.out.println("Select the group name you want to create: ");
             String groupName = interfaceHandler.getInput();
-
-            Set<String> groupNames = eventHandler.getAllGroupNames();
-            if (groupNames.contains(groupName)) {
-                InterfaceHandler.erro("The group already exists.");
-                return;
-            }
-
             eventHandler.createGroup(groupName);
         } catch (Exception e) {
             InterfaceHandler.erro("Error creating group: " + e.getMessage());
@@ -245,7 +239,7 @@ public class UserService implements UserServiceInterface {
     public void addUserToGroup(InterfaceHandler interfaceHandler) throws Exception {
         nodeSendMessageLock.lock();
         try {
-            Set<String> groupNames = eventHandler.getAllGroupNames();
+            Collection<String> groupNames = eventHandler.getAllGroupNames();
             if (groupNames.isEmpty()) {
                 InterfaceHandler.info("There are no groups.");
                 return;
@@ -256,13 +250,13 @@ public class UserService implements UserServiceInterface {
             if (groupName.equals("exit"))
                 return;
 
-            if (eventHandler.getGroupPublicKey(groupName) == null) { // Check if the group exists
+            if (!groupNames.contains(groupName)) { // Check if the group exists
                 InterfaceHandler.erro("You are not a member of the group. Or the group does not exist.");
                 InterfaceHandler.info("Select the group you want to add the user to: ");
                 groupName = interfaceHandler.getInput();
                 if (groupName.equals("exit"))
                     return;
-                while (eventHandler.getGroupPublicKey(groupName) == null) {
+                while (!groupNames.contains(groupName)) {
                     InterfaceHandler.erro("You are not a member of the group. Or the group does not exist.");
                     InterfaceHandler.info("Select the group you want to add the user to: ");
                     groupName = interfaceHandler.getInput();
@@ -284,7 +278,8 @@ public class UserService implements UserServiceInterface {
                 eventHandler.diffieHellman(diffHellmanEvent);
             }
 
-            GroupAtributesDTO groupAtributesDTO = new GroupAtributesDTO(eventHandler.getGroupAccessPolicy(groupName), eventHandler.getGroupRhos(groupName), eventHandler.getGroupPairingParameters(groupName), groupName, eventHandler.getGroupAttributes(groupName), eventHandler.getGroupMasterKey(groupName));
+            GroupAtributesDTO groupAtributesDTO = new GroupAtributesDTO(eventHandler.getGroupAccessPolicy(groupName), eventHandler.getGroupRhos(groupName), 
+                eventHandler.getGroupPairingParameters(groupName), groupName, eventHandler.getGroupAttributes(groupName), eventHandler.getGroupMasterKey(groupName), eventHandler.getKeyByValue(groupName));
             byte[] groupAtributesDTOBytes = Utils.serialize(groupAtributesDTO);
             ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.AddUserToGroup, currentNodeDTO, reciverHash, eventHandler.getGroupPublicKey(groupName), groupAtributesDTOBytes, (byte[]) null);
             AddUserToGroupEvent event = new AddUserToGroupEvent(messageToSend);
@@ -292,6 +287,10 @@ public class UserService implements UserServiceInterface {
         } finally {
             nodeSendMessageLock.unlock();
         }
+    }
+
+    private void selectGroup(String groupName) {
+
     }
 
     /**
@@ -308,7 +307,7 @@ public class UserService implements UserServiceInterface {
     }
 
     public void printGroups() {
-        Set<String> groupNames = eventHandler.getAllGroupNames();
+        Collection<String> groupNames = eventHandler.getAllGroupNames();
         if (groupNames.isEmpty()) {
             InterfaceHandler.info("There are no groups.");
             return;
