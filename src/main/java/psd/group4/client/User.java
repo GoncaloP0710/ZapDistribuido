@@ -2,8 +2,9 @@ package psd.group4.client;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.util.List;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -23,6 +24,28 @@ public class User {
     public static void main(String[] args) throws Exception {        
         interfaceHandler = new InterfaceHandler();
         interfaceHandler.startUp();
+
+        // -------------------------------------
+
+        // ADICIONAR A DATABASE
+
+        String messageString = "Hello World!";
+        byte[] messageDB = messageString.getBytes(StandardCharsets.UTF_8);
+
+        // Encrypt the message using secret sharing
+        List<MessageEntry> shares = EncryptionHandler.divideShare(messageDB, messageDB, messageDB, 3, 5);    
+        
+        MongoDBHandler mongoDBHandler = new MongoDBHandler();
+        try {
+            for (MessageEntry share : shares) {
+                mongoDBHandler.storeMessage(share);
+            }
+            mongoDBHandler.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } 
+
+        // -------------------------------------
         
         String name = interfaceHandler.getUserName();
         String password = interfaceHandler.getPassword();

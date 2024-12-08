@@ -1,45 +1,48 @@
 package psd.group4.client;
 
-import java.security.SecureRandom;
 import java.util.*;
 
+import org.bson.types.ObjectId;
+
 public class MessageEntry {
+    private ObjectId _id;
+    // @BsonProperty(value = "_id")
     private byte[] sender; 
     private byte[] receiver; 
     private byte[] message; 
     private Date date;
-    private long id;
+    private long identifier;
     private int bitLength;
-    private SecureRandom random;
-
-    public MessageEntry(){}
+    public MessageEntry(){
+        this._id = new ObjectId(); // Generate a unique _id
+    }
 
     public MessageEntry(byte[] sender, byte[] receiver, byte[] message, Date date){
+        this._id = new ObjectId(); // Generate a unique _id
         this.sender = sender;
         this.receiver = receiver;
         this.message = message;
         this.date = date;
     }
 
-    public MessageEntry(byte[] sender, byte[] receiver, byte[] message, Date date, long id, int bitLength, SecureRandom random){
+    public MessageEntry(byte[] sender, byte[] receiver, byte[] message, Date date, long id, int bitLength){
+        this._id = new ObjectId(); // Generate a unique _id
         this.sender = sender;
         this.receiver = receiver;
         this.message = message;
         this.date = date;
-        this.id = id;
+        this.identifier = id;
         this.bitLength = bitLength;
-        this.random = random;
     }
 
     public MessageEntry(byte[] message, MessageEntry me){
+        this._id = new ObjectId(); // Generate a unique _id
         this.message = message;
-
         this.sender = me.getSender();
         this.receiver = me.getReceiver();
         this.date = me.getDate();
-        this.id = me.getId();
+        this.identifier = me.getIdentifier();
         this.bitLength = me.getBitLength();
-        this.random = me.getRandom();
     }
 
     public byte[] getSender() {
@@ -58,16 +61,20 @@ public class MessageEntry {
         return date;
     }
 
-    public long getId() {
-        return id;
+    public long getIdentifier() {
+        return identifier;
     }
 
     public int getBitLength() {
         return bitLength;
     }
 
-    public SecureRandom getRandom() {
-        return random;
+    public ObjectId getId() {
+        return _id;
+    }
+
+    public void setId(ObjectId id) {
+        this._id = id;
     }
     
     public void setDate(Date date) {
@@ -77,13 +84,9 @@ public class MessageEntry {
     public void setBitLength(int bitLength) {
         this.bitLength = bitLength;
     }
-    
-    public void setRandom(SecureRandom random) {
-        this.random = random;
-    }
-    
-    public void setId(long id) {
-        this.id = id;
+
+    public void setIdentifier(long id) {
+        this.identifier = id;
     }
 
     public void setSender(byte[] sender) {
@@ -100,7 +103,7 @@ public class MessageEntry {
 
     @Override
     public String toString(){
-        StringBuilder s = new StringBuilder("Id: "+ id + "\n");
+        StringBuilder s = new StringBuilder("Id: "+ identifier + "\n");
         s.append("Sender: "+ sender + "\n");
         s.append("Receiver: "+ receiver + "\n");
         s.append("Message: "+ message + "\n");

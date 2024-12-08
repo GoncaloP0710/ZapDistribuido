@@ -74,7 +74,8 @@ public class EventHandler {
     private ConcurrentHashMap<BigInteger, PairingKeySerParameter> groupSecretKeys = new ConcurrentHashMap<>();
     private ConcurrentHashMap<BigInteger, String[]> groupRhos = new ConcurrentHashMap<>();
     private ConcurrentHashMap<BigInteger, PairingParameters> groupPairingParameters = new ConcurrentHashMap<>();
- 
+
+
     public EventHandler(UserService userService) {
         this.userService = userService;
         ipDefault = userService.getIpDefault();
@@ -313,8 +314,7 @@ public class EventHandler {
             byte[] messageDB = messageString.getBytes(StandardCharsets.UTF_8);
 
             // Encrypt the message using secret sharing
-            EncryptionHandler encryptionHandler = new EncryptionHandler();
-            List<MessageEntry> shares = encryptionHandler.divideShare(messageDB, sender, receiver, 3, 5);    
+            List<MessageEntry> shares = EncryptionHandler.divideShare(messageDB, sender, receiver, 3, 5);    
             
             MongoDBHandler mongoDBHandler = new MongoDBHandler();
             try {

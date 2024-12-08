@@ -33,8 +33,6 @@ import psd.group4.utils.Utils;
 
 public class EncryptionHandler{
 
-    private final SecureRandom random = new SecureRandom();
-
     public EncryptionHandler(){}
 
     /**
@@ -207,7 +205,8 @@ public class EncryptionHandler{
         return recoveredMessage;
     }
 
-    public List<MessageEntry> divideShare(byte[] secret, byte[] sender, byte[] receiver, int threshold, int numShares) {
+    public static List<MessageEntry> divideShare(byte[] secret, byte[] sender, byte[] receiver, int threshold, int numShares) {
+        SecureRandom random = new SecureRandom();
         long id = random.nextLong();
         BigInteger secretInt = new BigInteger(1, secret);
         BigInteger prime = secretInt.nextProbablePrime();
@@ -226,13 +225,13 @@ public class EncryptionHandler{
             for (int i = 0; i < threshold; i++) {
                 y = y.add(coefficients.get(i).multiply(BigInteger.valueOf(x).pow(i))).mod(prime);
             }
-            shares.add(new MessageEntry(sender, receiver, y.toByteArray(), date, id, bitLength, random));
+            shares.add(new MessageEntry(sender, receiver, y.toByteArray(), date, id, bitLength));
         }
 
         return shares;
     }
 
-    public byte[] reconstructSecret(List<MessageEntry> shares) {
+    public static byte[] reconstructSecret(List<MessageEntry> shares) {
         BigInteger prime = new BigInteger(1, shares.get(0).getMessage()).nextProbablePrime();
         BigInteger secret = BigInteger.ZERO;
 
