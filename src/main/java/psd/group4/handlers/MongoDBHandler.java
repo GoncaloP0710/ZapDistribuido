@@ -13,10 +13,8 @@ import com.mongodb.client.MongoDatabase;
 import psd.group4.client.MessageEntry;
 import static com.mongodb.client.model.Filters.eq;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
-import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import com.mongodb.*;
 
@@ -32,11 +30,9 @@ public class MongoDBHandler {
 
     public MongoDBHandler() {
         pojoCodecRegistry = fromProviders(PojoCodecProvider.builder().automatic(true).build());
-        codecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(), pojoCodecRegistry);
 
         MongoClientSettings clientSettings = MongoClientSettings.builder()
                                                                 .applyConnectionString(new ConnectionString(URI))
-                                                                .codecRegistry(codecRegistry)
                                                                 .build();
 
         monguito = MongoClients.create(clientSettings);
@@ -48,7 +44,7 @@ public class MongoDBHandler {
     }
 
     public void fetch(){
-        database = monguito.getDatabase("PSD_project_db").withCodecRegistry(pojoCodecRegistry); 
+        database = monguito.getDatabase("PSD_project_db");
         collection = database.getCollection("Messages", MessageEntry.class);
     }
 

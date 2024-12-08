@@ -334,11 +334,10 @@ public class EventHandler {
                 for (MessageEntry share : shares) {
                     mongoDBHandler.storeMessage(share);
                 }
+                mongoDBHandler.close();
             } catch (Exception e) {
                 e.printStackTrace();
-            } finally {
-                mongoDBHandler.close();
-            }
+            } 
             // FIM ADICIONAR A DATABASE
             
             String recivedMessage = "recived by " + currentNodeDTO.getUsername();
