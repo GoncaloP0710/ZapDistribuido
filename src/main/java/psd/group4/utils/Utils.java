@@ -332,4 +332,13 @@ public final class Utils {
         signature.update(EncryptionHandler.createMessageHash(messageEncrypted));
         return signature.verify(hashSigned);
     }
+
+    public static boolean isInteger(String str) {
+        try {
+            Integer.parseInt(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
 }

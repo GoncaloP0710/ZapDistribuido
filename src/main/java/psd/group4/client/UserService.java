@@ -5,7 +5,10 @@ import java.math.BigInteger;
 import java.security.cert.Certificate;
 import java.security.*;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.crypto.BadPaddingException;
@@ -199,27 +202,32 @@ public class UserService implements UserServiceInterface {
             System.out.println("Select the group you want to send a message to: ");
             String groupName = interfaceHandler.getInput();
 
-            if (eventHandler.getGroupPublicKey(groupName) == null) { // Check if the group exists
+            if (!eventHandler.getAllGroupNames().contains(groupName)) { // Check if the group exists
                 InterfaceHandler.erro("You are not a member of the group. Or the group does not exist.");
                 InterfaceHandler.info("Select the group you want to add the user to: ");
                 groupName = interfaceHandler.getInput();
-                while (eventHandler.getGroupPublicKey(groupName) == null) {
+                while (!eventHandler.getAllGroupNames().contains(groupName)) {
                     InterfaceHandler.erro("You are not a member of the group. Or the group does not exist.");
                     InterfaceHandler.info("Select the group you want to add the user to: ");
                     groupName = interfaceHandler.getInput();
                 }
             }
 
+            BigInteger groupNameHash = eventHandler.getKeyByValue(groupName);
+            if (hasMultipleOccurrences(groupName)) {
+                groupNameHash = selectGroup(groupName, interfaceHandler);
+            }
+
             System.out.println("Write the message: ");
             String message = interfaceHandler.getInput();
             PairingCipherSerParameter messageEncryp = EncryptionHandler.encryptGroupMessage(groupName, message, 
-                PairingFactory.getPairing(eventHandler.getGroupPairingParameters(groupName)), 
-                eventHandler.getGroupPublicKey(groupName), eventHandler.getGroupAttributes(groupName));
+                PairingFactory.getPairing(eventHandler.getGroupPairingParameters(groupNameHash)), 
+                eventHandler.getGroupPublicKey(groupNameHash), eventHandler.getGroupAttributes(groupNameHash));
             byte[] messageEncrypBytes = Utils.serialize(messageEncryp); // Serialize the message to be able to encrypt
             byte[] hash = EncryptionHandler.createMessageHash(messageEncrypBytes);
             byte[] hashSigned = eventHandler.getSignature(hash, getKeyHandler().getPrivateKey());
 
-            UserMessage msg = new UserMessage(MessageType.SendGroupMsg, currentNodeDTO, messageEncrypBytes, hashSigned, groupName, eventHandler.getKeyByValue(groupName));
+            UserMessage msg = new UserMessage(MessageType.SendGroupMsg, currentNodeDTO, messageEncrypBytes, hashSigned, groupName, groupNameHash);
             clientHandler.startClient(currentNode.getNextNode().getIp(), currentNode.getNextNode().getPort(), msg, false, currentNode.getNextNode().getUsername());
         } finally {
             nodeSendMessageLock.unlock();
@@ -250,19 +258,24 @@ public class UserService implements UserServiceInterface {
             if (groupName.equals("exit"))
                 return;
 
-            if (!groupNames.contains(groupName)) { // Check if the group exists
+            if (!eventHandler.getAllGroupNames().contains(groupName)) { // Check if the group exists
                 InterfaceHandler.erro("You are not a member of the group. Or the group does not exist.");
                 InterfaceHandler.info("Select the group you want to add the user to: ");
                 groupName = interfaceHandler.getInput();
                 if (groupName.equals("exit"))
                     return;
-                while (!groupNames.contains(groupName)) {
+                while (!eventHandler.getAllGroupNames().contains(groupName)) {
                     InterfaceHandler.erro("You are not a member of the group. Or the group does not exist.");
                     InterfaceHandler.info("Select the group you want to add the user to: ");
                     groupName = interfaceHandler.getInput();
                     if (groupName.equals("exit"))
                         return;
                 }
+            }
+
+            BigInteger groupNameHash = eventHandler.getKeyByValue(groupName);
+            if (hasMultipleOccurrences(groupName)) {
+                groupNameHash = selectGroup(groupName, interfaceHandler);
             }
 
             System.out.println("Write the user name (or exit to chose another operation): ");
@@ -278,10 +291,10 @@ public class UserService implements UserServiceInterface {
                 eventHandler.diffieHellman(diffHellmanEvent);
             }
 
-            GroupAtributesDTO groupAtributesDTO = new GroupAtributesDTO(eventHandler.getGroupAccessPolicy(groupName), eventHandler.getGroupRhos(groupName), 
-                eventHandler.getGroupPairingParameters(groupName), groupName, eventHandler.getGroupAttributes(groupName), eventHandler.getGroupMasterKey(groupName), eventHandler.getKeyByValue(groupName));
+            GroupAtributesDTO groupAtributesDTO = new GroupAtributesDTO(eventHandler.getGroupAccessPolicy(groupNameHash), eventHandler.getGroupRhos(groupNameHash), 
+                eventHandler.getGroupPairingParameters(groupNameHash), groupName, eventHandler.getGroupAttributes(groupNameHash), eventHandler.getGroupMasterKey(groupNameHash), groupNameHash);
             byte[] groupAtributesDTOBytes = Utils.serialize(groupAtributesDTO);
-            ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.AddUserToGroup, currentNodeDTO, reciverHash, eventHandler.getGroupPublicKey(groupName), groupAtributesDTOBytes, (byte[]) null);
+            ChordInternalMessage messageToSend = new ChordInternalMessage(MessageType.AddUserToGroup, currentNodeDTO, reciverHash, eventHandler.getGroupPublicKey(groupNameHash), groupAtributesDTOBytes, (byte[]) null);
             AddUserToGroupEvent event = new AddUserToGroupEvent(messageToSend);
             eventHandler.addMemberToGroup(event);
         } finally {
@@ -289,8 +302,21 @@ public class UserService implements UserServiceInterface {
         }
     }
 
-    private void selectGroup(String groupName) {
-
+    private BigInteger selectGroup(String groupName, InterfaceHandler interfaceHandler) {
+        Collection<BigInteger> groupIndex = eventHandler.getGroupHashesWithSameName(groupName);
+        int counter = 1;
+        // Iterate over the collection and print each value
+        for (BigInteger hash : groupIndex) {
+            InterfaceHandler.info(counter + ") " + groupName + " - " + hash.toString());
+            counter++;
+        }
+        String selectedGroup = interfaceHandler.getInput();
+        while (!Utils.isInteger(selectedGroup) || Integer.valueOf(selectedGroup) < 1 || Integer.valueOf(selectedGroup) >= counter) {
+            InterfaceHandler.erro("Invalid input. Please enter a number between 1 and " + counter);
+            selectedGroup = interfaceHandler.getInput();
+        }
+        
+        return (BigInteger) groupIndex.toArray()[Integer.valueOf(selectedGroup) - 1];
     }
 
     /**
@@ -312,8 +338,9 @@ public class UserService implements UserServiceInterface {
             InterfaceHandler.info("There are no groups.");
             return;
         }
-        for (String groupName : groupNames) {
-            InterfaceHandler.info(groupName);
+        ConcurrentHashMap<BigInteger, String> groupNamesAndHash = eventHandler.getGroupNames();
+        for (Map.Entry<BigInteger, String> entry : groupNamesAndHash.entrySet()) {
+            InterfaceHandler.info(entry.getValue() + " - " + entry.getKey().toString());
         }
     }
 
@@ -350,5 +377,16 @@ public class UserService implements UserServiceInterface {
         } catch (Exception exception) {
             exception.printStackTrace();
         }
+    }
+
+    public boolean hasMultipleOccurrences(String groupName) {
+        Collection<String> allGroupNames = eventHandler.getAllGroupNames();
+        Map<String, Integer> nameCountMap = new HashMap<>();
+
+        for (String name : allGroupNames) {
+            nameCountMap.put(name, nameCountMap.getOrDefault(name, 0) + 1);
+        }
+
+        return nameCountMap.getOrDefault(groupName, 0) > 1;
     }
 }

@@ -17,7 +17,9 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -706,32 +708,32 @@ public class EventHandler {
             
     // TODO: Try protected
 
-    public String[] getGroupAttributes(String groupName) {
-        return groupAtributes.get(getKeyByValue(groupName));
+    public String[] getGroupAttributes(BigInteger groupNameHash) {
+        return groupAtributes.get(groupNameHash);
     }
 
-    public int[][] getGroupAccessPolicy(String groupName) {
-        return groupAccessPolicy.get(getKeyByValue(groupName));
+    public int[][] getGroupAccessPolicy(BigInteger groupNameHash) {
+        return groupAccessPolicy.get(groupNameHash);
     }
 
-    public PairingKeySerParameter getGroupMasterKey(String groupName) {
-        return groupMasterKeys.get(getKeyByValue(groupName));
+    public PairingKeySerParameter getGroupMasterKey(BigInteger groupNameHash) {
+        return groupMasterKeys.get(groupNameHash);
     }
 
-    public PairingKeySerParameter getGroupPublicKey(String groupName) {
-        return groupPublicKeys.get(getKeyByValue(groupName));
+    public PairingKeySerParameter getGroupPublicKey(BigInteger groupNameHash) {
+        return groupPublicKeys.get(groupNameHash);
     }
 
-    public PairingKeySerParameter getGroupSecretKey(String groupName) {
-        return groupSecretKeys.get(getKeyByValue(groupName));
+    public PairingKeySerParameter getGroupSecretKey(BigInteger groupNameHash) {
+        return groupSecretKeys.get(groupNameHash);
     }
 
-    public String[] getGroupRhos(String groupName) {
-        return groupRhos.get(getKeyByValue(groupName));
+    public String[] getGroupRhos(BigInteger groupNameHash) {
+        return groupRhos.get(groupNameHash);
     }
 
-    public PairingParameters getGroupPairingParameters(String groupName) {
-        return groupPairingParameters.get(getKeyByValue(groupName));
+    public PairingParameters getGroupPairingParameters(BigInteger groupNameHash) {
+        return groupPairingParameters.get(groupNameHash);
     }
 
     public Collection<String> getAllGroupNames() {
@@ -745,5 +747,19 @@ public class EventHandler {
             }
         }
         return null; // Return null if the value is not found
+    }
+
+    public ConcurrentHashMap<BigInteger, String> getGroupNames() {
+        return groupNames;
+    }
+
+    public Collection<BigInteger> getGroupHashesWithSameName(String groupName) {
+        List<BigInteger> hashes = new ArrayList<>();
+        for (Map.Entry<BigInteger, String> entry : groupNames.entrySet()) {
+            if (entry.getValue().equals(groupName)) {
+                hashes.add(entry.getKey());
+            }
+        }
+        return hashes;
     }
 }
