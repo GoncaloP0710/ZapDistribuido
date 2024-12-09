@@ -1,13 +1,15 @@
 package psd.group4.client;
 
 import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.security.*;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -30,7 +32,7 @@ import psd.group4.message.*;
 public class UserService implements UserServiceInterface {
 
    // ---------------------- Default Node ----------------------
-    private String ipDefault = "192.168.1.9";
+    private String ipDefault = "192.168.1.130";
     private int portDefault = 8080;
     private String usernameDefault = "Wang";
     // ----------------------------------------------------------
@@ -388,5 +390,37 @@ public class UserService implements UserServiceInterface {
         }
 
         return nameCountMap.getOrDefault(groupName, 0) > 1;
+    }
+
+
+    public void printMessages() throws ClassNotFoundException, IOException {
+
+        Utils.clearSSLProperties();
+        
+        MongoDBHandler mh = new MongoDBHandler();
+        byte[] user = currentNodeDTO.getUsername().getBytes();
+        ArrayList<MessageEntry> list = mh.findAllbyUser(user);
+        ArrayList<MessageEntry> list2 = new ArrayList<>();
+        long i = 0;
+        for (MessageEntry messageEntry : list) {
+            if (i == 0) {
+                i = messageEntry.getIdentifier();
+                list2.add(messageEntry);
+            } else if (i == messageEntry.getIdentifier()) {
+                list2.add(messageEntry);
+            } else {
+
+                InterfaceHandler.messageRecived(messageEntry.getDate() + ": " 
+                    + Utils.deserialize(messageEntry.getSender(), NodeDTO.class).getUsername() + " sent a message to "
+                    + Utils.deserialize(messageEntry.getReceiver(), NodeDTO.class).getUsername() + " saying: "
+                    + new String(EncryptionHandler.reconstructSecret(list2).toByteArray(), StandardCharsets.UTF_8));
+                InterfaceHandler.messageRecived("----------------------------------------------------------");
+
+                
+                i = messageEntry.getIdentifier();
+                list2.clear();
+                list2.add(messageEntry);
+            }
+        }
     }
 }

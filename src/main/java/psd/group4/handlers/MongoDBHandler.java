@@ -15,6 +15,7 @@ import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
 import java.util.ArrayList;
+import java.util.stream.Stream;
 
 import com.mongodb.*;
 public class MongoDBHandler {
@@ -84,6 +85,20 @@ public class MongoDBHandler {
         return list;
     }
 
+    public ArrayList<MessageEntry> findAll() {
+        MongoCursor<MessageEntry> cursor = collection.find().iterator();
+        return convertCursorToArray(cursor);
+    }
+
+    public ArrayList<MessageEntry> findAllByIndentifier(long l) {
+        MongoCursor<MessageEntry> cursor = collection.find(eq("identifier", l)).iterator();
+        return convertCursorToArray(cursor);
+    }
     
-    
+    public ArrayList<MessageEntry> findAllbyUser(byte[] b){
+        ArrayList<MessageEntry> list = new ArrayList<>();
+        list = findAllByReceiver(b);
+        list.addAll(findAllBySender(b));
+        return list;
+    }
 }

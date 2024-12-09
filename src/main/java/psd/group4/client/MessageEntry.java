@@ -10,40 +10,47 @@ public class MessageEntry implements Serializable {
     // @BsonProperty(value = "_id")
     private byte[] sender; 
     private byte[] receiver; 
-    private byte[] message; 
     private Date date;
     private long identifier;
-    private int bitLength;
+    private String field;
+    private String share;
+    private String shareHolder;
+
+
     public MessageEntry(){
         this._id = new ObjectId(); // Generate a unique _id
     }
 
-    public MessageEntry(byte[] sender, byte[] receiver, byte[] message, Date date){
+    public MessageEntry(byte[] sender, byte[] receiver, Date date, String shareHolder, String share){
         this._id = new ObjectId(); // Generate a unique _id
         this.sender = sender;
         this.receiver = receiver;
-        this.message = message;
+        this.share = share;
+        this.shareHolder = shareHolder;
         this.date = date;
     }
 
-    public MessageEntry(byte[] sender, byte[] receiver, byte[] message, Date date, long id, int bitLength){
+    public MessageEntry(byte[] sender, byte[] receiver, Date date, long id, String field, String shareHolder, String share){
         this._id = new ObjectId(); // Generate a unique _id
         this.sender = sender;
         this.receiver = receiver;
-        this.message = message;
         this.date = date;
         this.identifier = id;
-        this.bitLength = bitLength;
+        this.field = field;
+        this.share = share;
+        this.shareHolder = shareHolder;
     }
 
-    public MessageEntry(byte[] message, MessageEntry me){
+    public MessageEntry(String shareHolder, String share, MessageEntry me){
         this._id = new ObjectId(); // Generate a unique _id
-        this.message = message;
+        this.share = share;
+        this.shareHolder = shareHolder;
         this.sender = me.getSender();
         this.receiver = me.getReceiver();
         this.date = me.getDate();
         this.identifier = me.getIdentifier();
-        this.bitLength = me.getBitLength();
+        this.field = me.getField();
+        
     }
 
     public byte[] getSender() {
@@ -54,10 +61,6 @@ public class MessageEntry implements Serializable {
         return receiver;
     }
 
-    public byte[] getMessage() {
-        return message;
-    }
-
     public Date getDate() {
         return date;
     }
@@ -66,8 +69,16 @@ public class MessageEntry implements Serializable {
         return identifier;
     }
 
-    public int getBitLength() {
-        return bitLength;
+    public String getField() {
+        return field;
+    }
+
+    public String getShare() {
+        return share;
+    }
+
+    public String getShareHolder() {
+        return shareHolder;
     }
 
     public ObjectId getId() {
@@ -82,8 +93,8 @@ public class MessageEntry implements Serializable {
         this.date = date;
     }
     
-    public void setBitLength(int bitLength) {
-        this.bitLength = bitLength;
+    public void setField(String field) {
+        this.field = field.toString();
     }
 
     public void setIdentifier(long id) {
@@ -98,16 +109,12 @@ public class MessageEntry implements Serializable {
         this.receiver = receiver;
     }
 
-    public void setMessage(byte[] message) {
-        this.message = message;
-    }
-
     @Override
     public String toString(){
         StringBuilder s = new StringBuilder("Id: "+ identifier + "\n");
         s.append("Sender: "+ sender + "\n");
         s.append("Receiver: "+ receiver + "\n");
-        s.append("Message: "+ message + "\n");
+        s.append("Message: "+ share + "\n");
         s.append("Date: "+ date.toString() + "\n");
         return s.toString();
     }

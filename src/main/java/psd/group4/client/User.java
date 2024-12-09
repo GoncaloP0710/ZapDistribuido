@@ -8,7 +8,9 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.util.ArrayList;
 import java.util.List;
+import java.math.BigInteger;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -25,17 +27,10 @@ public class User {
     private static UserService userService;
     private static InterfaceHandler interfaceHandler;
 
-    public static void main(String[] args) throws Exception {        
+    public static void main(String[] args) throws Exception {  
+
         interfaceHandler = new InterfaceHandler();
         interfaceHandler.startUp();
-
-        // -------------------------------------
-
-        // ADICIONAR A DATABASE
-
-
-
-        // -------------------------------------
         
         String name = interfaceHandler.getUserName();
         String password = interfaceHandler.getPassword();
@@ -72,7 +67,6 @@ public class User {
                 e.printStackTrace();
             }
         }));
-        
         mainLoop(); // Main loop - User interface
     }
 
@@ -143,6 +137,10 @@ public class User {
                 case "13":
                 case "ls":
                     userService.printGroups();
+                    break;
+                case "14":
+                case "pm":
+                    userService.printMessages();
                     break;
                 default:
                     InterfaceHandler.erro("Opção inválida!");

@@ -33,6 +33,8 @@ import psd.group4.utils.Utils;
 
 public class EncryptionHandler{
 
+    private static final SecureRandom rndGenerator = new SecureRandom();
+
     public EncryptionHandler(){}
 
     /**
@@ -205,54 +207,74 @@ public class EncryptionHandler{
         return recoveredMessage;
     }
 
-    public static List<MessageEntry> divideShare(byte[] secret, byte[] sender, byte[] receiver, int threshold, int numShares) {
-        SecureRandom random = new SecureRandom();
-        long id = random.nextLong();
-        BigInteger secretInt = new BigInteger(1, secret);
-        BigInteger prime = secretInt.nextProbablePrime();
-        int bitLength = prime.bitLength();
-        Date date = new Date();
-        List<BigInteger> coefficients = new ArrayList<>();
-        coefficients.add(secretInt);
+    public static List<MessageEntry> divideShare(BigInteger secret, byte[] sender, byte[] receiver, int polyDegree, int nShareholders) {
+        BigInteger field = secret.nextProbablePrime(); // Prime number
+        System.out.println("Secret: " + secret);
+        System.out.println("Field: " + field);
+        // creating polynomial: P(x) = a_d * x^d + ... + a_1 * x^1 + secret
+        BigInteger[] polynomial = new BigInteger[polyDegree + 1]; 
+        polynomial[0] = secret;
 
-        for (int i = 1; i < threshold; i++) {
-            coefficients.add(new BigInteger(prime.bitLength(), random).mod(prime)); // idk se o random é o certo
+        // Generate random coefficients for the polynomial
+        for (int i = 1; i <= polyDegree; i++) {
+            polynomial[i] = new BigInteger(secret.bitLength(), rndGenerator).mod(field);
         }
 
+        // calculating shares
         List<MessageEntry> shares = new ArrayList<>();
-        for (int x = 1; x <= numShares; x++) {
-            BigInteger y = BigInteger.ZERO;
-            for (int i = 0; i < threshold; i++) {
-                y = y.add(coefficients.get(i).multiply(BigInteger.valueOf(x).pow(i))).mod(prime);
-            }
-            shares.add(new MessageEntry(sender, receiver, y.toByteArray(), date, id, bitLength));
+        for (int i = 0; i < nShareholders; i++) {
+            BigInteger shareholder = BigInteger.valueOf(i + 1); // shareholder id can be any positive number, except 0
+            BigInteger share = calculatePoint(shareholder, polynomial, field); 
+            shares.add(new MessageEntry(sender, receiver, new Date(), rndGenerator.nextLong(), field.toString(), shareholder.toString(), share.toString()));
         }
 
         return shares;
     }
 
-    public static byte[] reconstructSecret(List<MessageEntry> shares) {
-        BigInteger prime = new BigInteger(1, shares.get(0).getMessage()).nextProbablePrime();
+    private static BigInteger calculatePoint(BigInteger x, BigInteger[] polynomial, BigInteger field) {
+        BigInteger result = BigInteger.ZERO;
+        for (int i = polynomial.length - 1; i >= 0; i--) {
+            result = result.multiply(x).add(polynomial[i]).mod(field); // Modular addition and multiplication
+        }
+        return result;
+    }
+
+    public static BigInteger reconstructSecret(List<MessageEntry> shares) {
         BigInteger secret = BigInteger.ZERO;
+        BigInteger field = new BigInteger(shares.get(0).getField());
+        System.out.println("Field2: " + field);
+        int k = shares.size();
 
-        for (int i = 0; i < shares.size(); i++) {
-            BigInteger xi = BigInteger.valueOf(i + 1);
-            BigInteger yi = new BigInteger(1, shares.get(i).getMessage());
-            BigInteger numerator = BigInteger.ONE;
-            BigInteger denominator = BigInteger.ONE;
+        for (int i = 0; i < k; i++) {
+            BigInteger xi = new BigInteger(shares.get(i).getShareHolder()) ;
+            BigInteger yi = new BigInteger(shares.get(i).getShare());
+            BigInteger li = BigInteger.ONE;
 
-            for (int j = 0; j < shares.size(); j++) {
+            for (int j = 0; j < k; j++) {
                 if (i != j) {
-                    BigInteger xj = BigInteger.valueOf(j + 1);
-                    numerator = numerator.multiply(xj.negate()).mod(prime);
-                    denominator = denominator.multiply(xi.subtract(xj)).mod(prime);
+                    BigInteger xj = new BigInteger(shares.get(j).getShareHolder());
+
+                    // Modular arithmetic for the Lagrange basis polynomial
+                    BigInteger numerator = xj.mod(field);
+                    BigInteger denominator = xi.subtract(xj).mod(field);
+                    if (denominator.equals(BigInteger.ZERO)) {
+                        throw new IllegalStateException("Denominator is zero. Shareholder IDs must be unique.");
+                    }
+
+                    try {
+                        denominator = denominator.modInverse(field);
+                    } catch (ArithmeticException e) {
+                        System.out.println("Denominator not invertible: " + denominator);
+                        throw e;
+                    }
+                    li = li.multiply(numerator).multiply(denominator).mod(field); // Modular multiplication
                 }
             }
 
-            BigInteger lagrange = numerator.multiply(denominator.modInverse(prime)).mod(prime);
-            secret = secret.add(yi.multiply(lagrange)).mod(prime);
+            // Accumulate the result
+            secret = secret.add(yi.multiply(li)).mod(field);
         }
 
-        return secret.toByteArray();
+        return secret;
     }
 }

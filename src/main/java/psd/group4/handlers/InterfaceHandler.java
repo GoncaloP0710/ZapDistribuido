@@ -285,6 +285,7 @@ public class InterfaceHandler {
         System.out.println(ANSI_GREEN + "11 - (ag)  "+  ANSI_UNDERLINE + "Add a new member to a group" + ANSI_RESET + ANSI_PURPLE + " - A new user is added to a group"+ ANSI_RESET);
         System.out.println(ANSI_GREEN + "12 - (cg)  "+  ANSI_UNDERLINE + "Create a new group" + ANSI_RESET + ANSI_PURPLE + " - Creates a new group"+ ANSI_RESET);
         System.out.println(ANSI_GREEN + "13 - (ls)  "+  ANSI_UNDERLINE + "List all groups" + ANSI_RESET + ANSI_PURPLE + " - Prints a list of all the groups the usar has access to"+ ANSI_RESET);
+        System.out.println(ANSI_GREEN + "14 - (pm)  "+  ANSI_UNDERLINE + "Prints message history" + ANSI_RESET + ANSI_PURPLE + " - Prints all of the messages from and to the user"+ ANSI_RESET);
     }
 
     /**

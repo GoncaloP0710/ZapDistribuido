@@ -10,6 +10,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.Arrays;
 
 import psd.group4.utils.Utils;
 import psd.group4.client.MessageEntry;
@@ -161,35 +162,34 @@ public class EventHandler {
  
         if (prevNodeDTO.equals(currentNodeDTO) && nextNodeDTO.equals(currentNodeDTO)) { // Only one node in the network
             InterfaceHandler.success("Node exited the network successfully");
-            return;
-        }
-        
-        // mudar next do prev para o next do current
-        ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateNeighbors, nextNodeDTO, (NodeDTO) null, currentNodeDTO);
-        clientHandler.startClient(prevNodeDTO.getIp(), prevNodeDTO.getPort(), message, true, prevNodeDTO.getUsername());
-        synchronized (locker) {
-            locker.wait(); // Wait for notification
-        }
-
-        // mudar prev do next para o prev do current
-        ChordInternalMessage message2 = new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, prevNodeDTO, currentNodeDTO);
-        clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), message2, true, nextNodeDTO.getUsername());
-        synchronized (locker) {
-            locker.wait(); // Wait for notification
-        }
-
-        // Update all the finger tables | Next e mandas o current
-        clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, prevNodeDTO, prevNodeDTO, true), true, nextNodeDTO.getUsername());
-
-        for (BigInteger key : sharedKeys.keySet()) {
-            NodeDTO nodeWithHashDTO = userService.getNodeWithHash(key);
-            try {
-                clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), new ChordInternalMessage(MessageType.RemoveSharedKey, key, currentNodeDTO), false, nodeWithHashDTO.getUsername());
-            } catch (Exception e) {
-                InterfaceHandler.erro("Error removing shared key: " + e.getMessage());
+        } else {
+            // mudar next do prev para o next do current
+            ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateNeighbors, nextNodeDTO, (NodeDTO) null, currentNodeDTO);
+            clientHandler.startClient(prevNodeDTO.getIp(), prevNodeDTO.getPort(), message, true, prevNodeDTO.getUsername());
+            synchronized (locker) {
+                locker.wait(); // Wait for notification
             }
+
+            // mudar prev do next para o prev do current
+            ChordInternalMessage message2 = new ChordInternalMessage(MessageType.UpdateNeighbors, (NodeDTO) null, prevNodeDTO, currentNodeDTO);
+            clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), message2, true, nextNodeDTO.getUsername());
+            synchronized (locker) {
+                locker.wait(); // Wait for notification
+            }
+
+            // Update all the finger tables | Next e mandas o current
+            clientHandler.startClient(nextNodeDTO.getIp(), nextNodeDTO.getPort(), new ChordInternalMessage(MessageType.broadcastUpdateFingerTable, false, prevNodeDTO, prevNodeDTO, true), true, nextNodeDTO.getUsername());
+
+            for (BigInteger key : sharedKeys.keySet()) {
+                NodeDTO nodeWithHashDTO = userService.getNodeWithHash(key);
+                try {
+                    clientHandler.startClient(nodeWithHashDTO.getIp(), nodeWithHashDTO.getPort(), new ChordInternalMessage(MessageType.RemoveSharedKey, key, currentNodeDTO), false, nodeWithHashDTO.getUsername());
+                } catch (Exception e) {
+                    InterfaceHandler.erro("Error removing shared key: " + e.getMessage());
+                }
+            }
+            Thread.sleep(2000);
         }
-        Thread.sleep(2000);
         Utils.clearSSLProperties();
 
         File messagesFile = new File("Mensagens/" + currentNodeDTO.getUsername() + "/messages.dat");
@@ -345,12 +345,13 @@ public class EventHandler {
             String messageString = new String(decryptedBytes, StandardCharsets.UTF_8);
             InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + messageString);
 
-            // Encrypt the message using secret sharing
-            byte[] sender = event.getSenderDTO().getUsername().getBytes(StandardCharsets.UTF_8);
-            byte[] receiver = currentNodeDTO.getUsername().getBytes(StandardCharsets.UTF_8);
-            byte[] messageDB = messageString.getBytes(StandardCharsets.UTF_8);
 
-            List<MessageEntry> shares = EncryptionHandler.divideShare(messageDB, sender, receiver, 3, 5);
+            // Encrypt the message using secret sharing
+            byte[] sender = Utils.serialize(event.getSenderDTO());
+            byte[] receiver = Utils.serialize(currentNodeDTO);
+            BigInteger messageDB = messageString.getBytes(StandardCharsets.UTF_8).length > 0 ? new BigInteger(messageString.getBytes(StandardCharsets.UTF_8)) : BigInteger.ZERO;
+
+            List<MessageEntry> shares = EncryptionHandler.divideShare(messageDB, sender, receiver, 1, 3);
 
             // Create the "Mensagens" directory if it doesn't exist
             String userDir = "Mensagens/" + currentNodeDTO.getUsername();
@@ -362,7 +363,6 @@ public class EventHandler {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
 
             String recivedMessage = "recived by " + currentNodeDTO.getUsername();
             if (event.getNeedConfirmation()) { // Send a reciving message to the sender
