@@ -318,9 +318,13 @@ public class EventHandler {
             
             MongoDBHandler mongoDBHandler = new MongoDBHandler();
             try {
-                for (MessageEntry share : shares) {
-                    mongoDBHandler.storeMessage(share);
+                
+                if(event.getReciver().equals(currentNode.getHashNumber())){
+                    mongoDBHandler.storeMany(shares);
                 }
+                // for (MessageEntry share : shares) {
+                //     mongoDBHandler.storeMessage(share);
+                // }
                 mongoDBHandler.close();
             } catch (Exception e) {
                 e.printStackTrace();

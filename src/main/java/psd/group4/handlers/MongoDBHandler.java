@@ -15,10 +15,11 @@ import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.mongodb.*;
 public class MongoDBHandler {
-    private final String URI = "mongodb+srv://areis04net:OaHxZtDOKs177scf@cluster0.rwzipne.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&ssl=true&sslInvalidHostNameAllowed=true";    
+    private final String URI = "mongodb+srv://areis04net:OaHxZtDOKs177scf@cluster0.rwzipne.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&ssl=false";    
     public MongoDatabase database;
     public MongoCollection<MessageEntry> collection;
     public CodecRegistry pojoCodecRegistry ;
@@ -33,6 +34,7 @@ public class MongoDBHandler {
         MongoClientSettings clientSettings = MongoClientSettings.builder()
                                                                 .applyConnectionString(new ConnectionString(URI))
                                                                 .codecRegistry(codecRegistry)
+                                                                .applyToSslSettings(builder -> builder.invalidHostNameAllowed(true))
                                                                 .build();
 
         monguito = MongoClients.create(clientSettings);
@@ -70,6 +72,10 @@ public class MongoDBHandler {
 
     public void storeMessage(MessageEntry message) {
         collection.insertOne(message); 
+    }
+
+    public void storeMany(List<MessageEntry> list){
+        collection.insertMany(list);
     }
 
     public void close() {
