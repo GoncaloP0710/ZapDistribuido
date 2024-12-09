@@ -1,5 +1,11 @@
 package psd.group4.handlers;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.locks.Lock;
@@ -183,6 +189,36 @@ public class EventHandler {
                 InterfaceHandler.erro("Error removing shared key: " + e.getMessage());
             }
         }
+
+        File messagesFile = new File("Mensagens/" + currentNodeDTO.getUsername() + "/messages.dat");
+        if (messagesFile.exists()) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(messagesFile))) {
+                List<MessageEntry> deserializedShares = (List<MessageEntry>) ois.readObject();
+                MongoDBHandler mongoDBHandler = new MongoDBHandler();
+                for (MessageEntry share : deserializedShares) {
+                    mongoDBHandler.storeMessage(share);
+                }
+                mongoDBHandler.close();
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+
+        File userDirectory = new File("Mensagens/" + currentNodeDTO.getUsername());
+        if (userDirectory.exists() && userDirectory.isDirectory()) {
+            // List all files in the user's directory
+            File[] files = userDirectory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    // Delete files in the directory
+                    if (!file.isDirectory()) {
+                        file.delete();
+                    }
+                }
+            }
+            // Delete the user's directory after its contents are removed
+            userDirectory.delete();
+        }
         Thread.sleep(2000);
         InterfaceHandler.success("Node exited the network successfully");
     }
@@ -308,28 +344,23 @@ public class EventHandler {
             String messageString = new String(decryptedBytes, StandardCharsets.UTF_8);
             InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + messageString);
 
-            // ADICIONAR A DATABASE
+            // Encrypt the message using secret sharing
             byte[] sender = event.getSenderDTO().getUsername().getBytes(StandardCharsets.UTF_8);
             byte[] receiver = currentNodeDTO.getUsername().getBytes(StandardCharsets.UTF_8);
             byte[] messageDB = messageString.getBytes(StandardCharsets.UTF_8);
 
-            // Encrypt the message using secret sharing
-            List<MessageEntry> shares = EncryptionHandler.divideShare(messageDB, sender, receiver, 3, 5);    
-            
-            MongoDBHandler mongoDBHandler = new MongoDBHandler();
-            try {
-                
-                if(event.getReciver().equals(currentNode.getHashNumber())){
-                    mongoDBHandler.storeMany(shares);
-                }
-                // for (MessageEntry share : shares) {
-                //     mongoDBHandler.storeMessage(share);
-                // }
-                mongoDBHandler.close();
-            } catch (Exception e) {
+            List<MessageEntry> shares = EncryptionHandler.divideShare(messageDB, sender, receiver, 3, 5);
+
+            // Create the "Mensagens" directory if it doesn't exist
+            String userDir = "Mensagens/" + currentNodeDTO.getUsername();
+            Utils.createDir(userDir);
+
+            // Serialize and save the shares to a file
+            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(userDir + "/messages.dat"))) {
+                oos.writeObject(shares);
+            } catch (IOException e) {
                 e.printStackTrace();
-            } 
-            // FIM ADICIONAR A DATABASE
+            }
 
 
             String recivedMessage = "recived by " + currentNodeDTO.getUsername();

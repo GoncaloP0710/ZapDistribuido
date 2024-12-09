@@ -1,10 +1,11 @@
 package psd.group4.client;
 
+import java.io.Serializable;
 import java.util.*;
 
 import org.bson.types.ObjectId;
 
-public class MessageEntry {
+public class MessageEntry implements Serializable {
     private ObjectId _id;
     // @BsonProperty(value = "_id")
     private byte[] sender; 
