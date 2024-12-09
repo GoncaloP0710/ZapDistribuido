@@ -189,6 +189,8 @@ public class EventHandler {
                 InterfaceHandler.erro("Error removing shared key: " + e.getMessage());
             }
         }
+        Thread.sleep(2000);
+        Utils.clearSSLProperties();
 
         File messagesFile = new File("Mensagens/" + currentNodeDTO.getUsername() + "/messages.dat");
         if (messagesFile.exists()) {
@@ -219,7 +221,6 @@ public class EventHandler {
             // Delete the user's directory after its contents are removed
             userDirectory.delete();
         }
-        Thread.sleep(2000);
         InterfaceHandler.success("Node exited the network successfully");
     }
 

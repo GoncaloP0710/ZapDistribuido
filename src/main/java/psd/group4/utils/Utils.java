@@ -17,6 +17,7 @@ import psd.group4.handlers.EncryptionHandler;
 import psd.group4.handlers.InterfaceHandler;
 
 import java.security.InvalidKeyException;
+import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -150,6 +151,24 @@ public final class Utils {
 
             InterfaceHandler.success(trustStorePath + " loaded successfully");
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Clear all SSL-related system properties and contexts
+     */
+    public static void clearSSLProperties() {
+        System.clearProperty("javax.net.ssl.trustStore");
+        System.clearProperty("javax.net.ssl.trustStorePassword");
+        System.clearProperty("javax.net.ssl.keyStore");
+        System.clearProperty("javax.net.ssl.keyStorePassword");
+        try {
+            // Reset the SSLContext to the default one
+            SSLContext defaultContext = SSLContext.getInstance("TLS");
+            defaultContext.init(null, null, null);
+            SSLContext.setDefault(defaultContext);
+        } catch (NoSuchAlgorithmException | KeyManagementException e) {
             e.printStackTrace();
         }
     }
