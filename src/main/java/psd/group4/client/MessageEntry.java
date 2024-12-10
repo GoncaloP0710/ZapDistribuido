@@ -109,12 +109,22 @@ public class MessageEntry implements Serializable {
         this.receiver = receiver;
     }
 
+    public void setShare(String share) {
+        this.share = share;
+    }
+
+    public void setShareHolder(String shareHolder) {
+        this.shareHolder = shareHolder;
+    }
+
     @Override
     public String toString(){
         StringBuilder s = new StringBuilder("Id: "+ identifier + "\n");
         s.append("Sender: "+ sender + "\n");
         s.append("Receiver: "+ receiver + "\n");
         s.append("Message: "+ share + "\n");
+        // s.append("Share Holder: "+ shareHolder + "\n");
+        // s.append("Field: "+ field + "\n");
         s.append("Date: "+ date.toString() + "\n");
         return s.toString();
     }

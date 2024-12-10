@@ -209,8 +209,6 @@ public class EncryptionHandler{
 
     public static List<MessageEntry> divideShare(BigInteger secret, byte[] sender, byte[] receiver, int polyDegree, int nShareholders) {
         BigInteger field = secret.nextProbablePrime(); // Prime number
-        System.out.println("Secret: " + secret);
-        System.out.println("Field: " + field);
         // creating polynomial: P(x) = a_d * x^d + ... + a_1 * x^1 + secret
         BigInteger[] polynomial = new BigInteger[polyDegree + 1]; 
         polynomial[0] = secret;
@@ -242,7 +240,6 @@ public class EncryptionHandler{
     public static BigInteger reconstructSecret(List<MessageEntry> shares) {
         BigInteger secret = BigInteger.ZERO;
         BigInteger field = new BigInteger(shares.get(0).getField());
-        System.out.println("Field2: " + field);
         int k = shares.size();
 
         for (int i = 0; i < k; i++) {

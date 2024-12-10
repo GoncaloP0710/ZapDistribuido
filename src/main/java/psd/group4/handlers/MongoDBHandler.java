@@ -16,6 +16,7 @@ import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -119,10 +120,13 @@ public class MongoDBHandler {
         return convertCursorToArray(cursor);
     }
     
-    public ArrayList<MessageEntry> findAllbyUser(byte[] b){
+    public ArrayList<MessageEntry> findAllbyUser(byte[] b) {
+        System.out.println("Finding messages for user: " + Arrays.toString(b));
         ArrayList<MessageEntry> list = new ArrayList<>();
         list = findAllByReceiver(b);
+        System.out.println("Messages received: " + list);
         list.addAll(findAllBySender(b));
+        System.out.println("Messages sent: " + list);
         return list;
     }
 }
