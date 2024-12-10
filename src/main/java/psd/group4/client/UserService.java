@@ -35,7 +35,7 @@ import psd.group4.message.*;
 public class UserService implements UserServiceInterface {
 
    // ---------------------- Default Node ----------------------
-    private String ipDefault = "192.168.1.79";
+    private String ipDefault = "192.168.1.130";
     private int portDefault = 8080;
     private String usernameDefault = "Wang";
     // ----------------------------------------------------------
@@ -401,17 +401,20 @@ public class UserService implements UserServiceInterface {
         Utils.clearSSLProperties();
 
         MongoDBHandler mh = new MongoDBHandler();
-        byte[] user = currentNodeDTO.getUsername().getBytes();
+        byte[] user = Utils.serialize(currentNodeDTO);
+        System.out.println(user.toString());
         ArrayList<MessageEntry> list = mh.findAllbyUser(user);
 
         // // Group messages by their identifier
         // Map<String, List<MessageEntry>> groupedMessages = new HashMap<>();
-        // for (MessageEntry messageEntry : list) {
+         for (MessageEntry messageEntry : list) {
         //     long identifier = messageEntry.getIdentifier(); // Assuming getIdentifier() returns the identifier
         //     Date date = messageEntry.getDate(); // Assuming getDate() returns the date
         //     String key = identifier + "_" + date.getTime(); // Create a unique key using identifier and date
         //     groupedMessages.computeIfAbsent(key, k -> new ArrayList<>()).add(messageEntry);
-        // }
+        System.out.println("---------------------------------------------------------");
+        System.out.println(messageEntry.toString());
+        }
 
         // // Process each group
         // for (Map.Entry<String, List<MessageEntry>> entry : groupedMessages.entrySet()) {
