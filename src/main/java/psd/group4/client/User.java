@@ -1,16 +1,8 @@
 package psd.group4.client;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
-import java.util.ArrayList;
-import java.util.List;
-import java.math.BigInteger;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -67,6 +59,7 @@ public class User {
                 e.printStackTrace();
             }
         }));
+
         mainLoop(); // Main loop - User interface
     }
 

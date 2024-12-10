@@ -16,6 +16,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.net.ssl.SSLContext;
 
 import cn.edu.buaa.crypto.algebra.serparams.PairingCipherSerParameter;
 import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
@@ -32,7 +33,7 @@ import psd.group4.message.*;
 public class UserService implements UserServiceInterface {
 
    // ---------------------- Default Node ----------------------
-    private String ipDefault = "192.168.1.130";
+    private String ipDefault = "192.168.1.79";
     private int portDefault = 8080;
     private String usernameDefault = "Wang";
     // ----------------------------------------------------------
@@ -396,12 +397,15 @@ public class UserService implements UserServiceInterface {
     public void printMessages() throws ClassNotFoundException, IOException {
 
         Utils.clearSSLProperties();
-        
+
         MongoDBHandler mh = new MongoDBHandler();
         byte[] user = currentNodeDTO.getUsername().getBytes();
         ArrayList<MessageEntry> list = mh.findAllbyUser(user);
+        System.out.println(list);
         ArrayList<MessageEntry> list2 = new ArrayList<>();
+        System.out.println(list2);
         long i = 0;
+   
         for (MessageEntry messageEntry : list) {
             if (i == 0) {
                 i = messageEntry.getIdentifier();
@@ -410,11 +414,35 @@ public class UserService implements UserServiceInterface {
                 list2.add(messageEntry);
             } else {
 
-                InterfaceHandler.messageRecived(messageEntry.getDate() + ": " 
-                    + Utils.deserialize(messageEntry.getSender(), NodeDTO.class).getUsername() + " sent a message to "
-                    + Utils.deserialize(messageEntry.getReceiver(), NodeDTO.class).getUsername() + " saying: "
-                    + new String(EncryptionHandler.reconstructSecret(list2).toByteArray(), StandardCharsets.UTF_8));
-                InterfaceHandler.messageRecived("----------------------------------------------------------");
+                try {
+                    // // Deserialize sender and receiver
+                    // NodeDTO senderNode = Utils.deserialize(messageEntry.getSender(), NodeDTO.class);
+                    // NodeDTO receiverNode = Utils.deserialize(messageEntry.getReceiver(), NodeDTO.class);
+                
+                    // Extract their usernames
+                    String senderUsername = "Gajo1";//senderNode.getUsername();
+                    String receiverUsername = "Gajo2";//receiverNode.getUsername();
+                
+                    // Reconstruct and decode the message
+                    String messageContent = new String(EncryptionHandler.reconstructSecret(list2).toByteArray(), StandardCharsets.UTF_8);
+                
+                    // Build and display the messages
+                    InterfaceHandler.messageRecived(
+                        messageEntry.getDate() + ": " 
+                        + senderUsername + " sent a message to " 
+                        + receiverUsername + " saying: " 
+                        + messageContent
+                    );
+                    InterfaceHandler.messageRecived("----------------------------------------------------------");
+                // } catch (IOException | ClassNotFoundException e) {
+                //     // Handle deserialization errors
+                //     e.printStackTrace();
+                //     InterfaceHandler.messageRecived("Error: Failed to deserialize sender or receiver.");
+                } catch (Exception e) {
+                    // Handle any other potential errors
+                    e.printStackTrace();
+                    InterfaceHandler.messageRecived("Error: An unexpected error occurred.");
+                }
 
                 
                 i = messageEntry.getIdentifier();

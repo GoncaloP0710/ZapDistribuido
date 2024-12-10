@@ -14,8 +14,12 @@ import static com.mongodb.client.model.Filters.eq;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.stream.Stream;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import com.mongodb.*;
 public class MongoDBHandler {
@@ -31,13 +35,33 @@ public class MongoDBHandler {
         pojoCodecRegistry = fromProviders(PojoCodecProvider.builder().automatic(true).build());
         codecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(), pojoCodecRegistry);
 
-        MongoClientSettings clientSettings = MongoClientSettings.builder()
-                                                                .applyConnectionString(new ConnectionString(URI))
-                                                                .codecRegistry(codecRegistry)
-                                                                .build();
+        try {
+            TrustManager[] trustAllCerts = new TrustManager[]{
+                new X509TrustManager() {
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return null;
+                    }
+                    public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                    }
+                    public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                    }
+                }
+            };
 
-        monguito = MongoClients.create(clientSettings);
-        fetch();
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+
+            MongoClientSettings clientSettings = MongoClientSettings.builder()
+                    .applyConnectionString(new ConnectionString(URI))
+                    .codecRegistry(codecRegistry)
+                    .applyToSslSettings(builder -> builder.enabled(true).context(sslContext))
+                    .build();
+
+            monguito = MongoClients.create(clientSettings);
+            fetch();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public MongoCollection<MessageEntry> getCollection() throws Exception{
