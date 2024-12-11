@@ -189,46 +189,27 @@ public class EventHandler {
                     InterfaceHandler.erro("Error removing shared key: " + e.getMessage());
                 }
             }
-            Thread.sleep(2000);
         }
         
+        Thread.sleep(2000);
         Properties originalSSLProperties = (Properties) System.getProperties().clone();
         Utils.clearSSLProperties();
 
         // Store the messages in the database
-        File messagesFile = new File("Mensagens/" + currentNodeDTO.getUsername() + "/messages.dat");
-        if (messagesFile.exists()) {
-            try (FileInputStream fis = new FileInputStream(messagesFile);
-                ObjectInputStream ois = new ObjectInputStream(fis)) {
-                MongoDBHandler mongoDBHandler = new MongoDBHandler();
-                while (fis.available() > 0) {
-                    List<MessageEntry> deserializedShares = (List<MessageEntry>) ois.readObject();
-                    for (MessageEntry share : deserializedShares) {
-                        mongoDBHandler.storeMessage(share);
-                    }
+        List<MessageEntry> messagesLocal = userService.getMessagesLocal();
+        if (!messagesLocal.isEmpty()) {
+            MongoDBHandler mongoDBHandler = new MongoDBHandler();
+            try {
+                for (MessageEntry share : messagesLocal) {
+                    mongoDBHandler.storeMessage(share);
                 }
-            mongoDBHandler.close();
-            } catch (IOException | ClassNotFoundException e) {
+                mongoDBHandler.close();
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
         System.setProperties(originalSSLProperties);
-
-        // Remove the user directory with the messages
-        File userDirectory = new File("Mensagens/" + currentNodeDTO.getUsername());
-        if (userDirectory.exists() && userDirectory.isDirectory()) {
-            File[] files = userDirectory.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    if (!file.isDirectory()) {
-                        file.delete();
-                    }
-                }
-            }
-            userDirectory.delete();
-        }
-
         InterfaceHandler.success("Node exited the network successfully");
     }
 
@@ -354,29 +335,14 @@ public class EventHandler {
             InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + messageString);
 
             // Encrypt the message using secret sharing
-            byte[] sender = Utils.serialize(event.getSenderDTO());
-            byte[] receiver = Utils.serialize(currentNodeDTO);
+            NodeDTO senderDTO = new NodeDTO(Sender.getUsername(), Sender.getIp(), Sender.getPort());
+            byte[] sender = Utils.serialize(senderDTO);
+            NodeDTO recieverDto = new NodeDTO(currentNodeDTO.getUsername(), currentNodeDTO.getIp(), currentNodeDTO.getPort());
+            byte[] receiver = Utils.serialize(recieverDto);
             BigInteger messageDB = messageString.getBytes(StandardCharsets.UTF_8).length > 0 ? new BigInteger(messageString.getBytes(StandardCharsets.UTF_8)) : BigInteger.ZERO;
 
             List<MessageEntry> shares = EncryptionHandler.divideShare(messageDB, sender, receiver, 1, 3);
-
-            String userDir = "Mensagens/" + currentNodeDTO.getUsername();
-            Utils.createDir(userDir);
-
-            File file = new File(userDir + "/messages.dat");
-            boolean append = file.exists();
-
-            try (FileOutputStream fos = new FileOutputStream(file, true);
-                ObjectOutputStream oos = append ? new ObjectOutputStream(fos) {
-                    @Override
-                    protected void writeStreamHeader() throws IOException {
-                        reset();
-                    }
-                } : new ObjectOutputStream(fos)) {
-                oos.writeObject(shares);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            userService.addMessagesLocal(shares);
 
             String recivedMessage = "recived by " + currentNodeDTO.getUsername();
             if (event.getNeedConfirmation()) { // Send a reciving message to the sender

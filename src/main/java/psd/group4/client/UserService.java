@@ -8,7 +8,6 @@ import java.security.cert.Certificate;
 import java.security.*;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +18,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.net.ssl.SSLContext;
 
 import cn.edu.buaa.crypto.algebra.serparams.PairingCipherSerParameter;
 import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
@@ -63,13 +61,19 @@ public class UserService implements UserServiceInterface {
     private NodeServerHandler serverHandler;
     // -----------------------------------------------------------
 
-    public UserService(String username, Node currentNode, KeyHandler keyHandler) throws Exception {
+    // -------------------- DataBase Variables -------------------
+    private List<MessageEntry> messagesDB = new ArrayList<>();
+    private List<MessageEntry> messagesLocal = new ArrayList<>();
+    //------------------------------------------------------------
+
+    public UserService(String username, Node currentNode, KeyHandler keyHandler, List<MessageEntry> messagesDB) throws Exception {
         this.username = username;
         this.currentNode = currentNode;
         this.keyHandler = keyHandler;
         this.keystoreFile = keyHandler.getKeystoreFile();
         this.keystorePassword = keyHandler.getKeyStorePassword();
         this.truststoreFile = keyHandler.getTrustStoreFile();
+        this.messagesDB = messagesDB;
         initializeCurrentNodeDTO(username, currentNode, keyHandler.getCertificate(username));
         this.clientHandler = new NodeClientHandler(this);
         this.serverHandler = new NodeServerHandler(this);
@@ -135,6 +139,18 @@ public class UserService implements UserServiceInterface {
 
     public NodeServerHandler getServerHandler() {
         return serverHandler;
+    }
+    
+    public List<MessageEntry> getMessagesLocal() {
+        return this.messagesLocal;
+    }
+
+    public void addMessagesLocal(List<MessageEntry> messagesLocal) {
+        this.messagesLocal.addAll(messagesLocal);
+    }
+
+    public void addMessagesLocal(MessageEntry messagesLocal) {
+        this.messagesLocal.add(messagesLocal);
     }
 
     /**
@@ -397,19 +413,18 @@ public class UserService implements UserServiceInterface {
     }
 
 
+
+
     public void printMessages() throws ClassNotFoundException, IOException {
-
-        Properties originalSSLProperties = (Properties) System.getProperties().clone();
-        Utils.clearSSLProperties();
-
-        MongoDBHandler mh = new MongoDBHandler();
-        byte[] user = Utils.serialize(currentNodeDTO);
-        ArrayList<MessageEntry> list = mh.findAllbyUser(user);
 
         ArrayList<MessageEntry> list2 = new ArrayList<>();
         long i = 0;
+
+        ArrayList<MessageEntry> allList = new ArrayList<>(messagesDB);
+        allList.addAll(messagesLocal);
+        
    
-        for (MessageEntry messageEntry : list) {
+        for (MessageEntry messageEntry : allList) {
             if (i == 0) {
                 i = messageEntry.getIdentifier();
                 list2.add(messageEntry);
@@ -422,14 +437,13 @@ public class UserService implements UserServiceInterface {
                 list2.clear();
                 list2.add(messageEntry);
             }
-            // System.out.println("000000000000000000000000000000000000000000000000000000000000000000000");
         }
         if(!list2.isEmpty()){
            printMessagesAux(list2);
         }
-        mh.close();
-        System.setProperties(originalSSLProperties);
     }
+
+    
 
     private static void printMessagesAux(ArrayList<MessageEntry> list2) {
         try {

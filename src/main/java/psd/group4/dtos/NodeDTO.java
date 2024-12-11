@@ -21,6 +21,12 @@ public class NodeDTO implements Serializable {
         this.hash = hash;
     }
 
+    public NodeDTO(String username, String ip, int port) {
+        this.username = username;
+        this.ip = ip;
+        this.port = port;
+    }
+
     public void setIp(String ip) {
         this.ip = ip;
     }

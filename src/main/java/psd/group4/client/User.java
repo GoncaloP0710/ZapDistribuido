@@ -1,16 +1,20 @@
 package psd.group4.client;
 
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
-
+import psd.group4.dtos.NodeDTO;
 import psd.group4.handlers.*;
-import psd.group4.utils.SuppressMongoLogs;
+import psd.group4.utils.*;
 
 
 public class User {
@@ -19,10 +23,34 @@ public class User {
     private static Node node;
     private static UserService userService;
     private static InterfaceHandler interfaceHandler;
+    private static ArrayList<MessageEntry> messagesDB = new ArrayList<MessageEntry>();
 
     public static void main(String[] args) throws Exception {  
 
         SuppressMongoLogs.disableMongoLogs();
+        // -------------------------------------
+
+        // ADICIONAR A DATABASE
+
+        // String messageString = "Hello World!";
+        // BigInteger messageInt = new BigInteger(messageString.getBytes(StandardCharsets.UTF_8));
+        // byte[] messageDB = messageString.getBytes(StandardCharsets.UTF_8);
+
+        // // Encrypt the message using secret sharing
+        // List<MessageEntry> shares = EncryptionHandler.divideShare(messageInt, messageDB, messageDB, 1, 3);
+
+        // MongoDBHandler mongoDBHandler = new MongoDBHandler();
+        // try {
+        //     for (MessageEntry share : shares) {
+        //         mongoDBHandler.storeMessage(share);
+        //     }
+        //     mongoDBHandler.close();
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // } 
+
+        // -------------------------------------
+
         interfaceHandler = new InterfaceHandler();
         interfaceHandler.startUp();
         
@@ -51,120 +79,133 @@ public class User {
         }
         int serverPort = Integer.parseInt(interfaceHandler.getPort());
         node = new Node(name, serverIp, serverPort);
-        userService = new UserService(name, node, keyHandler);
-
-        // Add shutdown hook to handle Ctrl+C
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                userService.exitNode();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }));
-
-        mainLoop(); // Main loop - User interface
-    }
-
-    /**
-     * Main loop of the user interface that handles the user input
-     * 
-     * @throws InvalidKeyException
-     * @throws IllegalBlockSizeException
-     * @throws BadPaddingException
-     * @throws NoSuchPaddingException
-     * @throws Exception
-     */
-    private static void mainLoop() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException, Exception {
-        interfaceHandler.help();
-        while (true) {
-            String option = interfaceHandler.getInput();
-                switch (option) {
-                case "1":
-                case "ne":
-                    System.out.println(node.neighborsStatus());
-                    break;
-                case "2":
-                case "pn":
-                    System.out.println(node.toString());
-                    break;
-                case "3":
-                case "s":
-                    userService.sendMessage(interfaceHandler);
-                    break;
-                case "4":
-                case "h":
-                case "help":
-                    interfaceHandler.help();
-                    break;
-                case "5":
-                case "e":
-                    userService.exitNode();
-                    System.exit(0);
-                    break;
-                case "6":
-                case "iinfo 0":
-                    InterfaceHandler.setInternalInfoLoggingEnabled(false);
-                    break;
-                case "7":
-                case "iinfo 1":
-                    InterfaceHandler.setInternalInfoLoggingEnabled(true);
-                    break;
-                case "8":
-                case "info 0":
-                    InterfaceHandler.setInfoLoggingEnabled(false);
-                    break;
-                case "9":
-                case "info 1":
-                    InterfaceHandler.setInfoLoggingEnabled(true);
-                    break;
-                case "10":
-                case "sg":
-                    userService.sendGroupMessage(interfaceHandler);
-                    break;
-                case "11":
-                case "ag":
-                    userService.addUserToGroup(interfaceHandler);
-                    break;
-                case "12":
-                case "cg":
-                    userService.createGroup(interfaceHandler);
-                    break;
-                case "13":
-                case "ls":
-                    userService.printGroups();
-                    break;
-                case "14":
-                case "pm":
-                    userService.printMessages();
-                    break;
-                default:
-                    InterfaceHandler.erro("Opção inválida!");
-                    break;
-            }
-        }
-    }
-
-    public String getUserName() {
-        return user_name;
-    }
-
-    private static String getLocalIpAddress() {
-        try {
-            InetAddress inetAddress = InetAddress.getLocalHost();
-            return inetAddress.getHostAddress();
-        } catch (UnknownHostException e) {
-            return "-1";
-        }
-    }
+        NodeDTO nodeDTO = new NodeDTO(name, serverIp, serverPort);
+        messagesDB = getMongoMsg(messagesDB, nodeDTO);
+        
+        
+            userService = new UserService(name, node, keyHandler, messagesDB);
     
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
+            // Add shutdown hook to handle Ctrl+C
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    userService.exitNode();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }));
+    
+            mainLoop(); // Main loop - User interface
         }
-        if (!(obj instanceof User)) {
-            return false;
+    
+        /**
+         * Main loop of the user interface that handles the user input
+         * 
+         * @throws InvalidKeyException
+         * @throws IllegalBlockSizeException
+         * @throws BadPaddingException
+         * @throws NoSuchPaddingException
+         * @throws Exception
+         */
+        private static void mainLoop() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException, Exception {
+            interfaceHandler.help();
+            while (true) {
+                String option = interfaceHandler.getInput();
+                    switch (option) {
+                    case "1":
+                    case "ne":
+                        System.out.println(node.neighborsStatus());
+                        break;
+                    case "2":
+                    case "pn":
+                        System.out.println(node.toString());
+                        break;
+                    case "3":
+                    case "s":
+                        userService.sendMessage(interfaceHandler);
+                        break;
+                    case "4":
+                    case "h":
+                    case "help":
+                        interfaceHandler.help();
+                        break;
+                    case "5":
+                    case "e":
+                        userService.exitNode();
+                        System.exit(0);
+                        break;
+                    case "6":
+                    case "iinfo 0":
+                        InterfaceHandler.setInternalInfoLoggingEnabled(false);
+                        break;
+                    case "7":
+                    case "iinfo 1":
+                        InterfaceHandler.setInternalInfoLoggingEnabled(true);
+                        break;
+                    case "8":
+                    case "info 0":
+                        InterfaceHandler.setInfoLoggingEnabled(false);
+                        break;
+                    case "9":
+                    case "info 1":
+                        InterfaceHandler.setInfoLoggingEnabled(true);
+                        break;
+                    case "10":
+                    case "sg":
+                        userService.sendGroupMessage(interfaceHandler);
+                        break;
+                    case "11":
+                    case "ag":
+                        userService.addUserToGroup(interfaceHandler);
+                        break;
+                    case "12":
+                    case "cg":
+                        userService.createGroup(interfaceHandler);
+                        break;
+                    case "13":
+                    case "ls":
+                        userService.printGroups();
+                        break;
+                    case "14":
+                    case "pm":
+                        userService.printMessages();
+                        break;
+                    default:
+                        InterfaceHandler.erro("Opção inválida!");
+                        break;
+                }
+            }
         }
-        User user = (User) obj;
-        return user.getUserName().equals(user_name);
-    }
+    
+        public String getUserName() {
+            return user_name;
+        }
+    
+        private static String getLocalIpAddress() {
+            try {
+                InetAddress inetAddress = InetAddress.getLocalHost();
+                return inetAddress.getHostAddress();
+            } catch (UnknownHostException e) {
+                return "-1";
+            }
+        }
+        
+        public boolean equals(Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof User)) {
+                return false;
+            }
+            User user = (User) obj;
+            return user.getUserName().equals(user_name);
+        }
+        
+        public static ArrayList<MessageEntry> getMongoMsg(ArrayList<MessageEntry> messagesDB, NodeDTO node) throws Exception{
+            MongoDBHandler mh = new MongoDBHandler();
+            byte[] user = Utils.serialize(node);
+            ArrayList<MessageEntry> list = mh.findAllbyUser(user);
+            messagesDB.addAll(list);
+            mh.close();
+            return messagesDB;
+        }
 }

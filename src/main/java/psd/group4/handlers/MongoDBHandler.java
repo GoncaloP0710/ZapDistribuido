@@ -14,66 +14,39 @@ import static com.mongodb.client.model.Filters.eq;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 
 import com.mongodb.*;
 public class MongoDBHandler {
-    private final String URI = "mongodb+srv://areis04net:OaHxZtDOKs177scf@cluster0.rwzipne.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-    private static MongoClient singletonMongoClient = null;
-    //private final String URI = "mongodb+srv://areis04net:OaHxZtDOKs177scf@cluster0.rwzipne.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&ssl=true&sslInvalidHostNameAllowed=true";    
+    private final String URI = "mongodb+srv://areis04net:OaHxZtDOKs177scf@cluster0.rwzipne.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&ssl=true&sslInvalidHostNameAllowed=true";    
     public MongoDatabase database;
     public MongoCollection<MessageEntry> collection;
     public CodecRegistry pojoCodecRegistry ;
     public CodecRegistry codecRegistry ;
-    // public MongoClient monguito;
+    public MongoClient monguito;
 
 
     public MongoDBHandler() {
-        try {
-            TrustManager[] trustAllCerts = new TrustManager[]{
-                new X509TrustManager() {
-                    public X509Certificate[] getAcceptedIssuers() { return null; }
-                    public void checkClientTrusted(X509Certificate[] certs, String authType) { }
-                    public void checkServerTrusted(X509Certificate[] certs, String authType) { }
-                }
-            };
+        pojoCodecRegistry = fromProviders(PojoCodecProvider.builder().automatic(true).build());
+        codecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(), pojoCodecRegistry);
 
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+        MongoClientSettings clientSettings = MongoClientSettings.builder()
+                                                                .applyConnectionString(new ConnectionString(URI))
+                                                                .codecRegistry(codecRegistry)
+                                                                .build();
 
-            CodecRegistry pojoCodecRegistry = fromProviders(PojoCodecProvider.builder().automatic(true).build());
-            CodecRegistry codecRegistry = fromRegistries(MongoClientSettings.getDefaultCodecRegistry(), pojoCodecRegistry);
-
-            MongoClientSettings clientSettings = MongoClientSettings.builder()
-                    .applyConnectionString(new ConnectionString(URI))
-                    .codecRegistry(codecRegistry)
-                    .applyToSslSettings(builder -> builder.enabled(true).context(sslContext))
-                    .applyToConnectionPoolSettings(builder -> builder
-                            .maxSize(50)
-                            .minSize(5)
-                            .maxConnectionIdleTime(60, TimeUnit.SECONDS))
-                    .build();
-
-            singletonMongoClient = MongoClients.create(clientSettings);
-            fetch();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        monguito = MongoClients.create(clientSettings);
+        fetch();
     }
+
+        
 
     public MongoCollection<MessageEntry> getCollection() throws Exception{
         return database.getCollection("Messages", MessageEntry.class);
     }
 
     public void fetch() {
-        database = singletonMongoClient.getDatabase("PSD_project_db");
+        database = monguito.getDatabase("PSD_project_db");
         collection = database.getCollection("Messages", MessageEntry.class);
     }
 
@@ -106,8 +79,8 @@ public class MongoDBHandler {
     // }
 
     public void close() {
-        if (singletonMongoClient != null) {
-            singletonMongoClient.close();
+        if (monguito != null) {
+            monguito.close();
         }
     }
 
