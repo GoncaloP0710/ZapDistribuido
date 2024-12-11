@@ -24,7 +24,9 @@ import javax.net.ssl.X509TrustManager;
 
 import com.mongodb.*;
 public class MongoDBHandler {
-    private final String URI = "mongodb+srv://areis04net:OaHxZtDOKs177scf@cluster0.rwzipne.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&ssl=true&sslInvalidHostNameAllowed=true";    
+    private final String URI = "mongodb+srv://areis04net:OaHxZtDOKs177scf@cluster0.rwzipne.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+
+    //private final String URI = "mongodb+srv://areis04net:OaHxZtDOKs177scf@cluster0.rwzipne.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&ssl=true&sslInvalidHostNameAllowed=true";    
     public MongoDatabase database;
     public MongoCollection<MessageEntry> collection;
     public CodecRegistry pojoCodecRegistry ;
@@ -55,7 +57,9 @@ public class MongoDBHandler {
             MongoClientSettings clientSettings = MongoClientSettings.builder()
                     .applyConnectionString(new ConnectionString(URI))
                     .codecRegistry(codecRegistry)
-                    .applyToSslSettings(builder -> builder.enabled(true).context(sslContext))
+                    .applyToSslSettings(builder -> builder
+                            .enabled(true)
+                            .context(sslContext)) // Ensure custom context is applied
                     .build();
 
             monguito = MongoClients.create(clientSettings);
