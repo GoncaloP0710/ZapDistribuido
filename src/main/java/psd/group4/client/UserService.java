@@ -405,16 +405,20 @@ public class UserService implements UserServiceInterface {
         System.out.println(user.toString());
         ArrayList<MessageEntry> list = mh.findAllbyUser(user);
 
+        // for (MessageEntry messageEntry : list) {
+        //     System.out.println("---------------------------------------------------------");
+        //     System.out.println(messageEntry.toString());
+        // }
+
         // // Group messages by their identifier
         // Map<String, List<MessageEntry>> groupedMessages = new HashMap<>();
-         for (MessageEntry messageEntry : list) {
+        // for (MessageEntry messageEntry : list) {
         //     long identifier = messageEntry.getIdentifier(); // Assuming getIdentifier() returns the identifier
         //     Date date = messageEntry.getDate(); // Assuming getDate() returns the date
         //     String key = identifier + "_" + date.getTime(); // Create a unique key using identifier and date
         //     groupedMessages.computeIfAbsent(key, k -> new ArrayList<>()).add(messageEntry);
-        System.out.println("---------------------------------------------------------");
-        System.out.println(messageEntry.toString());
-        }
+        
+        //}
 
         // // Process each group
         // for (Map.Entry<String, List<MessageEntry>> entry : groupedMessages.entrySet()) {
@@ -466,54 +470,73 @@ public class UserService implements UserServiceInterface {
         // MongoDBHandler mh = new MongoDBHandler();
         // byte[] user = currentNodeDTO.getUsername().getBytes();
         // ArrayList<MessageEntry> list = mh.findAllbyUser(user);
-        // System.out.println(list);
-        // ArrayList<MessageEntry> list2 = new ArrayList<>();
-        // System.out.println(list2);
-        // long i = 0;
+        System.out.println(list);
+        System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+        ArrayList<MessageEntry> list2 = new ArrayList<>();
+        System.out.println(list2);
+        long i = 0;
    
-        // for (MessageEntry messageEntry : list) {
-        //     if (i == 0) {
-        //         i = messageEntry.getIdentifier();
-        //         list2.add(messageEntry);
-        //     } else if (i == messageEntry.getIdentifier()) {
-        //         list2.add(messageEntry);
-        //     } else {
+        for (MessageEntry messageEntry : list) {
+            if (i == 0) {
+                i = messageEntry.getIdentifier();
+                list2.add(messageEntry);
+            } else if (i == messageEntry.getIdentifier()) {
+                list2.add(messageEntry);
+            } else {
 
-        //         try {
-        //             // // Deserialize sender and receiver
-        //             // NodeDTO senderNode = Utils.deserialize(messageEntry.getSender(), NodeDTO.class);
-        //             // NodeDTO receiverNode = Utils.deserialize(messageEntry.getReceiver(), NodeDTO.class);
+                try {
+                    String messageContent = new String(EncryptionHandler.reconstructSecret(list2).toByteArray(), StandardCharsets.UTF_8);
+                    NodeDTO sender = Utils.deserialize(messageEntry.getSender(),  NodeDTO.class) ;
+                    NodeDTO receiver = Utils.deserialize(messageEntry.getReceiver(),  NodeDTO.class);
                 
-        //             // Extract their usernames
-        //             String senderUsername = "Gajo1";//senderNode.getUsername();
-        //             String receiverUsername = "Gajo2";//receiverNode.getUsername();
-                
-        //             // Reconstruct and decode the message
-        //             String messageContent = new String(EncryptionHandler.reconstructSecret(list2).toByteArray(), StandardCharsets.UTF_8);
-                
-        //             // Build and display the messages
-        //             InterfaceHandler.messageRecived(
-        //                 messageEntry.getDate() + ": " 
-        //                 + senderUsername + " sent a message to " 
-        //                 + receiverUsername + " saying: " 
-        //                 + messageContent
-        //             );
-        //             InterfaceHandler.messageRecived("----------------------------------------------------------");
-        //         // } catch (IOException | ClassNotFoundException e) {
-        //         //     // Handle deserialization errors
-        //         //     e.printStackTrace();
-        //         //     InterfaceHandler.messageRecived("Error: Failed to deserialize sender or receiver.");
-        //         } catch (Exception e) {
-        //             // Handle any other potential errors
-        //             e.printStackTrace();
-        //             InterfaceHandler.messageRecived("Error: An unexpected error occurred.");
-        //         }
+                    // Build and display the messages
+                    InterfaceHandler.messageRecived(
+                        messageEntry.getDate() + ": " 
+                        + sender.getUsername() + " sent a message to " 
+                        + receiver.getUsername() + " saying: " 
+                        + messageContent
+                    );
+                    InterfaceHandler.messageRecived("----------------------------------------------------------");
+                // } catch (IOException | ClassNotFoundException e) {
+                //     // Handle deserialization errors
+                //     e.printStackTrace();
+                //     InterfaceHandler.messageRecived("Error: Failed to deserialize sender or receiver.");
+                } catch (Exception e) {
+                    // Handle any other potential errors
+                    e.printStackTrace();
+                    InterfaceHandler.messageRecived("Error: An unexpected error occurred.");
+                }
 
                 
-        //         i = messageEntry.getIdentifier();
-        //         list2.clear();
-        //         list2.add(messageEntry);
-        //     }
-        // }
+                i = messageEntry.getIdentifier();
+                list2.clear();
+                list2.add(messageEntry);
+            }
+            System.out.println("000000000000000000000000000000000000000000000000000000000000000000000");
+        }
+        if(!list2.isEmpty()){
+            try {
+                String messageContent = new String(EncryptionHandler.reconstructSecret(list2).toByteArray(), StandardCharsets.UTF_8);
+                NodeDTO sender = Utils.deserialize(list2.get(0).getSender(),  NodeDTO.class) ;
+                NodeDTO receiver = Utils.deserialize(list2.get(0).getReceiver(),  NodeDTO.class);
+            
+                // Build and display the messages
+                InterfaceHandler.messageRecived(
+                    list2.get(0).getDate() + ": " 
+                    + sender.getUsername() + " sent a message to " 
+                    + receiver.getUsername() + " saying: " 
+                    + messageContent
+                );
+                InterfaceHandler.messageRecived("----------------------------------------------------------");
+            // } catch (IOException | ClassNotFoundException e) {
+            //     // Handle deserialization errors
+            //     e.printStackTrace();
+            //     InterfaceHandler.messageRecived("Error: Failed to deserialize sender or receiver.");
+            } catch (Exception e) {
+                // Handle any other potential errors
+                e.printStackTrace();
+                InterfaceHandler.messageRecived("Error: An unexpected error occurred.");
+            }
+        }
     }
 }
