@@ -70,12 +70,12 @@
   <properties>
     <maven-compiler-plugin.source>21</maven-compiler-plugin.source>
     <java.version>17</java.version>
+    <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
+    <mongodb-driver-sync.version>5.0.0</mongodb-driver-sync.version>
     <maven-compiler-plugin.target>21</maven-compiler-plugin.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
     <logback-classic.version>1.2.13</logback-classic.version>
     <mongodb-crypt.version>1.8.0</mongodb-crypt.version>
-    <mongodb-driver-sync.version>5.0.0</mongodb-driver-sync.version>
     <exec-maven-plugin.version>3.1.1</exec-maven-plugin.version>
   </properties>
 </project>

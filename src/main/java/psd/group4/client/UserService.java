@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -35,7 +36,7 @@ import psd.group4.message.*;
 public class UserService implements UserServiceInterface {
 
    // ---------------------- Default Node ----------------------
-    private String ipDefault = "192.168.1.130";
+    private String ipDefault = "192.168.1.79";
     private int portDefault = 8080;
     private String usernameDefault = "Wang";
     // ----------------------------------------------------------
@@ -398,6 +399,7 @@ public class UserService implements UserServiceInterface {
 
     public void printMessages() throws ClassNotFoundException, IOException {
 
+        Properties originalSSLProperties = (Properties) System.getProperties().clone();
         Utils.clearSSLProperties();
 
         MongoDBHandler mh = new MongoDBHandler();
@@ -430,15 +432,15 @@ public class UserService implements UserServiceInterface {
            printMessagesAux(list2);
         }
         mh.close();
+        System.setProperties(originalSSLProperties);
     }
 
-    private static void printMessagesAux(ArrayList<MessageEntry> list2){
+    private static void printMessagesAux(ArrayList<MessageEntry> list2) {
         try {
             String messageContent = new String(EncryptionHandler.reconstructSecret(list2).toByteArray(), StandardCharsets.UTF_8);
             NodeDTO sender = Utils.deserialize(list2.get(0).getSender(),  NodeDTO.class) ;
             NodeDTO receiver = Utils.deserialize(list2.get(0).getReceiver(),  NodeDTO.class);
         
-            // Build and display the messages
             InterfaceHandler.messageRecived(
                 list2.get(0).getDate() + ": " 
                 + sender.getUsername() + " sent a message to " 
@@ -446,12 +448,7 @@ public class UserService implements UserServiceInterface {
                 + messageContent
             );
             InterfaceHandler.messageRecived("----------------------------------------------------------");
-        // } catch (IOException | ClassNotFoundException e) {
-        //     // Handle deserialization errors
-        //     e.printStackTrace();
-        //     InterfaceHandler.messageRecived("Error: Failed to deserialize sender or receiver.");
         } catch (Exception e) {
-            // Handle any other potential errors
             e.printStackTrace();
             InterfaceHandler.messageRecived("Error: An unexpected error occurred.");
         }

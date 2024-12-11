@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.security.cert.Certificate;
@@ -190,37 +191,44 @@ public class EventHandler {
             }
             Thread.sleep(2000);
         }
+        
+        Properties originalSSLProperties = (Properties) System.getProperties().clone();
         Utils.clearSSLProperties();
 
+        // Store the messages in the database
         File messagesFile = new File("Mensagens/" + currentNodeDTO.getUsername() + "/messages.dat");
         if (messagesFile.exists()) {
-            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(messagesFile))) {
-                List<MessageEntry> deserializedShares = (List<MessageEntry>) ois.readObject();
+            try (FileInputStream fis = new FileInputStream(messagesFile);
+                ObjectInputStream ois = new ObjectInputStream(fis)) {
                 MongoDBHandler mongoDBHandler = new MongoDBHandler();
-                for (MessageEntry share : deserializedShares) {
-                    mongoDBHandler.storeMessage(share);
+                while (fis.available() > 0) {
+                    List<MessageEntry> deserializedShares = (List<MessageEntry>) ois.readObject();
+                    for (MessageEntry share : deserializedShares) {
+                        mongoDBHandler.storeMessage(share);
+                    }
                 }
-                mongoDBHandler.close();
+            mongoDBHandler.close();
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
             }
         }
 
+        System.setProperties(originalSSLProperties);
+
+        // Remove the user directory with the messages
         File userDirectory = new File("Mensagens/" + currentNodeDTO.getUsername());
         if (userDirectory.exists() && userDirectory.isDirectory()) {
-            // List all files in the user's directory
             File[] files = userDirectory.listFiles();
             if (files != null) {
                 for (File file : files) {
-                    // Delete files in the directory
                     if (!file.isDirectory()) {
                         file.delete();
                     }
                 }
             }
-            // Delete the user's directory after its contents are removed
             userDirectory.delete();
         }
+
         InterfaceHandler.success("Node exited the network successfully");
     }
 
@@ -353,16 +361,37 @@ public class EventHandler {
 
             List<MessageEntry> shares = EncryptionHandler.divideShare(messageDB, sender, receiver, 1, 3);
 
-            // Create the "Mensagens" directory if it doesn't exist
             String userDir = "Mensagens/" + currentNodeDTO.getUsername();
             Utils.createDir(userDir);
 
-            // Serialize and save the shares to a file
-            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(userDir + "/messages.dat", true))) {//NOT WORKING razao: ObjectOutputStream
+            File file = new File(userDir + "/messages.dat");
+            boolean append = file.exists();
+
+            try (FileOutputStream fos = new FileOutputStream(file, true);
+                ObjectOutputStream oos = append ? new ObjectOutputStream(fos) {
+                    @Override
+                    protected void writeStreamHeader() throws IOException {
+                        reset();
+                    }
+                } : new ObjectOutputStream(fos)) {
                 oos.writeObject(shares);
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
+            // LOGS
+            try (FileInputStream fis = new FileInputStream(file);
+                ObjectInputStream ois = new ObjectInputStream(fis)) {
+                while (fis.available() > 0) {
+                    List<MessageEntry> deserializedShares = (List<MessageEntry>) ois.readObject();
+                    for (MessageEntry share : deserializedShares) {
+                        System.out.println(share);
+                    }
+                }
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+            // FIM LOGS
 
             String recivedMessage = "recived by " + currentNodeDTO.getUsername();
             if (event.getNeedConfirmation()) { // Send a reciving message to the sender
