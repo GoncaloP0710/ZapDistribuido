@@ -353,7 +353,6 @@ public class EventHandler {
             String messageString = new String(decryptedBytes, StandardCharsets.UTF_8);
             InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + messageString);
 
-
             // Encrypt the message using secret sharing
             byte[] sender = Utils.serialize(event.getSenderDTO());
             byte[] receiver = Utils.serialize(currentNodeDTO);
@@ -378,20 +377,6 @@ public class EventHandler {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-            // LOGS
-            try (FileInputStream fis = new FileInputStream(file);
-                ObjectInputStream ois = new ObjectInputStream(fis)) {
-                while (fis.available() > 0) {
-                    List<MessageEntry> deserializedShares = (List<MessageEntry>) ois.readObject();
-                    for (MessageEntry share : deserializedShares) {
-                        System.out.println(share);
-                    }
-                }
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-            // FIM LOGS
 
             String recivedMessage = "recived by " + currentNodeDTO.getUsername();
             if (event.getNeedConfirmation()) { // Send a reciving message to the sender

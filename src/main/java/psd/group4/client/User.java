@@ -10,6 +10,7 @@ import javax.crypto.NoSuchPaddingException;
 
 
 import psd.group4.handlers.*;
+import psd.group4.utils.SuppressMongoLogs;
 
 
 public class User {
@@ -21,6 +22,7 @@ public class User {
 
     public static void main(String[] args) throws Exception {  
 
+        SuppressMongoLogs.disableMongoLogs();
         interfaceHandler = new InterfaceHandler();
         interfaceHandler.startUp();
         

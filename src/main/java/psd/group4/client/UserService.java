@@ -404,13 +404,9 @@ public class UserService implements UserServiceInterface {
 
         MongoDBHandler mh = new MongoDBHandler();
         byte[] user = Utils.serialize(currentNodeDTO);
-        System.out.println(user.toString());
         ArrayList<MessageEntry> list = mh.findAllbyUser(user);
 
-        System.out.println(list);
-        System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         ArrayList<MessageEntry> list2 = new ArrayList<>();
-        System.out.println(list2);
         long i = 0;
    
         for (MessageEntry messageEntry : list) {
@@ -426,7 +422,7 @@ public class UserService implements UserServiceInterface {
                 list2.clear();
                 list2.add(messageEntry);
             }
-            System.out.println("000000000000000000000000000000000000000000000000000000000000000000000");
+            // System.out.println("000000000000000000000000000000000000000000000000000000000000000000000");
         }
         if(!list2.isEmpty()){
            printMessagesAux(list2);
@@ -447,7 +443,7 @@ public class UserService implements UserServiceInterface {
                 + receiver.getUsername() + " saying: " 
                 + messageContent
             );
-            InterfaceHandler.messageRecived("----------------------------------------------------------");
+            System.out.println("----------------------------------------------------------");
         } catch (Exception e) {
             e.printStackTrace();
             InterfaceHandler.messageRecived("Error: An unexpected error occurred.");
