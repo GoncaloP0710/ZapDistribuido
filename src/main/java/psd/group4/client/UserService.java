@@ -405,71 +405,6 @@ public class UserService implements UserServiceInterface {
         System.out.println(user.toString());
         ArrayList<MessageEntry> list = mh.findAllbyUser(user);
 
-        // for (MessageEntry messageEntry : list) {
-        //     System.out.println("---------------------------------------------------------");
-        //     System.out.println(messageEntry.toString());
-        // }
-
-        // // Group messages by their identifier
-        // Map<String, List<MessageEntry>> groupedMessages = new HashMap<>();
-        // for (MessageEntry messageEntry : list) {
-        //     long identifier = messageEntry.getIdentifier(); // Assuming getIdentifier() returns the identifier
-        //     Date date = messageEntry.getDate(); // Assuming getDate() returns the date
-        //     String key = identifier + "_" + date.getTime(); // Create a unique key using identifier and date
-        //     groupedMessages.computeIfAbsent(key, k -> new ArrayList<>()).add(messageEntry);
-        
-        //}
-
-        // // Process each group
-        // for (Map.Entry<String, List<MessageEntry>> entry : groupedMessages.entrySet()) {
-        //     List<MessageEntry> messageGroup = entry.getValue();
-        //     try {
-        //         // Reconstruct the secret
-        //         BigInteger secret = EncryptionHandler.reconstructSecret(messageGroup);
-        //         byte[] secretBytes = secret.toByteArray();
-
-        //         // Decrypt each message in the group
-        //         for (MessageEntry messageEntry : messageGroup) {
-        //             byte[] decryptedMessage = EncryptionHandler.decryptWithKey(messageEntry.getShare().getBytes(), secretBytes);
-        //             String messageContent = new String(decryptedMessage, StandardCharsets.UTF_8);
-        //             String senderUsername = new String(messageEntry.getSender(), StandardCharsets.UTF_8);
-        //             String receiverUsername = new String(messageEntry.getReceiver(), StandardCharsets.UTF_8);
-        //             System.out.println(messageEntry.getDate() + ": " 
-        //                 + senderUsername + " sent a message to " 
-        //                 + receiverUsername + " saying: " 
-        //                 + messageContent);
-        //         }
-        //     } catch (Exception e) {
-        //         e.printStackTrace();
-        //     }
-        // }
-
-
-
-        
-
-        // for (MessageEntry messageEntry : list) {
-        //     try {
-        //         System.out.println("MessageEntry: " + messageEntry);
-                
-        //         if (messageEntry.getShareHolder() != null && !messageEntry.getShareHolder().isEmpty()) {
-        //             BigInteger shareHolder = new BigInteger(messageEntry.getShareHolder());
-        //             byte[] decryptedMessage = EncryptionHandler.decryptWithKey(messageEntry.getShare().getBytes(), shareHolder.toByteArray());
-        //             String message = new String(decryptedMessage, StandardCharsets.UTF_8);
-        //             System.out.println("Message: " + message);
-        //         } else {
-        //             System.out.println("MessageEntry has a null or empty shareHolder");
-        //         }
-        //     } catch (Exception e) {
-        //         e.printStackTrace();
-        //     }
-        // }
-
-        // mh.close();
-
-        // MongoDBHandler mh = new MongoDBHandler();
-        // byte[] user = currentNodeDTO.getUsername().getBytes();
-        // ArrayList<MessageEntry> list = mh.findAllbyUser(user);
         System.out.println(list);
         System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         ArrayList<MessageEntry> list2 = new ArrayList<>();
@@ -484,30 +419,7 @@ public class UserService implements UserServiceInterface {
                 list2.add(messageEntry);
             } else {
 
-                try {
-                    String messageContent = new String(EncryptionHandler.reconstructSecret(list2).toByteArray(), StandardCharsets.UTF_8);
-                    NodeDTO sender = Utils.deserialize(messageEntry.getSender(),  NodeDTO.class) ;
-                    NodeDTO receiver = Utils.deserialize(messageEntry.getReceiver(),  NodeDTO.class);
-                
-                    // Build and display the messages
-                    InterfaceHandler.messageRecived(
-                        messageEntry.getDate() + ": " 
-                        + sender.getUsername() + " sent a message to " 
-                        + receiver.getUsername() + " saying: " 
-                        + messageContent
-                    );
-                    InterfaceHandler.messageRecived("----------------------------------------------------------");
-                // } catch (IOException | ClassNotFoundException e) {
-                //     // Handle deserialization errors
-                //     e.printStackTrace();
-                //     InterfaceHandler.messageRecived("Error: Failed to deserialize sender or receiver.");
-                } catch (Exception e) {
-                    // Handle any other potential errors
-                    e.printStackTrace();
-                    InterfaceHandler.messageRecived("Error: An unexpected error occurred.");
-                }
-
-                
+                printMessagesAux(list2);
                 i = messageEntry.getIdentifier();
                 list2.clear();
                 list2.add(messageEntry);
@@ -515,28 +427,33 @@ public class UserService implements UserServiceInterface {
             System.out.println("000000000000000000000000000000000000000000000000000000000000000000000");
         }
         if(!list2.isEmpty()){
-            try {
-                String messageContent = new String(EncryptionHandler.reconstructSecret(list2).toByteArray(), StandardCharsets.UTF_8);
-                NodeDTO sender = Utils.deserialize(list2.get(0).getSender(),  NodeDTO.class) ;
-                NodeDTO receiver = Utils.deserialize(list2.get(0).getReceiver(),  NodeDTO.class);
-            
-                // Build and display the messages
-                InterfaceHandler.messageRecived(
-                    list2.get(0).getDate() + ": " 
-                    + sender.getUsername() + " sent a message to " 
-                    + receiver.getUsername() + " saying: " 
-                    + messageContent
-                );
-                InterfaceHandler.messageRecived("----------------------------------------------------------");
-            // } catch (IOException | ClassNotFoundException e) {
-            //     // Handle deserialization errors
-            //     e.printStackTrace();
-            //     InterfaceHandler.messageRecived("Error: Failed to deserialize sender or receiver.");
-            } catch (Exception e) {
-                // Handle any other potential errors
-                e.printStackTrace();
-                InterfaceHandler.messageRecived("Error: An unexpected error occurred.");
-            }
+           printMessagesAux(list2);
+        }
+        mh.close();
+    }
+
+    private static void printMessagesAux(ArrayList<MessageEntry> list2){
+        try {
+            String messageContent = new String(EncryptionHandler.reconstructSecret(list2).toByteArray(), StandardCharsets.UTF_8);
+            NodeDTO sender = Utils.deserialize(list2.get(0).getSender(),  NodeDTO.class) ;
+            NodeDTO receiver = Utils.deserialize(list2.get(0).getReceiver(),  NodeDTO.class);
+        
+            // Build and display the messages
+            InterfaceHandler.messageRecived(
+                list2.get(0).getDate() + ": " 
+                + sender.getUsername() + " sent a message to " 
+                + receiver.getUsername() + " saying: " 
+                + messageContent
+            );
+            InterfaceHandler.messageRecived("----------------------------------------------------------");
+        // } catch (IOException | ClassNotFoundException e) {
+        //     // Handle deserialization errors
+        //     e.printStackTrace();
+        //     InterfaceHandler.messageRecived("Error: Failed to deserialize sender or receiver.");
+        } catch (Exception e) {
+            // Handle any other potential errors
+            e.printStackTrace();
+            InterfaceHandler.messageRecived("Error: An unexpected error occurred.");
         }
     }
 }

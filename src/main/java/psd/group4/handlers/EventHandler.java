@@ -358,7 +358,7 @@ public class EventHandler {
             Utils.createDir(userDir);
 
             // Serialize and save the shares to a file
-            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(userDir + "/messages.dat"))) {
+            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(userDir + "/messages.dat", true))) {//NOT WORKING razao: ObjectOutputStream
                 oos.writeObject(shares);
             } catch (IOException e) {
                 e.printStackTrace();

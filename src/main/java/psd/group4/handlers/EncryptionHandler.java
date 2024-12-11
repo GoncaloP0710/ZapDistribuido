@@ -218,13 +218,13 @@ public class EncryptionHandler{
             polynomial[i] = new BigInteger(secret.bitLength(), rndGenerator).mod(field);
         }
 
-        long l = rndGenerator.nextLong();
+        long identifier = rndGenerator.nextLong();
         // calculating shares
         List<MessageEntry> shares = new ArrayList<>();
         for (int i = 0; i < nShareholders; i++) {
             BigInteger shareholder = BigInteger.valueOf(i + 1); // shareholder id can be any positive number, except 0
             BigInteger share = calculatePoint(shareholder, polynomial, field); 
-            shares.add(new MessageEntry(sender, receiver, new Date(), l, field.toString(), shareholder.toString(), share.toString()));
+            shares.add(new MessageEntry(sender, receiver, new Date(), identifier, field.toString(), shareholder.toString(), share.toString()));
         }
 
         return shares;
