@@ -203,7 +203,6 @@ public class EncryptionHandler{
         Element decryptedMessage = engine.decryption(publicKey, secretKey, attributes, ciphertext);
         byte[] decryptedBytes = Utils.decodeGroupToBytes(decryptedMessage);
         String recoveredMessage = new String(decryptedBytes, StandardCharsets.UTF_8);
-        System.out.println("Recovered message: " + recoveredMessage);
         return recoveredMessage;
     }
 

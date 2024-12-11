@@ -1,16 +1,9 @@
 package psd.group4.handlers;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.Arrays;
 
 import psd.group4.utils.Utils;
 import psd.group4.client.MessageEntry;
@@ -335,10 +328,8 @@ public class EventHandler {
             InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + messageString);
 
             // Encrypt the message using secret sharing
-            NodeDTO senderDTO = new NodeDTO(Sender.getUsername(), Sender.getIp(), Sender.getPort());
-            byte[] sender = Utils.serialize(senderDTO);
-            NodeDTO recieverDto = new NodeDTO(currentNodeDTO.getUsername(), currentNodeDTO.getIp(), currentNodeDTO.getPort());
-            byte[] receiver = Utils.serialize(recieverDto);
+            byte[] sender = Utils.serialize(Sender);
+            byte[] receiver = Utils.serialize(currentNodeDTO);
             BigInteger messageDB = messageString.getBytes(StandardCharsets.UTF_8).length > 0 ? new BigInteger(messageString.getBytes(StandardCharsets.UTF_8)) : BigInteger.ZERO;
 
             List<MessageEntry> shares = EncryptionHandler.divideShare(messageDB, sender, receiver, 1, 3);

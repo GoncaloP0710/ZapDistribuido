@@ -1,18 +1,14 @@
 package psd.group4.client;
 
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
-import java.util.ArrayList;
-import java.util.List;
+
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
-import psd.group4.dtos.NodeDTO;
 import psd.group4.handlers.*;
 import psd.group4.utils.*;
 
@@ -23,33 +19,10 @@ public class User {
     private static Node node;
     private static UserService userService;
     private static InterfaceHandler interfaceHandler;
-    private static ArrayList<MessageEntry> messagesDB = new ArrayList<MessageEntry>();
 
     public static void main(String[] args) throws Exception {  
 
         SuppressMongoLogs.disableMongoLogs();
-        // -------------------------------------
-
-        // ADICIONAR A DATABASE
-
-        // String messageString = "Hello World!";
-        // BigInteger messageInt = new BigInteger(messageString.getBytes(StandardCharsets.UTF_8));
-        // byte[] messageDB = messageString.getBytes(StandardCharsets.UTF_8);
-
-        // // Encrypt the message using secret sharing
-        // List<MessageEntry> shares = EncryptionHandler.divideShare(messageInt, messageDB, messageDB, 1, 3);
-
-        // MongoDBHandler mongoDBHandler = new MongoDBHandler();
-        // try {
-        //     for (MessageEntry share : shares) {
-        //         mongoDBHandler.storeMessage(share);
-        //     }
-        //     mongoDBHandler.close();
-        // } catch (Exception e) {
-        //     e.printStackTrace();
-        // } 
-
-        // -------------------------------------
 
         interfaceHandler = new InterfaceHandler();
         interfaceHandler.startUp();
@@ -77,25 +50,13 @@ public class User {
             InterfaceHandler.erro("Erro ao obter o endereço IP local!");
             serverIp = interfaceHandler.getIP();
         }
+
         int serverPort = Integer.parseInt(interfaceHandler.getPort());
         node = new Node(name, serverIp, serverPort);
-        NodeDTO nodeDTO = new NodeDTO(name, serverIp, serverPort);
-        messagesDB = getMongoMsg(messagesDB, nodeDTO);
-        
-        
-            userService = new UserService(name, node, keyHandler, messagesDB);
-    
-            // Add shutdown hook to handle Ctrl+C
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                try {
-                    userService.exitNode();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }));
-    
-            mainLoop(); // Main loop - User interface
-        }
+        userService = new UserService(name, node, keyHandler);
+
+        mainLoop(); // Main loop - User interface
+    }
     
         /**
          * Main loop of the user interface that handles the user input
@@ -198,14 +159,5 @@ public class User {
             }
             User user = (User) obj;
             return user.getUserName().equals(user_name);
-        }
-        
-        public static ArrayList<MessageEntry> getMongoMsg(ArrayList<MessageEntry> messagesDB, NodeDTO node) throws Exception{
-            MongoDBHandler mh = new MongoDBHandler();
-            byte[] user = Utils.serialize(node);
-            ArrayList<MessageEntry> list = mh.findAllbyUser(user);
-            messagesDB.addAll(list);
-            mh.close();
-            return messagesDB;
         }
 }

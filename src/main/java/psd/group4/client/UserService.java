@@ -1,7 +1,6 @@
 package psd.group4.client;
 
 import java.io.File;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
@@ -11,7 +10,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -62,18 +60,17 @@ public class UserService implements UserServiceInterface {
     // -----------------------------------------------------------
 
     // -------------------- DataBase Variables -------------------
-    private List<MessageEntry> messagesDB = new ArrayList<>();
+    // private List<MessageEntry> messagesDB = new ArrayList<>();
     private List<MessageEntry> messagesLocal = new ArrayList<>();
     //------------------------------------------------------------
 
-    public UserService(String username, Node currentNode, KeyHandler keyHandler, List<MessageEntry> messagesDB) throws Exception {
+    public UserService(String username, Node currentNode, KeyHandler keyHandler) throws Exception {
         this.username = username;
         this.currentNode = currentNode;
         this.keyHandler = keyHandler;
         this.keystoreFile = keyHandler.getKeystoreFile();
         this.keystorePassword = keyHandler.getKeyStorePassword();
         this.truststoreFile = keyHandler.getTrustStoreFile();
-        this.messagesDB = messagesDB;
         initializeCurrentNodeDTO(username, currentNode, keyHandler.getCertificate(username));
         this.clientHandler = new NodeClientHandler(this);
         this.serverHandler = new NodeServerHandler(this);
@@ -221,6 +218,13 @@ public class UserService implements UserServiceInterface {
     public void sendGroupMessage(InterfaceHandler interfaceHandler) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException, Exception {
         nodeSendMessageLock.lock();
         try {
+
+            Collection<String> groupNames = eventHandler.getAllGroupNames();
+            if (groupNames.isEmpty()) {
+                InterfaceHandler.info("There are no groups.");
+                return;
+            }
+
             System.out.println("Select the group you want to send a message to: ");
             String groupName = interfaceHandler.getInput();
 
@@ -366,6 +370,71 @@ public class UserService implements UserServiceInterface {
         }
     }
 
+    public boolean hasMultipleOccurrences(String groupName) {
+        Collection<String> allGroupNames = eventHandler.getAllGroupNames();
+        Map<String, Integer> nameCountMap = new HashMap<>();
+
+        for (String name : allGroupNames) {
+            nameCountMap.put(name, nameCountMap.getOrDefault(name, 0) + 1);
+        }
+
+        return nameCountMap.getOrDefault(groupName, 0) > 1;
+    }
+
+
+    public void printMessages() throws Exception {
+
+        ArrayList<MessageEntry> list2 = new ArrayList<>();
+        long i = 0;
+
+        ArrayList<MessageEntry> messagesDB = getMongoMsg(this.currentNodeDTO);
+        messagesDB.addAll(messagesLocal);
+   
+        for (MessageEntry messageEntry : messagesDB) {
+            if (i == 0) {
+                i = messageEntry.getIdentifier();
+                list2.add(messageEntry);
+            } else if (i == messageEntry.getIdentifier()) {
+                list2.add(messageEntry);
+            } else {
+
+                printMessagesAux(list2);
+                i = messageEntry.getIdentifier();
+                list2.clear();
+                list2.add(messageEntry);
+            }
+        }
+        if(!list2.isEmpty()){
+           printMessagesAux(list2);
+        }
+    }
+
+    private static void printMessagesAux(ArrayList<MessageEntry> list2) {
+        try {
+            String messageContent = new String(EncryptionHandler.reconstructSecret(list2).toByteArray(), StandardCharsets.UTF_8);
+            NodeDTO sender = Utils.deserialize(list2.get(0).getSender(),  NodeDTO.class) ;
+            NodeDTO receiver = Utils.deserialize(list2.get(0).getReceiver(),  NodeDTO.class);
+        
+            InterfaceHandler.messageRecived(
+                list2.get(0).getDate() + ": " 
+                + sender.getUsername() + " sent a message to " 
+                + receiver.getUsername() + " saying: " 
+                + messageContent
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+            InterfaceHandler.messageRecived("Error: An unexpected error occurred.");
+        }
+    }
+
+    public static ArrayList<MessageEntry> getMongoMsg(NodeDTO node) throws Exception{
+        MongoDBHandler mh = new MongoDBHandler();
+        byte[] user = Utils.serialize(node);
+        ArrayList<MessageEntry> list = mh.findAllbyUser(user);
+        mh.close();
+        return list;
+    }
+
     @Override
     public void processEvent(NodeEvent e) { // Forwards the event to the event handler
         try {
@@ -398,69 +467,6 @@ public class UserService implements UserServiceInterface {
             }
         } catch (Exception exception) {
             exception.printStackTrace();
-        }
-    }
-
-    public boolean hasMultipleOccurrences(String groupName) {
-        Collection<String> allGroupNames = eventHandler.getAllGroupNames();
-        Map<String, Integer> nameCountMap = new HashMap<>();
-
-        for (String name : allGroupNames) {
-            nameCountMap.put(name, nameCountMap.getOrDefault(name, 0) + 1);
-        }
-
-        return nameCountMap.getOrDefault(groupName, 0) > 1;
-    }
-
-
-
-
-    public void printMessages() throws ClassNotFoundException, IOException {
-
-        ArrayList<MessageEntry> list2 = new ArrayList<>();
-        long i = 0;
-
-        ArrayList<MessageEntry> allList = new ArrayList<>(messagesDB);
-        allList.addAll(messagesLocal);
-        
-   
-        for (MessageEntry messageEntry : allList) {
-            if (i == 0) {
-                i = messageEntry.getIdentifier();
-                list2.add(messageEntry);
-            } else if (i == messageEntry.getIdentifier()) {
-                list2.add(messageEntry);
-            } else {
-
-                printMessagesAux(list2);
-                i = messageEntry.getIdentifier();
-                list2.clear();
-                list2.add(messageEntry);
-            }
-        }
-        if(!list2.isEmpty()){
-           printMessagesAux(list2);
-        }
-    }
-
-    
-
-    private static void printMessagesAux(ArrayList<MessageEntry> list2) {
-        try {
-            String messageContent = new String(EncryptionHandler.reconstructSecret(list2).toByteArray(), StandardCharsets.UTF_8);
-            NodeDTO sender = Utils.deserialize(list2.get(0).getSender(),  NodeDTO.class) ;
-            NodeDTO receiver = Utils.deserialize(list2.get(0).getReceiver(),  NodeDTO.class);
-        
-            InterfaceHandler.messageRecived(
-                list2.get(0).getDate() + ": " 
-                + sender.getUsername() + " sent a message to " 
-                + receiver.getUsername() + " saying: " 
-                + messageContent
-            );
-            System.out.println("----------------------------------------------------------");
-        } catch (Exception e) {
-            e.printStackTrace();
-            InterfaceHandler.messageRecived("Error: An unexpected error occurred.");
         }
     }
 }
