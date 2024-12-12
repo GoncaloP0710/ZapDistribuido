@@ -198,6 +198,7 @@ public class EventHandler {
                 }
                 mongoDBHandler.close();
             } catch (Exception e) {
+                mongoDBHandler.close();
                 e.printStackTrace();
             }
         }
@@ -326,21 +327,21 @@ public class EventHandler {
 
             String messageString = new String(decryptedBytes, StandardCharsets.UTF_8);
             InterfaceHandler.messageRecived("from " + event.getSenderDTO().getUsername() + ": " + messageString);
-
-            // Encrypt the message using secret sharing
-            byte[] sender = Utils.serialize(Sender);
-            byte[] receiver = Utils.serialize(currentNodeDTO);
-            BigInteger messageDB = messageString.getBytes(StandardCharsets.UTF_8).length > 0 ? new BigInteger(messageString.getBytes(StandardCharsets.UTF_8)) : BigInteger.ZERO;
-
-            List<MessageEntry> shares = EncryptionHandler.divideShare(messageDB, sender, receiver, 1, 3);
-            userService.addMessagesLocal(shares);
-
+            
             String recivedMessage = "recived by " + currentNodeDTO.getUsername();
             if (event.getNeedConfirmation()) { // Send a reciving message to the sender
+                // Encrypt the message using secret sharing
+                byte[] sender = Utils.serialize(Sender);
+                byte[] receiver = Utils.serialize(currentNodeDTO);
+                BigInteger messageDB = messageString.getBytes(StandardCharsets.UTF_8).length > 0 ? new BigInteger(messageString.getBytes(StandardCharsets.UTF_8)) : BigInteger.ZERO;
+    
+                List<MessageEntry> shares = EncryptionHandler.divideShare(messageDB, sender, receiver, 1, 3);
+                userService.addMessagesLocal(shares);
+
                 UserMessage userMessage = new UserMessage(MessageType.SendMsg, currentNodeDTO, event.getSenderDTO().getHash(), recivedMessage.getBytes(), false, (byte[]) null, false);
                 NodeSendMessageEvent e = new NodeSendMessageEvent(userMessage);
                 sendUserMessage(e);
-            }
+            } 
         }
     }
 

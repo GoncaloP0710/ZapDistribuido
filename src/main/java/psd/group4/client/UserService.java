@@ -389,6 +389,10 @@ public class UserService implements UserServiceInterface {
 
         ArrayList<MessageEntry> messagesDB = getMongoMsg(this.currentNodeDTO);
         messagesDB.addAll(messagesLocal);
+        if(messagesDB.isEmpty()){
+            InterfaceHandler.erro("There are no messages recorded");
+            return;
+        }
    
         for (MessageEntry messageEntry : messagesDB) {
             if (i == 0) {
