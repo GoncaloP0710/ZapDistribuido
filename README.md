@@ -28,6 +28,22 @@ Uma vez que as mensagens passam por nós dentro da rede antes de chegarem ao rec
 
 Para obter uma encriptação "end-to-end", decidimos enviar a mensagem encriptada com uma chave de sessão, acompanhada do hash dela assinado com a chave privada do transmissor. Dessa forma, obtemos confidencialidade, uma vez que a mensagem é cifrada; autenticidade, pela assinatura do transmissor; e integridade, garantida pelo hash da mensagem.
 
+### Group conversations
+TODO
+
+### Long Term Storage of Messages
+
+As mensagens enviadas são temporáriamente guardadas localmente. `Só após fechar o nó usando o comando "5" é que as suas mensagens serã guardadas remotamente`.
+As mensagens são guardadas usando a base de dados MongoDB.
+
+Todas as mensagens guardadas estão encriptadas individualmente usando Shamir Secret Sharing e apenas são desencriptadas quando o utilizador pede para as ver. Assim sendo cada mensagem individual tem várias shares que são necessárias para a reconstruir.
+Um utilizador apenas consegue ver as mensagens que enviou ou recebeu e nunca mensagens de outros.
+
+#### Limitações sobre Long-Term Storage
+Este sistema de storage NÃO É COMPATIVEL com as mensagens de grupo.
+Para efeitos de demonstração foi apenas usada uma só base de dados assim sendo, qualquer atacante que tenha acesso a essa única base de dados poderá reconstruir as mensagens.
+
+
 ## Project Requirements
 
 Para este projeto, o grupo decidiu utilizar a linguagem `Java`. Isto implica ter uma instalação do mesmo para conseguir executar o projeto.
@@ -57,3 +73,5 @@ java -jar .\target\ZapDistribuido-1.0-SNAPSHOT.jar
 ```bash
 java -jar ./target/ZapDistribuido-1.0-SNAPSHOT.jar
 ```
+
+Quando for pedido que escolha um porto, é necessário escolher portos com um minimo de 2 de distancia entre nós (ex: nó1: 8080, nó2: 8082, nó3 8084).
