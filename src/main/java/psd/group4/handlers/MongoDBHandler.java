@@ -26,14 +26,12 @@ import com.mongodb.*;
 public class MongoDBHandler {
     private final String URI = "mongodb+srv://areis04net:OaHxZtDOKs177scf@cluster0.rwzipne.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
     private static MongoClient singletonMongoClient = null;
-    //private final String URI = "mongodb+srv://areis04net:OaHxZtDOKs177scf@cluster0.rwzipne.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&ssl=true&sslInvalidHostNameAllowed=true";    
     public MongoDatabase database;
     public MongoCollection<MessageEntry> collection;
-    public CodecRegistry pojoCodecRegistry ;
-    public CodecRegistry codecRegistry ;
-    // public MongoClient monguito;
+    public CodecRegistry pojoCodecRegistry;
+    public CodecRegistry codecRegistry;
 
-
+    
     public MongoDBHandler() {
         try {
             TrustManager[] trustAllCerts = new TrustManager[]{
@@ -99,10 +97,6 @@ public class MongoDBHandler {
     public void storeMessage(MessageEntry message) {
         collection.insertOne(message); 
     }
-
-    // public void close() {
-    //     monguito.close();
-    // }
 
     public void close() {
         if (singletonMongoClient != null) {

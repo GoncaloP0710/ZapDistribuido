@@ -736,8 +736,6 @@ public class EventHandler {
         groupSecretKeys.put(groupAtributesDTO.getGroupNameHash(), secretKey);
         return true;
     }
-            
-    // TODO: Try protected
 
     public String[] getGroupAttributes(BigInteger groupNameHash) {
         return groupAtributes.get(groupNameHash);

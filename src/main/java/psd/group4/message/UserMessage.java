@@ -3,7 +3,6 @@ package psd.group4.message;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
 
-import cn.edu.buaa.crypto.algebra.serparams.PairingCipherSerParameter;
 import psd.group4.dtos.NodeDTO;
 
 public class UserMessage extends Message {

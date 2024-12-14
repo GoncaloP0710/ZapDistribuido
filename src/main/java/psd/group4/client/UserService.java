@@ -7,6 +7,8 @@ import java.security.cert.Certificate;
 import java.security.*;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +62,6 @@ public class UserService implements UserServiceInterface {
     // -----------------------------------------------------------
 
     // -------------------- DataBase Variables -------------------
-    // private List<MessageEntry> messagesDB = new ArrayList<>();
     private List<MessageEntry> messagesLocal = new ArrayList<>();
     //------------------------------------------------------------
 
@@ -414,6 +415,14 @@ public class UserService implements UserServiceInterface {
     }
 
     private static void printMessagesAux(ArrayList<MessageEntry> list2) {
+        Collections.sort(list2, new Comparator<MessageEntry>() {
+            @Override
+            public int compare(MessageEntry m1, MessageEntry m2) {
+                return m1.getDate().compareTo(m2.getDate());
+            }
+        });
+
+
         try {
             String messageContent = new String(EncryptionHandler.reconstructSecret(list2).toByteArray(), StandardCharsets.UTF_8);
             NodeDTO sender = Utils.deserialize(list2.get(0).getSender(),  NodeDTO.class) ;

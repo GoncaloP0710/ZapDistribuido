@@ -123,8 +123,6 @@ public class MessageEntry implements Serializable {
         s.append("Sender: "+ sender + "\n");
         s.append("Receiver: "+ receiver + "\n");
         s.append("Message: "+ share + "\n");
-        // s.append("Share Holder: "+ shareHolder + "\n");
-        // s.append("Field: "+ field + "\n");
         s.append("Date: "+ date.toString() + "\n");
         return s.toString();
     }

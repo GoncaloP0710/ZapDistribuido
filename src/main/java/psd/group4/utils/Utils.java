@@ -244,6 +244,15 @@ public final class Utils {
         return randomBytes;
     }
 
+
+    /**
+     * Serialize an object to a byte array
+     *
+     * @param object the object to serialize
+     * @param <T>    the type of the object to serialize
+     * @return the serialized byte array
+     * @throws IOException if an I/O error occurs during serialization
+     */
     public static <T extends Serializable> byte[] serialize(T object) throws IOException {
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
              ObjectOutputStream out = new ObjectOutputStream(bos)) {
@@ -252,6 +261,17 @@ public final class Utils {
         }
     }
 
+
+    /**
+     * Deserialize a byte array to an object of the specified class
+     *
+     * @param bytes the byte array to deserialize
+     * @param clazz the class of the object to deserialize
+     * @param <T>   the type of the object to deserialize
+     * @return the deserialized object
+     * @throws IOException            if an I/O error occurs during deserialization
+     * @throws ClassNotFoundException if the class of the object to deserialize cannot be found
+     */
     public static <T extends Serializable> T deserialize(byte[] bytes, Class<T> clazz) throws IOException, ClassNotFoundException {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
              ObjectInputStream in = new ObjectInputStream(bis)) {
@@ -309,6 +329,11 @@ public final class Utils {
                 .toArray(String[]::new);
     }
 
+    /**
+     * Generate a random policy for ABE
+     * 
+     * @return a random policy
+     */
     public static String generateRandomPolicy() {
         Random random = new Random();
         int numClauses = random.nextInt(3) + 1; // Number of clauses in the policy
@@ -352,6 +377,12 @@ public final class Utils {
         return signature.verify(hashSigned);
     }
 
+    /**
+     * Check if a string is an integer
+     * 
+     * @param str the string to check
+     * @return
+     */
     public static boolean isInteger(String str) {
         try {
             Integer.parseInt(str);

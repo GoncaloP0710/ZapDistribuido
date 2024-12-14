@@ -26,7 +26,7 @@ public class ChordInternalMessage extends Message {
     private PublicKey initializerPublicKey; // DiffHellmanEvent
     private PublicKey targetPublicKey; // DiffHellmanEvent
 
-    private NodeDTO targetDTO; // TODO: Check if it can be removed
+    private NodeDTO targetDTO; 
 
     private PairingKeySerParameter publicKey; // AddUserToGroupEvent
     private BigInteger receiverHash; // AddUserToGroupEvent

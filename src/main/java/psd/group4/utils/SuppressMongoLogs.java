@@ -5,6 +5,10 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 
 public class SuppressMongoLogs {
+
+    /**
+     * Disables all MongoDB related logs
+     */
     public static void disableMongoLogs() {
         // Suppress logs for the MongoDB driver
         Logger rootLogger = (Logger) LoggerFactory.getLogger("org.mongodb.driver");
