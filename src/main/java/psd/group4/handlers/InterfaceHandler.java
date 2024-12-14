@@ -181,7 +181,7 @@ public class InterfaceHandler {
      */
     public String getIP() {
         do {
-            System.out.print("Insira o seu ip: ");
+            System.out.print("Insira o ip do Wang: ");
             String ret = getInput();
             if (!isValidIP(ret)) {
                 System.out.println("IP digitado não é válido");

@@ -34,7 +34,8 @@ import psd.group4.message.*;
 public class UserService implements UserServiceInterface {
 
    // ---------------------- Default Node ----------------------
-    private String ipDefault = "192.168.1.79";
+    //private String ipDefault = "192.168.1.79";
+    private String ipDefault;
     private int portDefault = 8080;
     private String usernameDefault = "Wang";
     // ----------------------------------------------------------
@@ -66,6 +67,8 @@ public class UserService implements UserServiceInterface {
     //------------------------------------------------------------
 
     public UserService(String username, Node currentNode, KeyHandler keyHandler) throws Exception {
+        InterfaceHandler ih = new InterfaceHandler();
+        this.ipDefault = ih.getIP();
         this.username = username;
         this.currentNode = currentNode;
         this.keyHandler = keyHandler;
