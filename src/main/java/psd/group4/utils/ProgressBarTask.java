@@ -15,7 +15,7 @@ public class ProgressBarTask implements Runnable {
     public void run() {
         try (ProgressBar progressBar = new ProgressBarBuilder()
                 .setTaskName("Processing")
-                .setStyle(ProgressBarStyle.COLORFUL_UNICODE_BLOCK)
+                .setStyle(ProgressBarStyle.ASCII)
                 .setInitialMax(durationInSeconds * 2) // Double the steps for smoother updates
                 .continuousUpdate()
                 .setUpdateIntervalMillis(100) // Refresh rate for smoother updates
