@@ -10,6 +10,12 @@ Faculdade: https://ciencias.ulisboa.pt/
 
 ## Project overview
 
+### Project Preview
+
+<img src="READMEFiles/terminal1.png" alt="plot" width="400"/> <img src="READMEFiles/terminal2.png" alt="plot" width="400"/>
+
+In both pictures, there is an example of the project in runtime.
+
 ### Network structure - `Chord`
 
 <img src="READMEFiles/chord-p2p-removebg-preview.png" alt="plot" width="200"/>
@@ -34,9 +40,9 @@ De modo a obter uma conversa segura entre grupos, utilizamos diferentes bibliote
 
 #### Libraries Used
 
-- [BouncyCastle](https://github.com/bcgit/bc-java)
-- [JPBC](https://github.com/emilianobonassi/jpbc)
-- [CloudCrypto](https://github.com/GoncaloP0710/CloudCrypto)
+- [BouncyCastle](https://github.com/bcgit/bc-java): A collection of APIs used in cryptography, providing a lightweight cryptography API in Java.
+- [JPBC](https://github.com/emilianobonassi/jpbc): Java Pairing-Based Cryptography library, used for implementing cryptographic schemes based on pairings.
+- [CloudCrypto](https://github.com/GoncaloP0710/CloudCrypto): A library for cloud-based cryptographic operations, providing various encryption and decryption functionalities.
 
 #### Create a group
 

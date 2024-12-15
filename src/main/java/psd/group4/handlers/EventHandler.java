@@ -155,7 +155,7 @@ public class EventHandler {
         NodeDTO nextNodeDTO = currentNode.getNextNode();
  
         if (prevNodeDTO.equals(currentNodeDTO) && nextNodeDTO.equals(currentNodeDTO)) { // Only one node in the network
-            InterfaceHandler.success("Node exited the network successfully");
+            InterfaceHandler.info("Node is the last one in the network");
         } else {
             // mudar next do prev para o next do current
             ChordInternalMessage message = new ChordInternalMessage(MessageType.UpdateNeighbors, nextNodeDTO, (NodeDTO) null, currentNodeDTO);
