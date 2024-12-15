@@ -20,43 +20,56 @@ public class User {
     private static UserService userService;
     private static InterfaceHandler interfaceHandler;
 
-    public static void main(String[] args) throws Exception {  
-
-        SuppressMongoLogs.disableMongoLogs();
-
-        interfaceHandler = new InterfaceHandler();
-        interfaceHandler.startUp();
-        
-        String name = interfaceHandler.getUserName();
-        String password = interfaceHandler.getPassword();
-
-        // Load keystore and truststore as well as verify password
-        KeyHandler keyHandler = KeyHandler.getInstance(password, name);
-        boolean correctPassword = false;
-        while (!correctPassword) {
-            try {
-                keyHandler.loadKeyStore(); // Check if password is correct by loading the keystore
-                correctPassword = true;
-            } catch (Exception e) {
-                InterfaceHandler.erro("Username ou Password inválido!");
-                name = interfaceHandler.getUserName();
-                password = interfaceHandler.getPassword();
-                keyHandler = KeyHandler.newInstance(password, name);
+    private static boolean isExiting = false;
+    
+        public static void main(String[] args) throws Exception {  
+    
+            SuppressMongoLogs.disableMongoLogs();
+    
+            interfaceHandler = new InterfaceHandler();
+            interfaceHandler.startUp();
+            
+            String name = interfaceHandler.getUserName();
+            String password = interfaceHandler.getPassword();
+    
+            // Load keystore and truststore as well as verify password
+            KeyHandler keyHandler = KeyHandler.getInstance(password, name);
+            boolean correctPassword = false;
+            while (!correctPassword) {
+                try {
+                    keyHandler.loadKeyStore(); // Check if password is correct by loading the keystore
+                    correctPassword = true;
+                } catch (Exception e) {
+                    InterfaceHandler.erro("Username ou Password inválido!");
+                    name = interfaceHandler.getUserName();
+                    password = interfaceHandler.getPassword();
+                    keyHandler = KeyHandler.newInstance(password, name);
+                }
             }
+    
+            String serverIp = getLocalIpAddress();
+            if (serverIp.equals("-1")) {
+                InterfaceHandler.erro("Erro ao obter o endereço IP local!");
+                serverIp = interfaceHandler.getIP();
+            }
+    
+            int serverPort = Integer.parseInt(interfaceHandler.getPort());
+            node = new Node(name, serverIp, serverPort);
+            userService = new UserService(name, node, keyHandler);
+    
+            // Add shutdown hook to handle Ctrl+C
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    if (!isExiting) {
+                    userService.exitNode();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }));
+
+            mainLoop(); // Main loop - User interface
         }
-
-        String serverIp = getLocalIpAddress();
-        if (serverIp.equals("-1")) {
-            InterfaceHandler.erro("Erro ao obter o endereço IP local!");
-            serverIp = interfaceHandler.getIP();
-        }
-
-        int serverPort = Integer.parseInt(interfaceHandler.getPort());
-        node = new Node(name, serverIp, serverPort);
-        userService = new UserService(name, node, keyHandler);
-
-        mainLoop(); // Main loop - User interface
-    }
     
         /**
          * Main loop of the user interface that handles the user input
@@ -91,6 +104,7 @@ public class User {
                         break;
                     case "5":
                     case "e":
+                        isExiting = true;
                         userService.exitNode();
                         System.exit(0);
                         break;
