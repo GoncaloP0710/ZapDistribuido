@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import psd.group4.utils.ProgressBarTask;
 import psd.group4.utils.Utils;
 import psd.group4.client.MessageEntry;
 import psd.group4.client.Node;
@@ -183,8 +184,16 @@ public class EventHandler {
                 }
             }
         }
+
+        // Start the progress bar in a new thread
+        Thread progressBarThread = new Thread(new ProgressBarTask(2)); // 5 seconds duration
+        progressBarThread.start();
+        try {
+            progressBarThread.join(); // Wait for the progress bar to finish
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         
-        Thread.sleep(2000);
         Properties originalSSLProperties = (Properties) System.getProperties().clone();
         Utils.clearSSLProperties();
 
