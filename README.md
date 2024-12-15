@@ -66,7 +66,7 @@ Todas as mensagens guardadas estão encriptadas individualmente usando Shamir Se
 Um utilizador apenas consegue ver as mensagens que enviou ou recebeu e nunca mensagens de outros.
 
 #### Limitações sobre Long-Term Storage
-Este sistema de storage NÃO É COMPATIVEL com as mensagens de grupo.
+Este sistema de storage foi feito em paralelo com as mensagens de grupo. Devido a isso existem problemas de compatibilidade entre os dois.
 Para efeitos de demonstração foi apenas usada uma só base de dados assim sendo, qualquer atacante que tenha acesso a essa única base de dados poderá reconstruir as mensagens.
 
 
