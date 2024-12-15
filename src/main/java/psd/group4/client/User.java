@@ -130,6 +130,9 @@ public class User {
                     case "pm":
                         userService.printMessages();
                         break;
+                    case "MA":
+                        MestreAndre.printMestreAndre();
+                        break;
                     default:
                         InterfaceHandler.erro("Opção inválida!");
                         break;
