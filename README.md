@@ -14,7 +14,7 @@ Faculdade: https://ciencias.ulisboa.pt/
 
 <img src="READMEFiles/terminal1.png" alt="plot" width="400"/> <img src="READMEFiles/terminal2.png" alt="plot" width="400"/>
 
-In both pictures, there is an example of the project in runtime.
+Desenvolvemos uma aplicação de mensagens peer-to-peer altamente segura, utilizando a estrutura de rede Chord para eficiência na busca de nós (O(log N)). A comunicação entre os nodes ocorre via SSL/TLS, garantindo conexões seguras e reutilizáveis. Mensagens são protegidas com criptografia AES e RSA para garantir confidencialidade, autenticidade e integridade. Para conversas em grupo, implementamos Attribute-Based Encryption (ABE) com bibliotecas como BouncyCastle, JPBC e CloudCrypto. O armazenamento de mensagens é feito em MongoDB, utilizando Shamir Secret Sharing.
 
 ### Network structure - `Chord`
 
